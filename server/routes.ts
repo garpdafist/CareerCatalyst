@@ -39,51 +39,24 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   req.session.userId = "test-user-123";
   req.session.email = "test@example.com";
   next();
-
-  // Comment out the actual auth logic for now
-  /*
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ message: "No authorization header" });
-  }
-
-  try {
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-
-    if (error || !user) {
-      throw error || new Error('User not found');
-    }
-
-    req.session.userId = user.id;
-    req.session.email = user.email || '';
-    next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(401).json({ message: "Invalid or expired token" });
-  }
-  */
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add session middleware
   app.use(sessionMiddleware);
 
-  // Add this route before the auth routes
+  // Modify the /api/user route to return mock user for testing
   app.get("/api/user", async (req, res) => {
-    if (!req.session.userId) {
-      res.status(401).json({ message: "Not authenticated" });
-      return;
-    }
-
-    // Get user from database
-    const user = await storage.getUserByEmail(req.session.email);
-    if (!user) {
-      res.status(401).json({ message: "User not found" });
-      return;
-    }
-
-    res.json(user);
+    // For testing: Always return mock user
+    const mockUser = {
+      id: "test-user-123",
+      email: "test@example.com",
+      emailVerified: new Date(),
+      lastLoginAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    res.json(mockUser);
   });
 
   // Auth routes
