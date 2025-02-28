@@ -17,7 +17,7 @@ const supabaseAdmin = createClient(
 // Add session type declaration
 declare module "express-session" {
   interface SessionData {
-    userId: string; 
+    userId: string;
     email: string;
   }
 }
@@ -31,7 +31,7 @@ const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 
+    maxAge: 24 * 60 * 60 * 1000
   }
 });
 
@@ -51,16 +51,16 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 // Configure multer for memory storage
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   }
 });
 
-// Modify the resume content validation schema to handle both direct content and file uploads
+// Modify validation schema to handle both paths
 const resumeAnalysisSchema = z.object({
-  content: z.string().min(1).optional(),
+  content: z.string().min(1, "Resume content cannot be empty").optional(),
 });
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
@@ -140,9 +140,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Set session
     req.session.userId = user.id;
-    req.session.email = email; 
+    req.session.email = email;
 
-    res.json(user); 
+    res.json(user);
   });
 
   app.post("/api/auth/logout", (req, res) => {
@@ -152,15 +152,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Protected resume routes
-  app.post("/api/resume-analyze", 
+  app.post("/api/resume-analyze",
     requireAuth,
     upload.single('file'),
     async (req: Request, res: Response) => {
       try {
         let content: string;
 
+        // Log request details
+        console.log('Resume analysis request:', {
+          hasFile: !!req.file,
+          bodyContent: req.body.content ? 'present' : 'absent',
+          contentLength: req.body.content?.length || 0
+        });
+
         if (req.file) {
-          // Log file details
+          // Handle PDF upload
           console.log('Processing uploaded file:', {
             mimetype: req.file.mimetype,
             size: req.file.size,
@@ -174,33 +181,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content = await extractTextFromPDF(req.file.buffer);
         } else {
           // Handle direct text input
+          console.log('Processing direct text input:', {
+            contentPresent: !!req.body.content,
+            contentLength: req.body.content?.length || 0,
+            contentPreview: req.body.content?.substring(0, 100)
+          });
+
           const result = resumeAnalysisSchema.safeParse(req.body);
           if (!result.success) {
             console.error('Validation failed:', {
               errors: result.error.errors,
               receivedContent: typeof req.body.content,
-              contentLength: req.body.content?.length
+              contentLength: req.body.content?.length || 0
             });
-            res.status(400).json({ 
+
+            return res.status(400).json({
               message: "Invalid resume content",
               details: result.error.errors
             });
-            return;
           }
-          content = result.data.content || '';
+
+          if (!result.data.content) {
+            return res.status(400).json({
+              message: "Resume content is required",
+              details: "No content provided in request body"
+            });
+          }
+
+          content = result.data.content;
         }
 
+        // Final content validation
         if (!content.trim()) {
-          const error = new Error('No valid content found in the resume');
-          console.error('Content validation failed:', {
+          console.error('Empty content validation failed:', {
             contentLength: content.length,
             isString: typeof content === 'string',
-            isEmpty: !content.trim()
+            contentType: req.file ? 'pdf' : 'text'
           });
-          throw error;
+
+          return res.status(400).json({
+            message: "Resume content cannot be empty",
+            details: `${req.file ? 'PDF' : 'Text'} content was empty after processing`
+          });
         }
 
-        // Log content before analysis
+        // Log final content before analysis
         console.log('Content ready for analysis:', {
           length: content.length,
           preview: content.substring(0, 100) + '...'

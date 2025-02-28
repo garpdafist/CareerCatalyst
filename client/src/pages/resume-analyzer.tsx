@@ -54,7 +54,12 @@ export default function ResumeAnalyzer() {
   const handleFileUpload = async (file: File) => {
     try {
       setFile(file);
-      // Don't read the file here - we'll send it directly to the server
+      console.log('Uploading file:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+
       const formData = new FormData();
       formData.append('file', file);
       analyzeMutation.mutate(formData);
@@ -70,6 +75,13 @@ export default function ResumeAnalyzer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log('Form submission:', {
+      hasFile: !!file,
+      hasContent: !!content.trim(),
+      contentLength: content.length
+    });
+
     if (!content.trim() && !file) {
       toast({
         title: "Error",
