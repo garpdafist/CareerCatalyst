@@ -37,10 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string) => {
     try {
+      // Get the current Replit URL for redirect
+      const replitUrl = window.location.origin;
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: replitUrl,
         },
       });
 
