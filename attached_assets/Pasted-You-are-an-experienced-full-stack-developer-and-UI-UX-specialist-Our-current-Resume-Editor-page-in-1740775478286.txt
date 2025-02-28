@@ -1,0 +1,49 @@
+You are an experienced full-stack developer and UI/UX specialist. 
+Our current Resume Editor page includes:
+- A drag-and-drop layout for resume sections (e.g., Professional Summary, Skills).
+- Basic suggestions in a sidebar.
+
+I want to improve the design and user experience. 
+Please update our Resume Editor with the following enhancements:
+
+1. **Layout & Structure**:
+   - Consider a two-column or split-view approach:
+     - Left: Editable sections (Professional Summary, Technical Skills, etc.).
+     - Right: Real-time suggestions or a live resume preview (whichever is easier to implement first).
+   - Make sections collapsible or expandable to reduce clutter.
+
+2. **Suggestions & Guidance**:
+   - Integrate contextual tips near each section. 
+     - For example, “Professional Summary” shows marketing-specific tips like mentioning campaign ROI or brand growth.
+   - If possible, add a small “Rewrite with AI” or “Improve” button near each suggestion.
+
+3. **Drag-and-Drop Improvements**:
+   - Use a clear handle or icon to indicate that sections are draggable.
+   - Display a hover tooltip (“Drag to reorder”) for clarity.
+
+4. **Visual & UX Enhancements**:
+   - Show a “Resume Score” or progress bar at the top, updating as the user addresses suggestions.
+   - Style each section with distinct headings or icons (e.g., an icon for Skills, Experience, etc.).
+   - Include a “Preview Resume” button that shows a quick PDF or formatted view in a modal or side panel.
+
+5. **Save / Autosave & Navigation**:
+   - Clearly indicate when changes are saved or if autosave is enabled.
+   - Provide an easy “Back to Analysis” or “Next Steps” button so users can return to the main analyzer or proceed to other features.
+
+6. **Optional Advanced Ideas**:
+   - Keyword highlighting: If focusing on marketing, highlight missing industry keywords or show a short list to drag into the text.
+   - Inline AI chat: A small chat bubble to ask “How do I highlight my brand marketing experience?” and get real-time suggestions.
+
+**Implementation Details**:
+- Please share the updated React components (e.g., ResumeEditor.tsx or similar).
+- If you need to adjust state management, consider using React Context or Redux for real-time updates.
+- Provide sample CSS or styling changes (using Tailwind, Shadcn UI, or our existing framework).
+- If feasible, add minimal logs or console output so we can verify the new drag-and-drop and suggestions flow.
+
+After making these updates, please show me how to test the new UI. 
+We should be able to:
+1. Drag sections around easily.
+2. See suggestions next to the relevant section or in a right-hand column.
+3. Optionally preview the resume or see a progress bar/score.
+
+Let me know if you need additional details, and feel free to suggest any other UI/UX improvements based on best practices.

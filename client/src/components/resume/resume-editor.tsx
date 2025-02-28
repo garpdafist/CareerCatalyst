@@ -22,31 +22,56 @@ const initialSections: ResumeSection[] = [
     id: "summary", 
     title: "Professional Summary", 
     content: "",
-    suggestions: ["Keep your summary concise and impactful", "Highlight your key achievements"],
+    suggestions: [
+      "Keep your summary concise and impactful",
+      "Highlight key campaign ROI numbers",
+      "Mention brand growth achievements",
+      "Include years of marketing experience"
+    ],
   },
   { 
     id: "experience", 
     title: "Work Experience", 
     content: "",
-    suggestions: ["Use action verbs to start bullet points", "Include measurable achievements"],
+    suggestions: [
+      "Use action verbs like 'Launched', 'Grew', 'Optimized'",
+      "Include measurable marketing metrics",
+      "Highlight successful campaigns",
+      "Quantify audience growth and engagement"
+    ],
   },
   { 
     id: "skills", 
     title: "Technical Skills", 
     content: "",
-    suggestions: ["Group skills by category", "Prioritize skills mentioned in job descriptions"],
+    suggestions: [
+      "Group skills by marketing categories",
+      "Include digital marketing platforms",
+      "List analytics tools proficiency",
+      "Mention relevant certifications"
+    ],
   },
   { 
     id: "education", 
     title: "Education", 
     content: "",
-    suggestions: ["List degrees in reverse chronological order", "Include relevant coursework"],
+    suggestions: [
+      "List degrees in reverse chronological order",
+      "Include marketing-specific coursework",
+      "Highlight relevant projects or thesis",
+      "Add marketing certifications"
+    ],
   },
   { 
     id: "certifications", 
     title: "Certifications", 
     content: "",
-    suggestions: ["Include expiration dates if applicable", "Highlight industry-recognized certifications"],
+    suggestions: [
+      "Include Google Analytics certification",
+      "Add HubSpot or similar platform certifications",
+      "List social media marketing certifications",
+      "Mention industry-specific credentials"
+    ],
   },
 ];
 
@@ -185,6 +210,7 @@ export default function ResumeEditor() {
                         <div
                           {...provided.dragHandleProps}
                           className="cursor-grab"
+                          title="Drag to reorder"
                         >
                           <GripVertical className="h-5 w-5 text-muted-foreground" />
                         </div>
