@@ -33,8 +33,15 @@ const sessionMiddleware = session({
   }
 });
 
-// Supabase auth middleware
+// Modify the requireAuth middleware to bypass authentication
 const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+  // For testing: Set a default test user ID and email
+  req.session.userId = "test-user-123";
+  req.session.email = "test@example.com";
+  next();
+
+  // Comment out the actual auth logic for now
+  /*
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).json({ message: "No authorization header" });
@@ -48,7 +55,6 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
       throw error || new Error('User not found');
     }
 
-    // Store user info in session using string ID
     req.session.userId = user.id;
     req.session.email = user.email || '';
     next();
@@ -56,6 +62,7 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
     console.error('Auth error:', error);
     res.status(401).json({ message: "Invalid or expired token" });
   }
+  */
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {

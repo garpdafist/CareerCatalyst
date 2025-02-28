@@ -13,105 +13,26 @@ type AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
+// Modify the hook to provide a mock user for testing
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Check active sessions and set the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email: string) => {
-    try {
-      // Get the current Replit URL for redirect
-      const replitUrl = window.location.origin;
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: replitUrl,
-        },
-      });
-
-      if (error) {
-        if (error.message.includes("rate limit")) {
-          throw new Error("Too many sign in attempts. Please try again later.");
-        }
-        throw error;
-      }
-
-      return; // Success - let the UI show the email sent message
-    } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error; // Re-throw to let the component handle the error state
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-
-      if (error) {
-        if (error.message.includes("provider is not enabled")) {
-          throw new Error("Google sign in is not available yet. Please use email sign in.");
-        }
-        throw error;
-      }
-    } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Sign out failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
+  // For testing: Always return a mock authenticated user
+  const mockUser = {
+    id: "test-user-123",
+    email: "test@example.com",
+    emailVerified: new Date(),
+    lastLoginAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isLoading,
-        signIn,
-        signOut,
-        signInWithGoogle,
+        user: mockUser,
+        isLoading: false,
+        signIn: async () => {},
+        signOut: async () => {},
+        signInWithGoogle: async () => {},
       }}
     >
       {children}
