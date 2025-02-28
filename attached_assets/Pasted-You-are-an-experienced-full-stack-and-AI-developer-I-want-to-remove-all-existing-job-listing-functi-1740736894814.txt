@@ -1,0 +1,42 @@
+You are an experienced full-stack and AI developer. I want to remove all existing job listing functionality and focus exclusively on an AI-powered resume analyzer with a marketing focus. Please implement the following changes:
+
+1. **Remove Job Listings & Clean Up Code**
+   - Delete or comment out any routes, components, or database schemas related to job listings.
+   - Update navigation/UI to remove job-related pages and references.
+
+2. **Database & Resume Storage**
+   - Create a new 'resumes' collection (or table) to store each user’s resume data and AI analysis.
+   - Include fields like:
+     - userId
+     - resumeContent (text or file reference)
+     - analysisResults (JSON of the AI feedback)
+     - timestamps (createdAt, updatedAt)
+   - Ensure only the owner of the resume can access or delete it.
+
+3. **Enhanced Resume Analyzer (Marketing Focus)**
+   - Expand the AI analysis to emphasize marketing roles, metrics, and relevant keywords (e.g., ROI, CTR, campaign budgets, analytics tools).
+   - Return a “score” or rating for each resume based on keyword matches, structure, and marketing-related achievements.
+   - Display the **scoring criteria** to the user as a **hover tooltip** (e.g., “Score is based on marketing keywords, metrics, structure, etc.”).
+
+4. **Modern, User-Friendly Authentication**
+   - Implement a **passwordless login** (magic link) or another simple flow (e.g., social login with Google or LinkedIn).
+   - Minimize friction so users can quickly upload a resume and view their analysis.
+
+5. **Add UI Buttons for Future Features**
+   - On the main dashboard or resume analysis page, add **buttons** (or links) for:
+     - **“Role Fit”** suggestions (future product)
+     - **“Career Path”** recommendations (future product)
+   - For now, these buttons should be **placeholders** that show a simple modal or message: “Coming Soon!”
+
+6. **User Interface & Flow**
+   - Maintain a single-page flow for resume upload, analysis results, and new placeholders (Role Fit, Career Paths).
+   - Ensure the analysis page includes:
+     - Resume Score
+     - Detailed feedback categories (skills, keywords, improvements)
+     - Hover tooltips explaining how each category is scored
+
+7. **Final Touches & Testing**
+   - Confirm that OpenAI integration still works with the new marketing-focused prompts.
+   - Provide me with instructions on how to run and test everything within Replit.
+
+Please scaffold all these changes in the existing codebase, remove any outdated references to job listings, and ensure the final UI reflects a marketing-centric resume analyzer with user-friendly authentication and placeholders for upcoming features.

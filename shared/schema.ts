@@ -1,37 +1,22 @@
-import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const jobs = pgTable("jobs", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  company: text("company").notNull(),
-  location: text("location").notNull(),
-  category: text("category").notNull(),
-  description: text("description").notNull(),
-  salary: text("salary").notNull(),
-});
-
 export const resumeAnalysis = pgTable("resume_analysis", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   content: text("content").notNull(),
   score: integer("score").notNull(),
   feedback: text("feedback").array(),
   skills: text("skills").array(),
   improvements: text("improvements").array(),
   keywords: text("keywords").array(),
-});
-
-export const insertJobSchema = createInsertSchema(jobs).pick({
-  title: true,
-  company: true,
-  location: true,
-  category: true,
-  description: true,
-  salary: true,
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertResumeAnalysisSchema = createInsertSchema(resumeAnalysis).pick({
+  userId: true,
   content: true,
   score: true,
   feedback: true,
@@ -40,7 +25,5 @@ export const insertResumeAnalysisSchema = createInsertSchema(resumeAnalysis).pic
   keywords: true,
 });
 
-export type Job = typeof jobs.$inferSelect;
-export type InsertJob = z.infer<typeof insertJobSchema>;
 export type ResumeAnalysis = typeof resumeAnalysis.$inferSelect;
 export type InsertResumeAnalysis = z.infer<typeof insertResumeAnalysisSchema>;

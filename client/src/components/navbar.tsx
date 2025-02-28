@@ -8,16 +8,11 @@ export function Navbar() {
           <div className="flex">
             <Link href="/">
               <a className="flex items-center text-xl font-bold text-primary">
-                JobPortal
+                CareerAI
               </a>
             </Link>
           </div>
           <div className="flex space-x-8">
-            <Link href="/jobs">
-              <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
-                Jobs
-              </a>
-            </Link>
             <Link href="/resume-analyzer">
               <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
                 Resume Analyzer
