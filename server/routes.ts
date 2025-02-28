@@ -168,9 +168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add configuration endpoint
   app.get("/api/config", (_req, res) => {
+    // Use the non-VITE prefixed environment variables for server-side
     res.json({
-      supabaseUrl: process.env.VITE_SUPABASE_URL,
-      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY
     });
   });
 

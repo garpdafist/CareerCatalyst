@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize with empty config first
-let supabase = createClient('', '');
+// Create a promise to track initialization
+let initializationPromise: Promise<ReturnType<typeof createClient>> | null = null;
 
-// Fetch and update configuration
 async function initializeSupabase() {
   try {
     const response = await fetch('/api/config');
@@ -11,13 +10,34 @@ async function initializeSupabase() {
       throw new Error('Failed to fetch Supabase configuration');
     }
     const config = await response.json();
-    supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
+
+    if (!config.supabaseUrl || !config.supabaseAnonKey) {
+      throw new Error('Invalid Supabase configuration received from server');
+    }
+
+    // Log configuration status (not the actual values)
+    console.log('Supabase Configuration Status:', {
+      hasUrl: !!config.supabaseUrl,
+      hasAnonKey: !!config.supabaseAnonKey
+    });
+
+    return createClient(config.supabaseUrl, config.supabaseAnonKey);
   } catch (error) {
     console.error('Failed to initialize Supabase:', error);
+    throw error;
   }
 }
 
-// Initialize on load
-initializeSupabase();
+// Initialize on first import
+initializationPromise = initializeSupabase();
 
-export { supabase };
+// Export a function that always returns the initialized client
+export async function getSupabase() {
+  if (!initializationPromise) {
+    initializationPromise = initializeSupabase();
+  }
+  return initializationPromise;
+}
+
+// For backward compatibility
+export const supabase = await getSupabase();
