@@ -3,8 +3,9 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Download, AlertCircle } from "lucide-react";
+import { GripVertical, Download, AlertCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import type { ResumeAnalysis } from "@shared/schema";
 
 // Define resume section structure
@@ -14,6 +15,7 @@ type ResumeSection = {
   content: string;
   suggestions: string[];
   keywords?: string[];
+  isCollapsed?: boolean;
 };
 
 // Standard ATS-friendly sections
@@ -28,6 +30,7 @@ const initialSections: ResumeSection[] = [
       "Mention brand growth achievements",
       "Include years of marketing experience"
     ],
+    isCollapsed: false,
   },
   { 
     id: "experience", 
@@ -39,6 +42,7 @@ const initialSections: ResumeSection[] = [
       "Highlight successful campaigns",
       "Quantify audience growth and engagement"
     ],
+    isCollapsed: false,
   },
   { 
     id: "skills", 
@@ -50,6 +54,7 @@ const initialSections: ResumeSection[] = [
       "List analytics tools proficiency",
       "Mention relevant certifications"
     ],
+    isCollapsed: false,
   },
   { 
     id: "education", 
@@ -61,6 +66,7 @@ const initialSections: ResumeSection[] = [
       "Highlight relevant projects or thesis",
       "Add marketing certifications"
     ],
+    isCollapsed: false,
   },
   { 
     id: "certifications", 
@@ -72,6 +78,7 @@ const initialSections: ResumeSection[] = [
       "List social media marketing certifications",
       "Mention industry-specific credentials"
     ],
+    isCollapsed: false,
   },
 ];
 
@@ -79,6 +86,7 @@ export default function ResumeEditor() {
   const [sections, setSections] = useState(initialSections);
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [completionScore, setCompletionScore] = useState(0);
 
   useEffect(() => {
     // Load analysis results from localStorage
@@ -116,7 +124,8 @@ export default function ResumeEditor() {
                 "Match skills with job requirements",
                 "Include both technical and soft skills"
               ],
-              keywords: parsedAnalysis.skills
+              keywords: parsedAnalysis.skills,
+              isCollapsed: false
             };
           case "summary":
             return {
@@ -126,18 +135,27 @@ export default function ResumeEditor() {
                 ...sectionSuggestions,
                 "Include years of experience",
                 "Highlight key achievements"
-              ]
+              ],
+              isCollapsed: false
             };
           default:
             return {
               ...section,
               suggestions: [...section.suggestions, ...sectionSuggestions],
-              keywords: relevantKeywords
+              keywords: relevantKeywords,
+              isCollapsed: false
             };
         }
       }));
     }
   }, []);
+
+  // Calculate completion score based on filled sections
+  useEffect(() => {
+    const filledSections = sections.filter(s => s.content.trim().length > 0).length;
+    const newScore = Math.round((filledSections / sections.length) * 100);
+    setCompletionScore(newScore);
+  }, [sections]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -147,6 +165,12 @@ export default function ResumeEditor() {
     items.splice(result.destination.index, 0, reorderedItem);
 
     setSections(items);
+  };
+
+  const toggleSection = (index: number) => {
+    const newSections = [...sections];
+    newSections[index].isCollapsed = !newSections[index].isCollapsed;
+    setSections(newSections);
   };
 
   const handleDownload = () => {
@@ -176,11 +200,20 @@ export default function ResumeEditor() {
         </p>
       </div>
 
+      <div className="mb-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Resume Completion</h3>
+          <span className="text-sm font-medium">{completionScore}%</span>
+        </div>
+        <Progress value={completionScore} className="h-2" />
+      </div>
+
       {analysis && (
-        <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Resume Score: {analysis.score}/100. 
+        <Alert className="mb-6 bg-primary/5 border-primary/20">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-primary">
+            ATS Score: {analysis.score}/100
+            <br />
             Make the suggested improvements to increase your ATS compatibility score.
           </AlertDescription>
         </Alert>
@@ -204,62 +237,80 @@ export default function ResumeEditor() {
                     <Card
                       ref={provided.innerRef}
                       {...provided.draggableProps}
-                      className="border"
+                      className="border border-muted-foreground/20 hover:border-primary/50 transition-colors"
                     >
-                      <CardHeader className="flex flex-row items-center gap-4 py-3">
+                      <CardHeader 
+                        className="flex flex-row items-center gap-4 py-3 cursor-pointer"
+                        onClick={() => toggleSection(index)}
+                      >
                         <div
                           {...provided.dragHandleProps}
-                          className="cursor-grab"
-                          title="Drag to reorder"
+                          className="cursor-grab hover:text-primary transition-colors"
+                          title="Drag to reorder sections"
                         >
-                          <GripVertical className="h-5 w-5 text-muted-foreground" />
+                          <GripVertical className="h-5 w-5" />
                         </div>
-                        <CardTitle className="text-lg">{section.title}</CardTitle>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {section.title}
+                          {section.isCollapsed ? (
+                            <ChevronDown className="h-4 w-4 ml-2" />
+                          ) : (
+                            <ChevronUp className="h-4 w-4 ml-2" />
+                          )}
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="md:col-span-2">
-                            <Textarea
-                              value={section.content}
-                              onChange={(e) => {
-                                const newSections = [...sections];
-                                newSections[index].content = e.target.value;
-                                setSections(newSections);
-                              }}
-                              placeholder={`Add your ${section.title.toLowerCase()} here...`}
-                              className="min-h-[200px] mb-2"
-                            />
-                          </div>
-                          <div className="space-y-4">
-                            <div className="bg-muted/50 rounded-lg p-4">
-                              <h4 className="font-medium mb-2">📝 Suggestions</h4>
-                              <ul className="space-y-2 text-sm text-muted-foreground">
-                                {section.suggestions.map((suggestion, i) => (
-                                  <li key={i} className="flex items-start gap-2">
-                                    <span className="text-primary">•</span>
-                                    {suggestion}
-                                  </li>
-                                ))}
-                              </ul>
+                      {!section.isCollapsed && (
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-2">
+                              <Textarea
+                                value={section.content}
+                                onChange={(e) => {
+                                  const newSections = [...sections];
+                                  newSections[index].content = e.target.value;
+                                  setSections(newSections);
+                                }}
+                                placeholder={`Add your ${section.title.toLowerCase()} here...`}
+                                className="min-h-[200px] mb-2 resize-y"
+                              />
                             </div>
-                            {section.keywords && section.keywords.length > 0 && (
-                              <div className="bg-muted/50 rounded-lg p-4">
-                                <h4 className="font-medium mb-2">🎯 Keywords</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {section.keywords.map((keyword, i) => (
-                                    <span 
-                                      key={i}
-                                      className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
-                                    >
-                                      {keyword}
-                                    </span>
+                            <div className="space-y-4">
+                              <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                                <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                  <Sparkles className="h-4 w-4" />
+                                  AI Suggestions
+                                </h4>
+                                <ul className="space-y-2 text-sm">
+                                  {section.suggestions.map((suggestion, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                                      <span className="text-primary">•</span>
+                                      {suggestion}
+                                    </li>
                                   ))}
-                                </div>
+                                </ul>
                               </div>
-                            )}
+                              {section.keywords && section.keywords.length > 0 && (
+                                <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                                  <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                    <Sparkles className="h-4 w-4" />
+                                    Recommended Keywords
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {section.keywords.map((keyword, i) => (
+                                      <span 
+                                        key={i}
+                                        className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                                      >
+                                        {keyword}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
+                        </CardContent>
+                      )}
                     </Card>
                   )}
                 </Draggable>
