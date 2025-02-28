@@ -11,7 +11,6 @@ import type { ResumeAnalysis } from "@shared/schema";
 import { Brain, CheckCircle, ListChecks, Tags, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/lib/supabase";
 
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
@@ -20,10 +19,24 @@ export default function ResumeAnalyzer() {
 
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string }) => {
-      console.log('Sending resume content:', data); // Add logging
-      const res = await apiRequest("POST", "/api/resume-analyze", data, {
+      if (!data.content.trim()) {
+        throw new Error("Resume content is required");
+      }
+
+      // If content is a PDF (starts with %PDF), send it as base64
+      const isPDF = data.content.startsWith("%PDF");
+      const requestData = {
+        content: data.content,
+        contentType: isPDF ? "application/pdf" : "text/plain"
+      };
+
+      console.log('Sending resume content:', {
+        contentType: requestData.contentType,
+        contentLength: requestData.content.length
+      });
+
+      const res = await apiRequest("POST", "/api/resume-analyze", requestData, {
         headers: {
-          // Add a mock Bearer token for testing
           Authorization: "Bearer mock-token-for-testing",
           'Content-Type': 'application/json',
         },
@@ -63,7 +76,7 @@ export default function ResumeAnalyzer() {
       });
       return;
     }
-    console.log('Submitting content:', content); // Add logging
+    console.log('Submitting content:', content); 
     analyzeMutation.mutate({ content: content.trim() });
   };
 

@@ -48,6 +48,12 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Add this validation schema for the resume content
+const resumeAnalysisSchema = z.object({
+  content: z.string().min(1),
+  contentType: z.enum(["application/pdf", "text/plain"]).default("text/plain")
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add session middleware
   app.use(sessionMiddleware);
@@ -108,22 +114,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Log the session and request for debugging
     console.log('Resume analyze request:', {
       session: req.session,
-      body: req.body
+      body: {
+        contentType: req.body.contentType,
+        contentLength: req.body?.content?.length
+      }
     });
 
-    const schema = z.object({
-      content: z.string().min(1),
-    });
-
-    const result = schema.safeParse(req.body);
+    const result = resumeAnalysisSchema.safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ message: "Invalid resume content" });
       return;
     }
 
     try {
+      let cleanContent = result.data.content;
+
+      // If content is PDF, extract text or use as is
+      if (result.data.contentType === "application/pdf") {
+        // For now, we'll just remove the PDF header and handle it as text
+        cleanContent = cleanContent.replace(/^%PDF[^]*?(?=\w)/i, '').trim();
+      }
+
       const analysis = await storage.analyzeResume(
-        result.data.content,
+        cleanContent,
         req.session.userId!
       );
       res.json(analysis);
