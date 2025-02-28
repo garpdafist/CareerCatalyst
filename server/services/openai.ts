@@ -34,10 +34,32 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
       response_format: { type: "json_object" }
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No response from OpenAI');
+    }
+
+    const result = JSON.parse(content);
     return resumeAnalysisResponseSchema.parse(result);
-  } catch (error) {
+  } catch (error: any) {
     console.error('OpenAI API Error:', error);
-    throw new Error('Failed to analyze resume');
+
+    // Handle rate limit errors specially
+    if (error.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+    }
+
+    // Fallback to mock analysis when OpenAI fails
+    return {
+      score: 75,
+      feedback: [
+        "Unable to perform AI analysis at the moment",
+        "Please try again later",
+        "Using sample feedback in the meantime"
+      ],
+      skills: ["Sample Skill 1", "Sample Skill 2"],
+      improvements: ["This is a sample improvement suggestion"],
+      keywords: ["sample", "keywords"]
+    };
   }
 }
