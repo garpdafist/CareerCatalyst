@@ -60,14 +60,33 @@ app.use((req, res, next) => {
       await setupVite(app, server);
     }
 
-    // ALWAYS serve the app on port 5000
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`Server running at http://0.0.0.0:${port}`);
+    // Try to serve the app on port 5000, but fallback to another port if needed
+    const tryPort = (port: number): Promise<number> => {
+      return new Promise((resolve, reject) => {
+        server.listen({
+          port,
+          host: "0.0.0.0",
+          reusePort: true,
+        })
+        .on('listening', () => {
+          log(`Server running at http://0.0.0.0:${port}`);
+          resolve(port);
+        })
+        .on('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            log(`Port ${port} is in use, trying ${port + 1}`);
+            server.close();
+            resolve(tryPort(port + 1));
+          } else {
+            reject(err);
+          }
+        });
+      });
+    };
+    
+    tryPort(5000).catch(error => {
+      log(`Fatal error during server startup: ${error}`);
+      process.exit(1);
     });
   } catch (error) {
     log(`Fatal error during server startup: ${error}`);
