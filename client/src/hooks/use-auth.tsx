@@ -1,6 +1,5 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -15,14 +14,16 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 // Modify the hook to provide a mock user for testing
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // For testing: Always return a mock authenticated user
-  const mockUser = {
+  // For testing: Create a mock user that matches Supabase User structure
+  const mockUser: User = {
     id: "test-user-123",
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    created_at: new Date().toISOString(),
     email: "test@example.com",
-    emailVerified: new Date(),
-    lastLoginAt: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date()
+    role: "authenticated",
+    updated_at: new Date().toISOString()
   };
 
   return (

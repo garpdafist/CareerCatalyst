@@ -35,9 +35,16 @@ const sessionMiddleware = session({
 
 // Modify the requireAuth middleware to bypass authentication
 const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
-  // For testing: Set a default test user ID and email
+  // For testing: Always set the test user in the session
   req.session.userId = "test-user-123";
   req.session.email = "test@example.com";
+
+  // Log the session for debugging
+  console.log('Session data:', {
+    userId: req.session.userId,
+    email: req.session.email
+  });
+
   next();
 };
 
@@ -98,6 +105,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protected resume routes
   app.post("/api/resume-analyze", requireAuth, async (req, res) => {
+    // Log the session and request for debugging
+    console.log('Resume analyze request:', {
+      session: req.session,
+      body: req.body
+    });
+
     const schema = z.object({
       content: z.string().min(1),
     });
