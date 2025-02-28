@@ -4,12 +4,18 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import session from "express-session";
-import { supabase } from "@/lib/supabase";
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client for auth verification
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.VITE_SUPABASE_ANON_KEY!
+);
 
 // Add session type declaration
 declare module "express-session" {
   interface SessionData {
-    userId: number;
+    userId: string; // Changed from number to string since Supabase uses string IDs
     email: string;
   }
 }
@@ -36,14 +42,15 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
     if (error || !user) {
       throw error || new Error('User not found');
     }
 
+    // Store user info in session using string ID
     req.session.userId = user.id;
-    req.session.email = user.email;
+    req.session.email = user.email || '';
     next();
   } catch (error) {
     console.error('Auth error:', error);
@@ -129,9 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(analysis);
     } catch (error: any) {
       console.error('Analysis error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to analyze resume",
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -157,6 +164,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/analyses", requireAuth, async (req, res) => {
     const analyses = await storage.getUserAnalyses(req.session.userId!);
     res.json(analyses);
+  });
+
+  // Add configuration endpoint
+  app.get("/api/config", (_req, res) => {
+    res.json({
+      supabaseUrl: process.env.VITE_SUPABASE_URL,
+      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY
+    });
   });
 
   const httpServer = createServer(app);

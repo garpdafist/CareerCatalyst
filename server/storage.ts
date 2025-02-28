@@ -14,10 +14,10 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   verifyEmail(email: string): Promise<void>;
 
-  // Resume analysis
-  analyzeResume(content: string, userId: number): Promise<ResumeAnalysis>;
+  // Resume analysis with string ID
+  analyzeResume(content: string, userId: string): Promise<ResumeAnalysis>;
   getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined>;
-  getUserAnalyses(userId: number): Promise<ResumeAnalysis[]>;
+  getUserAnalyses(userId: string): Promise<ResumeAnalysis[]>;
 
   // Session store for authentication
   sessionStore: Store;
@@ -55,14 +55,14 @@ export class DatabaseStorage implements IStorage {
   async verifyEmail(email: string): Promise<void> {
     await db
       .update(users)
-      .set({ 
+      .set({
         emailVerified: new Date(),
         lastLoginAt: new Date()
       })
       .where(eq(users.email, email));
   }
 
-  async analyzeResume(content: string, userId: number): Promise<ResumeAnalysis> {
+  async analyzeResume(content: string, userId: string): Promise<ResumeAnalysis> {
     const aiAnalysis = await analyzeResumeWithAI(content);
 
     const [analysis] = await db
@@ -85,7 +85,7 @@ export class DatabaseStorage implements IStorage {
     return analysis;
   }
 
-  async getUserAnalyses(userId: number): Promise<ResumeAnalysis[]> {
+  async getUserAnalyses(userId: string): Promise<ResumeAnalysis[]> {
     return db
       .select()
       .from(resumeAnalyses)

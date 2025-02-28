@@ -16,7 +16,7 @@ export const users = pgTable("users", {
 // Resume analysis table with user relation
 export const resumeAnalyses = pgTable("resume_analyses", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: text("user_id").notNull(), // Changed from integer to text
   content: text("content").notNull(),
   score: integer("score").notNull(),
   feedback: text("feedback").array(),
