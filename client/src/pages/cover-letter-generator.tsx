@@ -78,7 +78,7 @@ export default function CoverLetterGenerator() {
 
   const handleNext = () => {
     const currentStepData = steps[currentStep];
-    
+
     if (currentStepData.isRequired && !formData[currentStepData.id]) {
       toast({
         title: "Required Field",
@@ -87,7 +87,7 @@ export default function CoverLetterGenerator() {
       });
       return;
     }
-    
+
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -110,17 +110,34 @@ export default function CoverLetterGenerator() {
     }
 
     setIsGenerating(true);
-    
-    try {
-      // TODO: Implement API call to generate content
-      const mockGeneratedContent = {
-        email: "Dear Hiring Manager,\n\nI am writing to express my interest...",
-        video: "Hello! I'm excited to share why I would be a great fit...",
-        linkedin: "I'm thrilled to announce that I'm pursuing an exciting opportunity...",
-      };
 
-      setGeneratedContent(mockGeneratedContent);
+    try {
+      // Get saved resume data for fallback
+      const savedResumeData = localStorage.getItem('resumeAnalysis');
+      const resumeInfo = savedResumeData ? JSON.parse(savedResumeData) : null;
+
+      const response = await apiRequest("POST", "/api/generate-cover-letter", {
+        role: formData.role || '',
+        company: formData.company || '',
+        achievements: formData.achievements || '',
+        brand: formData.brand || '',
+        formats: selectedFormats,
+        resumeData: resumeInfo, // Send resume data for fallback
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate content');
+      }
+
+      const result = await response.json();
+      setGeneratedContent(result);
+
+      toast({
+        title: "Success",
+        description: "Your content has been generated successfully!",
+      });
     } catch (error) {
+      console.error('Generation error:', error);
       toast({
         title: "Generation Failed",
         description: "Failed to generate content. Please try again.",
@@ -209,7 +226,7 @@ export default function CoverLetterGenerator() {
             </AlertDescription>
           </Alert>
         )}
-        
+
         {currentStepData.id === "achievements" ? (
           <RichTextEditor
             value={formData[currentStepData.id] || ""}
@@ -315,3 +332,15 @@ export default function CoverLetterGenerator() {
     </div>
   );
 }
+
+// Placeholder for the API request function.  Replace with your actual implementation.
+const apiRequest = async (method: string, url: string, data: any) => {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+  return response;
+};

@@ -7,6 +7,7 @@ import session from "express-session";
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import pdf from 'pdf-parse/lib/pdf-parse.js';
+import OpenAI from "openai";
 
 // Initialize Supabase client for auth verification
 const supabaseAdmin = createClient(
@@ -197,6 +198,58 @@ async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
       stack: error.stack
     });
     throw new Error(`Failed to process file: ${error.message}`);
+  }
+}
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+async function generateCoverLetterContent(
+  role: string,
+  company: string,
+  achievements: string,
+  brand: string,
+  formats: string[],
+  resumeData: any
+): Promise<Record<string, string>> {
+  const systemPrompt = `You are an expert career coach specializing in creating compelling job application content. Generate content in the specified formats based on the provided information. If any information is missing, intelligently use the resume data provided.
+
+Key rules:
+1. Adapt tone and style to each format (formal for email, conversational for video)
+2. Include specific achievements and metrics
+3. Incorporate company research and role alignment
+4. Keep length appropriate for each format`;
+
+  const userPrompt = `Create content for a ${role} position at ${company}.
+
+Candidate Information:
+${achievements ? `Key Achievements: ${achievements}` : 'Use achievements from resume'}
+${brand ? `Personal Brand: ${brand}` : 'Use brand elements from resume'}
+
+Additional Context from Resume:
+${resumeData ? `
+- Skills: ${resumeData.skills?.join(', ')}
+- Keywords: ${resumeData.keywords?.join(', ')}
+- Overall Profile: ${resumeData.feedback?.join('. ')}` : 'No resume data available'}
+
+Generate content in the following formats: ${formats.join(', ')}
+
+Respond with a JSON object where each key is the format name and the value is the generated content.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    return JSON.parse(response.choices[0].message.content);
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    throw new Error('Failed to generate content');
   }
 }
 
@@ -392,6 +445,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || ""
     });
   });
+
+  app.post("/api/generate-cover-letter", requireAuth, async (req, res) => {
+    try {
+      const { role, company, achievements, brand, formats, resumeData } = req.body;
+
+      if (!role || !company || !formats || formats.length === 0) {
+        return res.status(400).json({
+          message: "Missing required fields: role, company, and at least one format"
+        });
+      }
+
+      const content = await generateCoverLetterContent(
+        role,
+        company,
+        achievements,
+        brand,
+        formats,
+        resumeData
+      );
+
+      res.json(content);
+    } catch (error: any) {
+      console.error('Cover letter generation error:', error);
+      res.status(500).json({
+        message: "Failed to generate content",
+        error: error.message
+      });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
