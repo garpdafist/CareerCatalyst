@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   Select,
@@ -12,10 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Steps, Step } from "@/components/ui/steps";
+import { Steps } from "@/components/ui/steps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, FileText, MessageSquare, LinkedinIcon, Video } from "lucide-react";
+import { AlertCircle, FileText, MessageSquare, LinkedinIcon, Video, LightbulbIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type FormStep = {
@@ -23,6 +20,7 @@ type FormStep = {
   title: string;
   description: string;
   isRequired: boolean;
+  sampleAnswer?: string;
 };
 
 type OutputFormat = "email" | "video" | "linkedin";
@@ -33,24 +31,28 @@ const steps: FormStep[] = [
     title: "Target Role",
     description: "What position are you applying for?",
     isRequired: true,
+    sampleAnswer: "Performance Marketing Manager at Trigent Software",
   },
   {
     id: "company",
     title: "Company Details",
     description: "Tell us about the company and why you're interested",
     isRequired: true,
+    sampleAnswer: "Trigent Software is a leading IT services organization with impressive ~$300M revenue and strong reputation in the US market. I'm excited about their commitment to excellence and expansion plans.",
   },
   {
     id: "achievements",
     title: "Key Achievements",
     description: "Share 2-3 relevant accomplishments (or we'll use your resume)",
     isRequired: false,
+    sampleAnswer: "• Reduced Customer Acquisition Cost (CAC) by up to 30% through optimization\n• Boosted user installs by 50% within a year\n• Led successful rebranding initiative increasing brand visibility by 40%",
   },
   {
     id: "brand",
     title: "Personal Brand",
     description: "What makes you unique? (optional - we can use resume data)",
     isRequired: false,
+    sampleAnswer: "Data-driven marketer with strong analytical skills, leveraging platforms like Google Analytics and Firebase. Passionate about optimizing user acquisition and engagement through strategic campaigns.",
   },
   {
     id: "format",
@@ -227,27 +229,24 @@ export default function CoverLetterGenerator() {
           </Alert>
         )}
 
-        {currentStepData.id === "achievements" ? (
-          <RichTextEditor
-            value={formData[currentStepData.id] || ""}
-            onChange={(value) =>
-              setFormData({ ...formData, [currentStepData.id]: value })
-            }
-            placeholder="• Increased sales by X%
-• Led a team of Y people
-• Reduced costs by Z%"
-            className="min-h-[200px]"
-          />
-        ) : (
-          <Textarea
-            value={formData[currentStepData.id] || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, [currentStepData.id]: e.target.value })
-            }
-            placeholder={`Enter ${currentStepData.title.toLowerCase()}...`}
-            className="min-h-[100px]"
-          />
+        {currentStepData.sampleAnswer && (
+          <Alert className="mb-4 bg-primary/5 border-primary/10">
+            <LightbulbIcon className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-primary">
+              <strong>Sample Answer:</strong><br />
+              {currentStepData.sampleAnswer}
+            </AlertDescription>
+          </Alert>
         )}
+
+        <RichTextEditor
+          value={formData[currentStepData.id] || ""}
+          onChange={(value) =>
+            setFormData({ ...formData, [currentStepData.id]: value })
+          }
+          placeholder={`Enter ${currentStepData.title.toLowerCase()}...`}
+          className="min-h-[200px]"
+        />
       </div>
     );
   };
@@ -308,7 +307,7 @@ export default function CoverLetterGenerator() {
             <CardTitle>Generated Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="email">
+            <Tabs defaultValue={selectedFormats[0]}>
               <TabsList>
                 {selectedFormats.map((format) => (
                   <TabsTrigger key={format} value={format}>
@@ -317,12 +316,17 @@ export default function CoverLetterGenerator() {
                 ))}
               </TabsList>
               {selectedFormats.map((format) => (
-                <TabsContent key={format} value={format}>
-                  <RichTextEditor
-                    value={generatedContent[format] || ""}
-                    onChange={() => {}}
-                    className="min-h-[300px]"
-                  />
+                <TabsContent key={format} value={format} className="mt-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <RichTextEditor
+                        value={generatedContent[format] || ""}
+                        onChange={() => {}}
+                        className="min-h-[300px]"
+                        readOnly
+                      />
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               ))}
             </Tabs>
@@ -333,7 +337,7 @@ export default function CoverLetterGenerator() {
   );
 }
 
-// Placeholder for the API request function.  Replace with your actual implementation.
+// API request helper
 const apiRequest = async (method: string, url: string, data: any) => {
   const response = await fetch(url, {
     method,

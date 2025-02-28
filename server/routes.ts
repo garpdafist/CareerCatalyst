@@ -215,10 +215,29 @@ async function generateCoverLetterContent(
   const systemPrompt = `You are an expert career coach specializing in creating compelling job application content. Generate content in the specified formats based on the provided information. If any information is missing, intelligently use the resume data provided.
 
 Key rules:
-1. Adapt tone and style to each format (formal for email, conversational for video)
-2. Include specific achievements and metrics
-3. Incorporate company research and role alignment
-4. Keep length appropriate for each format`;
+1. Format email/cover letters with clear sections:
+   - Professional greeting
+   - Strong opening paragraph showing enthusiasm
+   - 2-3 achievement-focused body paragraphs
+   - Concrete closing with call to action
+
+2. Structure video scripts with:
+   - Engaging hook/introduction (10-15 seconds)
+   - Key qualifications and achievements (30-45 seconds)
+   - Why this specific role/company (30 seconds)
+   - Strong closing with next steps (15 seconds)
+
+3. Style LinkedIn posts with:
+   - Attention-grabbing opening line
+   - Brief personal story or achievement
+   - Connection to new opportunity
+   - Call to action or networking invitation
+
+4. For all formats:
+   - Use specific metrics and numbers
+   - Keep tone professional yet personable
+   - Reference company research
+   - Highlight relevant achievements`;
 
   const userPrompt = `Create content for a ${role} position at ${company}.
 
@@ -234,7 +253,14 @@ ${resumeData ? `
 
 Generate content in the following formats: ${formats.join(', ')}
 
-Respond with a JSON object where each key is the format name and the value is the generated content.`;
+For the cover letter/email format, use this structure:
+[Professional Greeting]
+[Enthusiastic Opening - Show Role & Company Knowledge]
+[Achievement Paragraph - Most Relevant Accomplishment]
+[Skills & Alignment Paragraph]
+[Strong Closing with Call to Action]
+
+For all formats, ensure content is well-structured with appropriate line breaks and formatting. Use bullet points where appropriate. Respond with a JSON object where each key is the format name and the value is the generated content.`;
 
   try {
     const response = await openai.chat.completions.create({
