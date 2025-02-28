@@ -176,14 +176,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Handle direct text input
           const result = resumeAnalysisSchema.safeParse(req.body);
           if (!result.success) {
-            res.status(400).json({ message: "Invalid resume content" });
+            console.error('Validation failed:', {
+              errors: result.error.errors,
+              receivedContent: typeof req.body.content,
+              contentLength: req.body.content?.length
+            });
+            res.status(400).json({ 
+              message: "Invalid resume content",
+              details: result.error.errors
+            });
             return;
           }
           content = result.data.content || '';
         }
 
         if (!content.trim()) {
-          throw new Error('No valid content found in the resume');
+          const error = new Error('No valid content found in the resume');
+          console.error('Content validation failed:', {
+            contentLength: content.length,
+            isString: typeof content === 'string',
+            isEmpty: !content.trim()
+          });
+          throw error;
         }
 
         // Log content before analysis
@@ -201,9 +215,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stack: error.stack
         });
 
-        res.status(500).json({
+        const statusCode = error.message.includes('Invalid') ? 400 : 500;
+        res.status(statusCode).json({
           message: "Failed to analyze resume",
-          error: error.message
+          error: error.message,
+          details: {
+            type: error.constructor.name,
+            occurred: error.stack?.split('\n')[1] || 'unknown location'
+          }
         });
       }
     }

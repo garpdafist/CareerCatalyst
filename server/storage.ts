@@ -54,7 +54,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(email: string, id?: string): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values({ 
+      .values({
         id: id || randomBytes(16).toString("hex"),
         email,
         emailVerified: new Date(),
