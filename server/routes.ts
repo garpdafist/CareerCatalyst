@@ -89,7 +89,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   } catch (error: any) {
     console.error('PDF parsing error:', {
       message: error.message,
-      name: error.name,
+      type: error.constructor.name,
       stack: error.stack
     });
     throw new Error(`Failed to parse PDF: ${error.message}`);
