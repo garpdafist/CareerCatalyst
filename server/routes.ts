@@ -58,9 +58,9 @@ const upload = multer({
   }
 });
 
-// Add this validation schema for the resume content
+// Modify the resume content validation schema to handle both direct content and file uploads
 const resumeAnalysisSchema = z.object({
-  content: z.string().min(1),
+  content: z.string().min(1).optional(),
 });
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
@@ -179,7 +179,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(400).json({ message: "Invalid resume content" });
             return;
           }
-          content = result.data.content;
+          content = result.data.content || '';
+        }
+
+        if (!content.trim()) {
+          throw new Error('No valid content found in the resume');
         }
 
         // Log content before analysis
