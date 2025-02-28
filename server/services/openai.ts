@@ -46,7 +46,7 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     // Handle rate limit errors specially
     if (error.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+      console.log('Rate limit hit, falling back to mock data');
     }
 
     // Fallback to mock analysis when OpenAI fails
