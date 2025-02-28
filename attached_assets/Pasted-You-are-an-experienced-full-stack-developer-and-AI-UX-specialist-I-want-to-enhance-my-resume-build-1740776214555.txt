@@ -1,0 +1,71 @@
+You are an experienced full-stack developer and AI/UX specialist. 
+I want to enhance my resume-building product by applying the following rules and best practices, which are drawn from B-school/consulting-style marketing resumes:
+
+----------------------------
+RESUME RULES & BEST PRACTICES
+----------------------------
+1. **Overall Structure & Formatting**
+   - Keep the resume to one page if possible.
+   - Use clear, bold section headings and bullet points for achievements.
+   - Maintain consistent fonts and spacing.
+
+2. **Summary/Profile**
+   - 2–3 sentences max, focusing on key strengths and marketing achievements.
+   - Mention data-driven results (e.g., ROI improvements, user acquisition).
+
+3. **Experience Section**
+   - Emphasize quantifiable achievements with metrics (CPC, CTR, LTV, ROI).
+   - Use action verbs and marketing-specific terms.
+   - Keep bullet points concise (2–4 bullets per role), focusing on outcomes.
+
+4. **Education Section**
+   - Highlight relevant programs or courses if they enhance marketing credibility.
+   - Keep details brief unless you’re a recent grad.
+
+5. **Skills & Additional Section**
+   - List core marketing tools, certifications, or languages.
+   - Mention unique or conversation-worthy interests briefly.
+
+6. **Criteria for a Strong Marketing Resume**
+   - Data-driven achievements, clear impact statements, relevant marketing language.
+   - Professional polish and consulting-style bullet points.
+
+7. **Tailoring & Relevancy**
+   - Show advanced marketing tools (GA, Firebase, Appsflyer, etc.).
+   - Possibly add a “Key Achievements” section at the top.
+
+------------------------------------
+GOAL: UPDATE PRODUCT & AI SUGGESTIONS
+------------------------------------
+Please update the following aspects of our resume builder:
+
+1. **Product Flow & Sections**:
+   - Ensure each resume section (Summary, Experience, Education, Skills) encourages the user to follow these best practices.
+   - Add prompts or placeholders that remind the user to include metrics (e.g., “Mention a % increase or cost savings”).
+   - If we have a “Key Achievements” section, prompt the user to list top 2–3 data-driven wins.
+
+2. **AI Suggestions**:
+   - When the AI analyzes a resume, it should check for:
+     - Quantifiable metrics (ROI, CTR, CPC, retention rates).
+     - Action-oriented language (“Led,” “Optimized,” “Drove,” etc.).
+     - Clear structure and bullet formatting.
+   - Provide feedback if the user’s bullet points lack data or are too wordy.
+   - Suggest ways to make statements more concise, results-oriented, and marketing-focused.
+
+3. **UI/UX Enhancements**:
+   - Add tooltips or inline tips that remind the user to keep bullets short and data-driven.
+   - Possibly show a “resume quality score” reflecting these rules (metrics usage, clarity, formatting).
+
+4. **Implementation Details**:
+   - In the front end (ResumeEditor or similar component), incorporate placeholders or instructions that align with these rules.
+   - In the AI analysis (server-side or client-side), revise the suggestion prompts to reflect B-school/consulting best practices. 
+   - Let me know how you’ll structure the code changes (e.g., a “rules” file or object that the AI references).
+
+5. **Testing & Validation**:
+   - Provide a way to test the updated suggestions on sample resumes.
+   - Show logs or examples of how the AI now flags missing metrics or non-action verbs.
+
+Please share the updated code snippets and confirm that our product:
+1) Guides users toward data-driven, consulting-style bullet points,
+2) Encourages them to keep the resume structured and concise,
+3) Improves AI feedback to highlight marketing achievements and metric-based results.

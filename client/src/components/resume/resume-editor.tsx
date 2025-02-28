@@ -16,20 +16,22 @@ type ResumeSection = {
   suggestions: string[];
   keywords?: string[];
   isCollapsed?: boolean;
+  placeholder?: string;
 };
 
-// Standard ATS-friendly sections
+// Standard ATS-friendly sections with consulting-style guidance
 const initialSections: ResumeSection[] = [
   { 
     id: "summary", 
     title: "Professional Summary", 
     content: "",
     suggestions: [
-      "Keep your summary concise and impactful",
-      "Highlight key campaign ROI numbers",
-      "Mention brand growth achievements",
-      "Include years of marketing experience"
+      "Start with years of marketing experience and key specializations",
+      "Include 2-3 quantifiable achievements (e.g., 'Drove 40% YoY growth')",
+      "Mention specific marketing tools and platforms mastered",
+      "Keep to 2-3 impactful sentences maximum"
     ],
+    placeholder: "Marketing professional with X years of experience in [specialization]. Achieved [specific metric]% growth in [key area] through [strategy]. Expert in [tools/platforms] with proven success in [specific achievement with numbers].",
     isCollapsed: false,
   },
   { 
@@ -37,11 +39,12 @@ const initialSections: ResumeSection[] = [
     title: "Work Experience", 
     content: "",
     suggestions: [
-      "Use action verbs like 'Launched', 'Grew', 'Optimized'",
-      "Include measurable marketing metrics",
-      "Highlight successful campaigns",
-      "Quantify audience growth and engagement"
+      "Start bullets with strong action verbs (Launched, Optimized, Spearheaded)",
+      "Include metrics: ROI, CTR, CPC, conversion rates",
+      "Quantify team size and budget managed",
+      "Show progression: 'Increased engagement by X% YoY'"
     ],
+    placeholder: "• Spearheaded digital campaign delivering 45% ROI, reducing CPC from $2.30 to $1.15\n• Led 5-person team to achieve 150% YoY growth in user acquisition\n• Optimized conversion funnel, improving CTR by 60% through A/B testing",
     isCollapsed: false,
   },
   { 
@@ -49,11 +52,12 @@ const initialSections: ResumeSection[] = [
     title: "Technical Skills", 
     content: "",
     suggestions: [
-      "Group skills by marketing categories",
-      "Include digital marketing platforms",
-      "List analytics tools proficiency",
-      "Mention relevant certifications"
+      "Group by category: Analytics, Paid Media, Content, etc.",
+      "List tools with proficiency levels",
+      "Include relevant marketing certifications",
+      "Highlight data analysis capabilities"
     ],
+    placeholder: "Analytics: Google Analytics, Firebase, AppsFlyer (Advanced)\nPaid Media: Meta Ads, Google Ads, LinkedIn Ads (Expert)\nTools: HubSpot, Salesforce, Mailchimp (Proficient)\nAnalysis: SQL, Excel, Tableau (Advanced)",
     isCollapsed: false,
   },
   { 
@@ -62,24 +66,26 @@ const initialSections: ResumeSection[] = [
     content: "",
     suggestions: [
       "List degrees in reverse chronological order",
-      "Include marketing-specific coursework",
-      "Highlight relevant projects or thesis",
-      "Add marketing certifications"
+      "Include GPA if above 3.5",
+      "Highlight marketing coursework and projects",
+      "Add relevant honors/awards"
     ],
+    placeholder: "MBA, Marketing Analytics (GPA: 3.8)\nUniversity Name, Year\n• Led market research project resulting in 25% improvement in campaign targeting\n• Selected for Marketing Leadership Program (Top 5%)",
     isCollapsed: false,
   },
   { 
-    id: "certifications", 
-    title: "Certifications", 
+    id: "achievements", 
+    title: "Key Achievements", 
     content: "",
     suggestions: [
-      "Include Google Analytics certification",
-      "Add HubSpot or similar platform certifications",
-      "List social media marketing certifications",
-      "Mention industry-specific credentials"
+      "List 2-3 most impressive quantifiable wins",
+      "Focus on revenue impact and growth metrics",
+      "Include awards and recognition",
+      "Highlight innovation and leadership"
     ],
+    placeholder: "• Youngest marketing manager to achieve $1M+ quarterly revenue\n• Winner, Industry Marketing Excellence Award 2024\n• Patent pending for innovative customer segmentation model",
     isCollapsed: false,
-  },
+  }
 ];
 
 export default function ResumeEditor() {
@@ -150,11 +156,16 @@ export default function ResumeEditor() {
     }
   }, []);
 
-  // Calculate completion score based on filled sections
+  // Calculate completion score based on filled sections and metrics usage
   useEffect(() => {
     const filledSections = sections.filter(s => s.content.trim().length > 0).length;
-    const newScore = Math.round((filledSections / sections.length) * 100);
-    setCompletionScore(newScore);
+    const hasMetrics = sections.some(s => 
+      /\d+%|\$\d+|\d+x/i.test(s.content) || // Check for percentages, dollar amounts, or multipliers
+      /increased|decreased|improved|reduced/i.test(s.content) // Check for improvement-related words
+    );
+    const baseScore = (filledSections / sections.length) * 80; // Base score out of 80
+    const metricsBonus = hasMetrics ? 20 : 0; // Bonus 20 points for using metrics
+    setCompletionScore(Math.round(baseScore + metricsBonus));
   }, [sections]);
 
   const handleDragEnd = (result: any) => {
@@ -176,7 +187,7 @@ export default function ResumeEditor() {
   const handleDownload = () => {
     // Create formatted resume content
     const resumeContent = sections
-      .map(section => `${section.title}\n${section.content}\n\n`)
+      .map(section => `${section.title.toUpperCase()}\n${section.content}\n\n`)
       .join('');
 
     // Create and download file
@@ -184,7 +195,7 @@ export default function ResumeEditor() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'updated_resume.txt';
+    a.download = 'marketing_resume.txt';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -196,16 +207,23 @@ export default function ResumeEditor() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-2">Resume Editor</h2>
         <p className="text-muted-foreground">
-          Drag sections to reorder. Edit content using the suggestions to improve ATS compatibility.
+          Follow consulting-style best practices: quantify achievements, use action verbs, and highlight metrics.
         </p>
       </div>
 
       <div className="mb-8 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Resume Completion</h3>
-          <span className="text-sm font-medium">{completionScore}%</span>
+          <h3 className="text-lg font-medium">Resume Quality Score</h3>
+          <span className="text-sm font-medium">
+            {completionScore}% {completionScore >= 90 ? "✨" : ""}
+          </span>
         </div>
         <Progress value={completionScore} className="h-2" />
+        {completionScore < 90 && (
+          <p className="text-sm text-muted-foreground">
+            Pro tip: Add specific metrics (%, $, growth rates) to improve your score
+          </p>
+        )}
       </div>
 
       {analysis && (
@@ -270,7 +288,7 @@ export default function ResumeEditor() {
                                   newSections[index].content = e.target.value;
                                   setSections(newSections);
                                 }}
-                                placeholder={`Add your ${section.title.toLowerCase()} here...`}
+                                placeholder={section.placeholder}
                                 className="min-h-[200px] mb-2 resize-y"
                               />
                             </div>
@@ -278,7 +296,7 @@ export default function ResumeEditor() {
                               <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
                                 <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
                                   <Sparkles className="h-4 w-4" />
-                                  AI Suggestions
+                                  Best Practices
                                 </h4>
                                 <ul className="space-y-2 text-sm">
                                   {section.suggestions.map((suggestion, i) => (
@@ -293,7 +311,7 @@ export default function ResumeEditor() {
                                 <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
                                   <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
                                     <Sparkles className="h-4 w-4" />
-                                    Recommended Keywords
+                                    Key Terms to Include
                                   </h4>
                                   <div className="flex flex-wrap gap-2">
                                     {section.keywords.map((keyword, i) => (
@@ -327,7 +345,7 @@ export default function ResumeEditor() {
           className="w-full flex items-center justify-center gap-2"
         >
           <Download className="h-4 w-4" />
-          Download Updated Resume
+          Download Marketing Resume
         </Button>
       </div>
     </div>
