@@ -5,6 +5,8 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import session from "express-session";
 import { createClient } from '@supabase/supabase-js';
+import multer from 'multer';
+import pdf from 'pdf-parse/lib/pdf-parse.js'; // Import directly from lib to avoid test file loading
 
 // Initialize Supabase client for auth verification
 const supabaseAdmin = createClient(
@@ -15,7 +17,7 @@ const supabaseAdmin = createClient(
 // Add session type declaration
 declare module "express-session" {
   interface SessionData {
-    userId: string; // Changed from number to string since Supabase uses string IDs
+    userId: string; 
     email: string;
   }
 }
@@ -29,7 +31,7 @@ const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000 
   }
 });
 
@@ -48,22 +50,50 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Configure multer for memory storage
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
 // Add this validation schema for the resume content
 const resumeAnalysisSchema = z.object({
   content: z.string().min(1),
-  contentType: z.enum(["application/pdf", "text/plain"]).default("text/plain")
 });
 
-// Add this helper function to clean content
-function cleanContent(content: string): string {
-  // Remove null bytes and invalid UTF-8 characters
-  return content
-    .replace(/\0/g, '') // Remove null bytes
-    .replace(/[^\x20-\x7E\x0A\x0D]/g, ' ') // Replace non-printable chars with space
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .replace(/^\s+|\s+$/g, '') // Trim ends
-    .replace(/(%PDF-.*?%%EOF)/gs, '') // Remove PDF markers
-    .trim();
+async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  try {
+    // Log buffer details
+    console.log('PDF Buffer:', {
+      size: buffer.length,
+      isBuffer: Buffer.isBuffer(buffer),
+      firstBytes: buffer.slice(0, 4).toString('hex')
+    });
+
+    const data = await pdf(buffer);
+
+    // Log extraction details
+    console.log('PDF Extraction Results:', {
+      pageCount: data.numpages,
+      textLength: data.text.length,
+      firstChars: data.text.substring(0, 100) + '...'
+    });
+
+    if (!data.text.trim()) {
+      throw new Error('PDF parsing returned empty text');
+    }
+
+    return data.text;
+  } catch (error: any) {
+    console.error('PDF parsing error:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    throw new Error(`Failed to parse PDF: ${error.message}`);
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -110,9 +140,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Set session
     req.session.userId = user.id;
-    req.session.email = email; // Added storing email in session
+    req.session.email = email; 
 
-    res.json(user); // Return user object instead of success message
+    res.json(user); 
   });
 
   app.post("/api/auth/logout", (req, res) => {
@@ -122,55 +152,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Protected resume routes
-  app.post("/api/resume-analyze", requireAuth, async (req, res) => {
-    // Log the session and request for debugging
-    console.log('Resume analyze request:', {
-      session: req.session,
-      body: {
-        contentType: req.body.contentType,
-        contentLength: req.body?.content?.length
-      }
-    });
+  app.post("/api/resume-analyze", 
+    requireAuth,
+    upload.single('file'),
+    async (req: Request, res: Response) => {
+      try {
+        let content: string;
 
-    const result = resumeAnalysisSchema.safeParse(req.body);
-    if (!result.success) {
-      res.status(400).json({ message: "Invalid resume content" });
-      return;
-    }
+        if (req.file) {
+          // Log file details
+          console.log('Processing uploaded file:', {
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            originalName: req.file.originalname
+          });
 
-    try {
-      let processedContent = result.data.content;
+          if (req.file.mimetype !== 'application/pdf') {
+            throw new Error('Only PDF files are supported');
+          }
 
-      // If content is PDF, clean it
-      if (result.data.contentType === "application/pdf") {
-        processedContent = cleanContent(processedContent);
+          content = await extractTextFromPDF(req.file.buffer);
+        } else {
+          // Handle direct text input
+          const result = resumeAnalysisSchema.safeParse(req.body);
+          if (!result.success) {
+            res.status(400).json({ message: "Invalid resume content" });
+            return;
+          }
+          content = result.data.content;
+        }
 
-        // Log processed content details
-        console.log('Processed PDF content:', {
-          originalLength: result.data.content.length,
-          processedLength: processedContent.length,
-          firstChars: processedContent.substring(0, 100) + '...'
+        // Log content before analysis
+        console.log('Content ready for analysis:', {
+          length: content.length,
+          preview: content.substring(0, 100) + '...'
         });
 
-        // Verify we have actual content
-        if (!processedContent.trim()) {
-          throw new Error("No readable content found in PDF");
-        }
-      }
+        const analysis = await storage.analyzeResume(content, req.session.userId!);
+        res.json(analysis);
+      } catch (error: any) {
+        console.error('Resume analysis error:', {
+          message: error.message,
+          type: error.constructor.name,
+          stack: error.stack
+        });
 
-      const analysis = await storage.analyzeResume(
-        processedContent,
-        req.session.userId!
-      );
-      res.json(analysis);
-    } catch (error: any) {
-      console.error('Analysis error:', error);
-      res.status(500).json({
-        message: "Failed to analyze resume",
-        error: error.message
-      });
+        res.status(500).json({
+          message: "Failed to analyze resume",
+          error: error.message
+        });
+      }
     }
-  });
+  );
 
   app.get("/api/resume-analysis/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
@@ -197,7 +230,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add configuration endpoint
   app.get("/api/config", (_req, res) => {
-    // Use the non-VITE prefixed environment variables for server-side
     res.json({
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY

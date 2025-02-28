@@ -18,29 +18,28 @@ export default function ResumeAnalyzer() {
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
-    mutationFn: async (data: { content: string }) => {
-      if (!data.content.trim()) {
+    mutationFn: async (data: { content: string } | FormData) => {
+      if (!data) {
         throw new Error("Resume content is required");
       }
 
-      // If content is a PDF (starts with %PDF), send it as base64
-      const isPDF = data.content.startsWith("%PDF");
-      const requestData = {
-        content: data.content,
-        contentType: isPDF ? "application/pdf" : "text/plain"
+      const headers: Record<string, string> = {
+        Authorization: "Bearer mock-token-for-testing"
       };
 
-      console.log('Sending resume content:', {
-        contentType: requestData.contentType,
-        contentLength: requestData.content.length
-      });
+      // If data is FormData (file upload), don't set Content-Type
+      // Let the browser set it with the boundary
+      if (!(data instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
+      }
 
-      const res = await apiRequest("POST", "/api/resume-analyze", requestData, {
-        headers: {
-          Authorization: "Bearer mock-token-for-testing",
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log('Sending resume for analysis:', 
+        data instanceof FormData ? 
+        { type: 'file', fileName: file?.name } : 
+        { type: 'text', length: (data as {content: string}).content.length }
+      );
+
+      const res = await apiRequest("POST", "/api/resume-analyze", data, { headers });
       return res.json() as Promise<ResumeAnalysis>;
     },
     onError: (error: Error) => {
@@ -54,29 +53,16 @@ export default function ResumeAnalyzer() {
 
   const handleFileUpload = async (file: File) => {
     try {
-      // Read file as ArrayBuffer first for PDF detection
-      const buffer = await file.arrayBuffer();
-      const firstBytes = new Uint8Array(buffer).slice(0, 4);
-      const isPDF = firstBytes[0] === 0x25 && // %
-                    firstBytes[1] === 0x50 && // P
-                    firstBytes[2] === 0x44 && // D
-                    firstBytes[3] === 0x46;   // F
-
-      // Convert ArrayBuffer to text
-      const decoder = new TextDecoder('utf-8');
-      let content = decoder.decode(buffer);
-
-      // Log content length for debugging
-      console.log('File content length:', content.length);
-      console.log('File type:', isPDF ? 'PDF' : 'text');
-
-      setContent(content);
       setFile(file);
+      // Don't read the file here - we'll send it directly to the server
+      const formData = new FormData();
+      formData.append('file', file);
+      analyzeMutation.mutate(formData);
     } catch (error) {
-      console.error('File reading error:', error);
+      console.error('File handling error:', error);
       toast({
         title: "Error",
-        description: "Failed to read file. Please try a different file or paste the content directly.",
+        description: "Failed to process file. Please try a different file or paste the content directly.",
         variant: "destructive",
       });
     }
@@ -84,7 +70,7 @@ export default function ResumeAnalyzer() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) {
+    if (!content.trim() && !file) {
       toast({
         title: "Error",
         description: "Please paste your resume content or upload a file",
@@ -92,8 +78,14 @@ export default function ResumeAnalyzer() {
       });
       return;
     }
-    console.log('Submitting content:', content);
-    analyzeMutation.mutate({ content: content.trim() });
+
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      analyzeMutation.mutate(formData);
+    } else {
+      analyzeMutation.mutate({ content: content.trim() });
+    }
   };
 
   return (
