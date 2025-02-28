@@ -4,12 +4,13 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import session from "express-session";
+import { supabase } from "@/lib/supabase";
 
 // Add session type declaration
 declare module "express-session" {
   interface SessionData {
     userId: number;
-    email: string; // Added email to session
+    email: string;
   }
 }
 
@@ -26,13 +27,28 @@ const sessionMiddleware = session({
   }
 });
 
-// Auth middleware with proper types
-const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.session.userId) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+// Supabase auth middleware
+const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ message: "No authorization header" });
   }
-  next();
+
+  try {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      throw error || new Error('User not found');
+    }
+
+    req.session.userId = user.id;
+    req.session.email = user.email;
+    next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -105,11 +121,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
 
-    const analysis = await storage.analyzeResume(
-      result.data.content,
-      req.session.userId!
-    );
-    res.json(analysis);
+    try {
+      const analysis = await storage.analyzeResume(
+        result.data.content,
+        req.session.userId!
+      );
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      res.status(500).json({ 
+        message: "Failed to analyze resume",
+        error: error.message 
+      });
+    }
   });
 
   app.get("/api/resume-analysis/:id", requireAuth, async (req, res) => {

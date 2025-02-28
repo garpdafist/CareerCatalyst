@@ -8,37 +8,65 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, CheckCircle, ListChecks, Tags } from "lucide-react";
+import { Brain, CheckCircle, ListChecks, Tags, Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/lib/supabase";
 
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const res = await apiRequest("POST", "/api/resume-analyze", { content });
+    mutationFn: async (data: { content: string }) => {
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Not authenticated");
+      }
+
+      const res = await apiRequest("POST", "/api/resume-analyze", data, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       return res.json() as Promise<ResumeAnalysis>;
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to analyze resume. Please try again.",
+        description: error.message || "Failed to analyze resume. Please try again.",
         variant: "destructive",
       });
     },
   });
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      const text = await file.text();
+      setContent(text);
+      setFile(file);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to read file. Please try a different file.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
       toast({
         title: "Error",
-        description: "Please paste your resume content",
+        description: "Please paste your resume content or upload a file",
         variant: "destructive",
       });
       return;
     }
-    analyzeMutation.mutate(content);
+    analyzeMutation.mutate({ content });
   };
 
   return (
@@ -46,22 +74,63 @@ export default function ResumeAnalyzer() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">AI Resume Analyzer</h1>
         <p className="mt-2 text-muted-foreground">
-          Paste your resume content below and our AI will analyze it for improvements
+          Upload your resume or paste its content below for AI-powered analysis
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Paste your resume content below
-          </label>
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="h-64"
-            placeholder="Paste your resume here..."
-          />
-        </div>
+        <Tabs defaultValue="paste" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="paste">Paste Content</TabsTrigger>
+            <TabsTrigger value="upload">Upload File</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="paste" className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Paste your resume content below
+              </label>
+              <Textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="h-64"
+                placeholder="Paste your resume here..."
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="upload" className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Upload your resume file
+              </label>
+              <div className="grid w-full gap-4">
+                <div className="border rounded-lg p-8 text-center space-y-4">
+                  <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Upload your resume in TXT, DOC, DOCX, or PDF format
+                    </p>
+                    <Input
+                      type="file"
+                      accept=".txt,.doc,.docx,.pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                      className="mx-auto max-w-xs"
+                    />
+                  </div>
+                </div>
+                {file && (
+                  <p className="text-sm text-muted-foreground">
+                    File loaded: {file.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <Button
           type="submit"
