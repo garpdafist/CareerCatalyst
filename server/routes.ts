@@ -6,7 +6,7 @@ import { randomBytes } from "crypto";
 import session from "express-session";
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
-import pdf from 'pdf-parse/lib/pdf-parse.js'; // Import directly from lib to avoid test file loading
+import pdf from 'pdf-parse/lib/pdf-parse.js';
 
 // Initialize Supabase client for auth verification
 const supabaseAdmin = createClient(
