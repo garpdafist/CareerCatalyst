@@ -1,9 +1,16 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import session from "express-session";
+
+// Add session type declaration
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+  }
+}
 
 // Initialize session middleware
 const sessionMiddleware = session({
@@ -18,8 +25,8 @@ const sessionMiddleware = session({
   }
 });
 
-// Auth middleware
-const requireAuth = (req: any, res: any, next: any) => {
+// Auth middleware with proper types
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   if (!req.session.userId) {
     res.status(401).json({ message: "Unauthorized" });
     return;
@@ -80,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const analysis = await storage.analyzeResume(
       result.data.content,
-      req.session.userId
+      req.session.userId!
     );
     res.json(analysis);
   });
@@ -104,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/user/analyses", requireAuth, async (req, res) => {
-    const analyses = await storage.getUserAnalyses(req.session.userId);
+    const analyses = await storage.getUserAnalyses(req.session.userId!);
     res.json(analyses);
   });
 

@@ -4,7 +4,7 @@ import { db } from "./db";
 import { users, resumeAnalyses } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
-import type { SessionStore } from "express-session";
+import { Store } from "express-session";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 
@@ -20,11 +20,11 @@ export interface IStorage {
   getUserAnalyses(userId: number): Promise<ResumeAnalysis[]>;
 
   // Session store for authentication
-  sessionStore: SessionStore;
+  sessionStore: Store;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: SessionStore;
+  sessionStore: Store;
 
   constructor() {
     const PostgresStore = connectPg(session);
