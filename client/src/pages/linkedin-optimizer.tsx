@@ -22,6 +22,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+type ProfileData = {
+  headline: string;
+  about: string;
+  currentJob: JobExperience;
+  previousJob: JobExperience;
+};
+
 type JobExperience = {
   jobTitle: string;
   companyName: string;
@@ -31,6 +38,8 @@ type JobExperience = {
 };
 
 const tooltips = {
+  headline: "Keep under 220 characters, include your role, industry, and key specializations",
+  about: "Tell your professional story, highlight achievements, and include a clear call to action",
   jobTitle: "Use a clear, industry-standard title (e.g., 'Senior Marketing Manager' rather than 'Marketing Ninja')",
   companyName: "Include the official company name, avoiding abbreviations unless widely recognized",
   startDate: "Format: MM/YYYY",
@@ -38,39 +47,60 @@ const tooltips = {
   achievements: "Use action verbs and include metrics/numbers. Example: 'Increased sales by 25% through digital marketing initiatives'"
 };
 
-const jobFieldBestPractices = [
-  "Start with strong action verbs (Led, Developed, Implemented)",
-  "Include at least one metric or data point per bullet",
-  "Focus on achievements rather than duties",
-  "Keep bullet points concise and impactful",
-  "Highlight leadership and scope when applicable"
-];
+const bestPractices = {
+  headline: [
+    "Include your current role and industry",
+    "Add 2-3 key specializations",
+    "Use industry-relevant keywords",
+    "Keep it under 220 characters",
+    "Avoid buzzwords like 'guru' or 'ninja'"
+  ],
+  about: [
+    "Start with a compelling hook",
+    "Include key achievements with metrics",
+    "Describe your unique value proposition",
+    "Add a clear call to action",
+    "Use industry-specific keywords",
+    "Break text into short paragraphs"
+  ],
+  experience: [
+    "Start with strong action verbs (Led, Developed, Implemented)",
+    "Include at least one metric or data point per bullet",
+    "Focus on achievements rather than duties",
+    "Keep bullet points concise and impactful",
+    "Highlight leadership and scope when applicable"
+  ]
+};
 
 export default function LinkedInOptimizer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentJob, setCurrentJob] = useState<JobExperience>({
-    jobTitle: "",
-    companyName: "",
-    startDate: "",
-    endDate: "",
-    achievements: ""
+  const [activeTab, setActiveTab] = useState("headline");
+  const [profileData, setProfileData] = useState<ProfileData>({
+    headline: "",
+    about: "",
+    currentJob: {
+      jobTitle: "",
+      companyName: "",
+      startDate: "",
+      endDate: "",
+      achievements: ""
+    },
+    previousJob: {
+      jobTitle: "",
+      companyName: "",
+      startDate: "",
+      endDate: "",
+      achievements: ""
+    }
   });
-  const [previousJob, setPreviousJob] = useState<JobExperience>({
-    jobTitle: "",
-    companyName: "",
-    startDate: "",
-    endDate: "",
-    achievements: ""
-  });
-  const [activeTab, setActiveTab] = useState("current");
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
 
   const handleAnalyzeContent = async () => {
-    if (!currentJob.jobTitle || !currentJob.achievements) {
+    if (!profileData.headline.trim() && !profileData.about.trim() && !profileData.currentJob.jobTitle) {
       toast({
         title: "Error",
-        description: "Please fill in at least the current job details",
+        description: "Please fill in at least one section before analyzing",
         variant: "destructive",
       });
       return;
@@ -86,14 +116,10 @@ export default function LinkedInOptimizer() {
         },
         body: JSON.stringify({
           sections: [
-            {
-              id: "currentJob",
-              content: JSON.stringify(currentJob)
-            },
-            {
-              id: "previousJob",
-              content: JSON.stringify(previousJob)
-            }
+            { id: "headline", content: profileData.headline },
+            { id: "about", content: profileData.about },
+            { id: "currentJob", content: JSON.stringify(profileData.currentJob) },
+            { id: "previousJob", content: JSON.stringify(profileData.previousJob) }
           ]
         }),
       });
@@ -103,17 +129,17 @@ export default function LinkedInOptimizer() {
       }
 
       const analysis = await response.json();
-      setAiSuggestions(analysis.experienceSuggestions || []);
+      setSuggestions(analysis);
 
       toast({
         title: "Success",
-        description: "Your experience has been analyzed successfully!",
+        description: "Your LinkedIn profile has been analyzed successfully!",
       });
     } catch (error) {
       console.error("Content analysis error:", error);
       toast({
         title: "Analysis Failed",
-        description: "Failed to analyze your experience. Please try again.",
+        description: "Failed to analyze your profile content. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -122,8 +148,13 @@ export default function LinkedInOptimizer() {
   };
 
   const JobForm = ({ isCurrentJob }: { isCurrentJob: boolean }) => {
-    const job = isCurrentJob ? currentJob : previousJob;
-    const setJob = isCurrentJob ? setCurrentJob : setPreviousJob;
+    const job = isCurrentJob ? profileData.currentJob : profileData.previousJob;
+    const setJob = (newJob: JobExperience) => {
+      setProfileData(prev => ({
+        ...prev,
+        [isCurrentJob ? 'currentJob' : 'previousJob']: newJob
+      }));
+    };
 
     return (
       <div className="space-y-4">
@@ -233,33 +264,174 @@ export default function LinkedInOptimizer() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">LinkedIn Experience Optimizer</h1>
+        <h1 className="text-3xl font-bold">LinkedIn Profile Optimizer</h1>
         <p className="text-muted-foreground mt-2">
-          Add your last two jobs to receive AI-powered suggestions for optimizing your experience section
+          Enhance your professional presence with AI-powered optimization
         </p>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Best Practices for Job Descriptions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
-            {jobFieldBestPractices.map((practice, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm">
-                <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-1" />
-                <span>{practice}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="mb-6 flex justify-end">
+        <Button
+          onClick={handleAnalyzeContent}
+          disabled={isAnalyzing}
+          className="min-w-[120px]"
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            "Analyze Profile"
+          )}
+        </Button>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
+          <TabsTrigger value="headline" className="flex-1">Headline</TabsTrigger>
+          <TabsTrigger value="about" className="flex-1">About</TabsTrigger>
           <TabsTrigger value="current" className="flex-1">Current Role</TabsTrigger>
           <TabsTrigger value="previous" className="flex-1">Previous Role</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="headline">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Professional Headline
+                <span className="text-sm text-muted-foreground">
+                  {profileData.headline.length}/220 characters
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>{tooltips.headline}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Input
+                      value={profileData.headline}
+                      onChange={(e) => setProfileData({ ...profileData, headline: e.target.value })}
+                      placeholder="Marketing Director | Digital Growth Strategy | Performance Marketing | B2B SaaS Expert"
+                      maxLength={220}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                    <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      Best Practices
+                    </h4>
+                    <ul className="space-y-2 text-sm">
+                      {bestPractices.headline.map((practice, i) => (
+                        <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                          <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          {practice}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {suggestions.headlineSuggestions && suggestions.headlineSuggestions.length > 0 && (
+                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                      <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                        <Sparkles className="h-4 w-4" />
+                        AI Suggestions
+                      </h4>
+                      <ul className="space-y-2 text-sm">
+                        {suggestions.headlineSuggestions.map((suggestion, i) => (
+                          <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                            <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                            {suggestion}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="about">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                About Section
+                <span className="text-sm text-muted-foreground">
+                  {profileData.about.length}/2600 characters
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>{tooltips.about}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <RichTextEditor
+                      value={profileData.about}
+                      onChange={(value) => setProfileData({ ...profileData, about: value })}
+                      placeholder="Driving digital transformation through data-driven marketing strategies. As a Marketing Director with 8+ years of experience, I've helped B2B SaaS companies achieve measurable results..."
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                    <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      Best Practices
+                    </h4>
+                    <ul className="space-y-2 text-sm">
+                      {bestPractices.about.map((practice, i) => (
+                        <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                          <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          {practice}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {suggestions.aboutSuggestions && suggestions.aboutSuggestions.length > 0 && (
+                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                      <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                        <Sparkles className="h-4 w-4" />
+                        AI Suggestions
+                      </h4>
+                      <ul className="space-y-2 text-sm">
+                        {suggestions.aboutSuggestions.map((suggestion, i) => (
+                          <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                            <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                            {suggestion}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="current">
           <Card>
@@ -284,34 +456,17 @@ export default function LinkedInOptimizer() {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-6 flex justify-end">
-        <Button
-          onClick={handleAnalyzeContent}
-          disabled={isAnalyzing}
-          className="min-w-[120px]"
-        >
-          {isAnalyzing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            "Analyze Experience"
-          )}
-        </Button>
-      </div>
-
-      {aiSuggestions.length > 0 && (
+      {suggestions.experienceSuggestions && suggestions.experienceSuggestions.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
-              AI Suggestions
+              Experience Optimization Suggestions
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {aiSuggestions.map((suggestion, index) => (
+              {suggestions.experienceSuggestions.map((suggestion, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-1" />
                   <span>{suggestion}</span>
