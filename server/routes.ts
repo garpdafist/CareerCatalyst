@@ -333,6 +333,62 @@ Focus on actionable improvements that will increase profile visibility and engag
   }
 }
 
+async function analyzeLinkedInContent(sections: { id: string; content: string }[]): Promise<Record<string, string[]>> {
+  const systemPrompt = `You are an expert LinkedIn profile optimizer and career coach. Analyze the provided LinkedIn profile content and generate specific, actionable improvement suggestions. Focus on enhancing visibility, engagement, and professional impact.
+
+Key rules:
+1. Professional Headline (under 220 chars):
+   - Include current role and industry
+   - Add key specializations
+   - Use relevant keywords
+   - Keep professional, avoid buzzwords
+
+2. About Section:
+   - Start with a compelling hook
+   - Include measurable achievements
+   - Show unique value proposition
+   - Add clear call to action
+   - Use industry keywords
+   - Structure in clear paragraphs
+
+3. Experience Section:
+   - Lead with achievements
+   - Use specific metrics
+   - Show leadership and scope
+   - Include tools and skills
+   - Keep bullets focused
+
+Provide 3-5 specific, actionable suggestions for each section.`;
+
+  const userPrompt = `Analyze these LinkedIn profile sections:
+
+${sections.map(section => `${section.id.toUpperCase()}:
+${section.content || '[Empty section]'}`).join('\n\n')}
+
+Provide a JSON response with arrays of specific suggestions for each section:
+{
+  "headlineSuggestions": ["suggestion 1", "suggestion 2", ...],
+  "aboutSuggestions": ["suggestion 1", "suggestion 2", ...],
+  "experienceSuggestions": ["suggestion 1", "suggestion 2", ...]
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    return JSON.parse(response.choices[0].message.content);
+  } catch (error) {
+    console.error('LinkedIn content analysis error:', error);
+    throw new Error('Failed to analyze LinkedIn content');
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add session middleware
   app.use(sessionMiddleware);
@@ -555,34 +611,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/analyze-linkedin", requireAuth, async (req, res) => {
+
+  app.post("/api/analyze-linkedin-content", requireAuth, async (req, res) => {
     try {
-      const { profileUrl } = req.body;
+      const { sections } = req.body;
 
-      if (!profileUrl) {
+      if (!sections || !Array.isArray(sections)) {
         return res.status(400).json({
-          message: "LinkedIn profile URL is required"
+          message: "Sections array is required"
         });
       }
 
-      // Validate URL format
-      if (!profileUrl.includes('linkedin.com/')) {
-        return res.status(400).json({
-          message: "Invalid LinkedIn profile URL"
-        });
-      }
-
-      const analysis = await analyzeLinkedInProfile(profileUrl);
+      const analysis = await analyzeLinkedInContent(sections);
       res.json(analysis);
     } catch (error: any) {
-      console.error('LinkedIn analysis error:', error);
+      console.error('LinkedIn content analysis error:', error);
       res.status(500).json({
-        message: "Failed to analyze LinkedIn profile",
+        message: "Failed to analyze LinkedIn content",
         error: error.message
       });
     }
   });
-
 
   const httpServer = createServer(app);
   return httpServer;

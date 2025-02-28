@@ -1,0 +1,97 @@
+You are an experienced full-stack developer and AI engineer. 
+Please remove our existing LinkedIn profile analyzer product and rebuild it from scratch with a new approach: 
+we will rely on manual data entry (i.e., user copy-paste) rather than trying to scrape or access a URL.
+
+-----------------------------
+1. Product Overview & Flow
+-----------------------------
+- **User Flow**:
+  1. **Landing Page**: Explains the benefits of optimizing a LinkedIn profile. 
+  2. **Data Collection**: User manually copies and pastes their LinkedIn headline, summary, experience, etc., into text fields (or a single large text area).
+  3. **AI Analysis & Feedback**: We send this pasted text to our AI service (OpenAI) for feedback, focusing on:
+     - Keywords
+     - SEO-friendly profile URLs
+     - Engagement strategies
+     - Profile photo best practices
+     - All the tips provided below
+  4. **Results Page**: Shows suggestions, best practices, and an actionable checklist.
+
+- **Key Requirements**:
+  1. We do NOT fetch the user’s LinkedIn profile automatically. 
+  2. The user must paste their content (headline, summary, experiences) into our form.
+  3. The AI then analyzes that text and returns suggestions for improvement.
+
+------------------------------------
+2. Integrate Best Practices & Tips
+------------------------------------
+Use these 20 best practice tips as reference points for AI suggestions and user feedback. 
+They cover:
+1. Relevant keywords
+2. Customizing the LinkedIn URL
+3. Regular content engagement
+4. Profile pictures
+5. Background photos
+6. Headline optimization
+7. Name pronunciation feature
+8. Summaries as stories
+9. Avoiding overused buzzwords
+10. Growing and managing your network
+11. Listing relevant skills
+12. Getting endorsements and recommendations
+13. Showcasing learning (LinkedIn Learning, certifications)
+14. Sharing marketing collateral and relevant content
+15. Commenting and engaging with influencer content
+16. Turning on Creator Mode
+17. Spotlighting services
+18. Contributing to collaborative articles
+19. Considering Sales Navigator for business growth
+
+For each tip, the AI can highlight which ones the user is already following (based on their pasted text) and which ones they should adopt.
+
+-------------------------------------------
+3. Implementation Details
+-------------------------------------------
+1. **Front End**:
+   - **Landing Page**:
+     - Quick pitch on why a strong LinkedIn profile matters.
+     - “Paste Your LinkedIn Content” button leading to the main form.
+   - **Data Collection Form**:
+     - Separate text fields or a single large text area for headline, summary, experience, etc.
+     - Possibly add placeholders or instructions (e.g., “Paste your LinkedIn summary here”).
+   - **Results Page**:
+     - Display AI-generated suggestions referencing the 20 best practices.
+     - Show a short actionable checklist (e.g., “Add at least one metric in your headline,” “Personalize your URL,” etc.).
+   - **UI**: 
+     - Keep it simple and clean. 
+     - Possibly a progress bar or “completeness” score based on how many tips are satisfied.
+
+2. **Back End & AI**:
+   - Use Node.js/Express (or similar) to handle form submissions.
+   - When the user submits text, call an OpenAI endpoint with a carefully crafted prompt:
+     - “Here’s the user’s LinkedIn content. 
+       Please analyze it against these 20 best practices. 
+       Return suggestions on how to improve their profile.” 
+     - Include the 20 tips in the prompt so the AI references them.
+   - Parse the AI’s response and structure it into actionable items.
+
+3. **Data Handling**:
+   - Store user-submitted text in a database (or ephemeral memory if you prefer no long-term storage).
+   - Provide an option for the user to save or download their results.
+   - Ensure privacy and disclaimers about not scraping LinkedIn.
+
+-------------------------------------
+4. Testing & Final Steps
+-------------------------------------
+1. **Remove Old Product**:
+   - Delete or comment out any old code that tried to fetch LinkedIn URLs or used a scraping approach.
+   - Update readme/documentation to reflect the new manual data entry approach.
+2. **Test the New Flow**:
+   - Input sample LinkedIn text, confirm the AI suggestions reference the 20 tips (keywords, custom URL, photo best practices, etc.).
+   - Check that each tip is addressed: if the user is missing a profile photo mention, the AI should recommend adding one; if the user hasn’t used a custom URL, it should prompt them to do so, etc.
+3. **Share Code & Instructions**:
+   - Provide me with the updated front-end components (LandingPage, DataCollectionForm, ResultsPage).
+   - Show me how to configure the AI prompt in the backend. 
+   - Confirm that the old product is fully removed and the new approach is functional.
+
+That’s it! 
+Please implement these changes, remove the old product code, and confirm the new manual data entry approach is fully working with the AI-driven suggestions referencing the 20 best practice tips.
