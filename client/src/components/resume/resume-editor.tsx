@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { GripVertical, Download, AlertCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -186,8 +186,14 @@ export default function ResumeEditor() {
 
   const handleDownload = () => {
     // Create formatted resume content
+    const stripHtml = (html: string) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    };
+
     const resumeContent = sections
-      .map(section => `${section.title.toUpperCase()}\n${section.content}\n\n`)
+      .map(section => `${section.title.toUpperCase()}\n${stripHtml(section.content)}\n\n`)
       .join('');
 
     // Create and download file
@@ -281,15 +287,15 @@ export default function ResumeEditor() {
                         <CardContent>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="md:col-span-2">
-                              <Textarea
+                              <RichTextEditor
                                 value={section.content}
-                                onChange={(e) => {
+                                onChange={(value) => {
                                   const newSections = [...sections];
-                                  newSections[index].content = e.target.value;
+                                  newSections[index].content = value;
                                   setSections(newSections);
                                 }}
                                 placeholder={section.placeholder}
-                                className="min-h-[200px] mb-2 resize-y"
+                                className="mb-2"
                               />
                             </div>
                             <div className="space-y-4">
