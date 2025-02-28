@@ -50,11 +50,25 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-// Configure multer for memory storage
+// Configure multer with file type validation
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not supported. Please upload PDF, TXT, DOC, or DOCX files.`));
+    }
   }
 });
 
@@ -93,6 +107,46 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
       stack: error.stack
     });
     throw new Error(`Failed to parse PDF: ${error.message}`);
+  }
+}
+
+async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
+  try {
+    // Log file details
+    console.log('Processing file:', {
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      encoding: file.encoding
+    });
+
+    let content: string = '';
+
+    if (file.mimetype === 'application/pdf') {
+      content = await extractTextFromPDF(file.buffer);
+    } else if (file.mimetype === 'text/plain') {
+      // For text files, just decode the buffer
+      content = file.buffer.toString('utf-8');
+    } else {
+      // For now, handle DOC/DOCX as text (you might want to add proper DOC parsing)
+      content = file.buffer.toString('utf-8');
+    }
+
+    // Log extracted content details
+    console.log('Extracted content:', {
+      length: content.length,
+      preview: content.substring(0, 100) + '...',
+      hasContent: content.trim().length > 0
+    });
+
+    return content;
+  } catch (error: any) {
+    console.error('File processing error:', {
+      message: error.message,
+      type: error.constructor.name,
+      stack: error.stack
+    });
+    throw new Error(`Failed to process file: ${error.message}`);
   }
 }
 
@@ -167,20 +221,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         if (req.file) {
-          // Handle PDF upload
-          console.log('Processing uploaded file:', {
-            mimetype: req.file.mimetype,
-            size: req.file.size,
-            originalName: req.file.originalname
-          });
-
-          if (req.file.mimetype !== 'application/pdf') {
-            throw new Error('Only PDF files are supported');
-          }
-
-          content = await extractTextFromPDF(req.file.buffer);
+          content = await extractTextFromFile(req.file);
         } else {
-          // Handle direct text input
           console.log('Processing direct text input:', {
             contentPresent: !!req.body.content,
             contentLength: req.body.content?.length || 0,
@@ -225,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Log final content before analysis
+        // Log content before analysis
         console.log('Content ready for analysis:', {
           length: content.length,
           preview: content.substring(0, 100) + '...'

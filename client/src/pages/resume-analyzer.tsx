@@ -61,7 +61,7 @@ export default function ResumeAnalyzer() {
       });
 
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', file); // Make sure this matches the field name expected by multer
       analyzeMutation.mutate(formData);
     } catch (error) {
       console.error('File handling error:', error);
@@ -147,7 +147,15 @@ export default function ResumeAnalyzer() {
                       accept=".txt,.doc,.docx,.pdf"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleFileUpload(file);
+                        if (file) {
+                          console.log('Selected file:', {
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            lastModified: new Date(file.lastModified).toISOString()
+                          });
+                          handleFileUpload(file);
+                        }
                       }}
                       className="mx-auto max-w-xs"
                     />
