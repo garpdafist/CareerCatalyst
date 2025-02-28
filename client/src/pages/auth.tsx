@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { queryClient } from "@/lib/queryClient";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -25,12 +26,13 @@ export default function Auth() {
       const res = await apiRequest("POST", "/api/auth/login", { email });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (user) => {
+      // Update the user data in the cache
+      queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Success",
-        description: "Check your email for the magic link to sign in.",
+        description: "Successfully signed in. Redirecting...",
       });
-      // For demo purposes, we auto-verify, so redirect immediately
       setLocation("/resume-analyzer");
     },
     onError: (error: Error) => {
