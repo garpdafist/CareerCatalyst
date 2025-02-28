@@ -34,12 +34,34 @@ export class DatabaseStorage implements IStorage {
       },
       createTableIfMissing: true,
     });
+
+    // Create test user during initialization
+    this.ensureTestUser().catch(console.error);
   }
 
-  async createUser(email: string): Promise<User> {
+  private async ensureTestUser() {
+    try {
+      const testUser = await this.getUserByEmail("test@example.com");
+      if (!testUser) {
+        console.log("Creating test user...");
+        await this.createUser("test@example.com", "test-user-123");
+      }
+    } catch (error) {
+      console.error("Failed to create test user:", error);
+    }
+  }
+
+  async createUser(email: string, id?: string): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values({ email })
+      .values({ 
+        id: id || randomBytes(16).toString("hex"),
+        email,
+        emailVerified: new Date(),
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
       .returning();
     return user;
   }
