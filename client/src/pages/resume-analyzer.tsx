@@ -20,10 +20,12 @@ export default function ResumeAnalyzer() {
 
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string }) => {
+      console.log('Sending resume content:', data); // Add logging
       const res = await apiRequest("POST", "/api/resume-analyze", data, {
         headers: {
           // Add a mock Bearer token for testing
-          Authorization: "Bearer mock-token-for-testing"
+          Authorization: "Bearer mock-token-for-testing",
+          'Content-Type': 'application/json',
         },
       });
       return res.json() as Promise<ResumeAnalysis>;
@@ -61,7 +63,8 @@ export default function ResumeAnalyzer() {
       });
       return;
     }
-    analyzeMutation.mutate({ content });
+    console.log('Submitting content:', content); // Add logging
+    analyzeMutation.mutate({ content: content.trim() });
   };
 
   return (
