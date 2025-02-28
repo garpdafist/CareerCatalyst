@@ -267,6 +267,19 @@ export default function ResumeAnalyzer() {
                   </ul>
                 </div>
               </div>
+
+              <div className="mt-6 flex justify-center">
+                <Button
+                  onClick={() => {
+                    localStorage.setItem('resumeAnalysis', JSON.stringify(analyzeMutation.data));
+                    window.location.href = '/resume-editor';
+                  }}
+                  className="w-full max-w-md"
+                >
+                  Edit Resume with Suggestions
+                </Button>
+              </div>
+
             </CardContent>
           </Card>
         </div>
