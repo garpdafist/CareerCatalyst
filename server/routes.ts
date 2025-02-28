@@ -281,6 +281,58 @@ For all formats, ensure content is well-structured with appropriate HTML formatt
   }
 }
 
+async function analyzeLinkedInProfile(profileUrl: string): Promise<{
+  headline: string;
+  about: string;
+  experience: string;
+  headlineSuggestions: string[];
+  aboutSuggestions: string[];
+  experienceSuggestions: string[];
+}> {
+  const systemPrompt = `You are an expert LinkedIn profile optimizer and career coach. Analyze the provided LinkedIn profile URL and generate structured feedback and improvement suggestions. Focus on enhancing visibility, engagement, and professional impact.
+
+Key areas to analyze:
+1. Professional Headline: Should be compelling, keyword-rich, and under 220 characters
+2. About Section: Should tell a story, include achievements, and be highly engaging
+3. Experience Section: Should be achievement-focused with metrics and clear impact
+
+For each section, provide:
+1. Current content analysis
+2. Specific, actionable improvement suggestions
+3. Industry best practices and keywords to include`;
+
+  const userPrompt = `Analyze this LinkedIn profile: ${profileUrl}
+
+Provide a JSON response with the following structure:
+{
+  "headline": "Current headline content",
+  "about": "Current about section content",
+  "experience": "Current experience section content",
+  "headlineSuggestions": ["Array of specific suggestions for improving the headline"],
+  "aboutSuggestions": ["Array of specific suggestions for improving the about section"],
+  "experienceSuggestions": ["Array of specific suggestions for improving the experience section"]
+}
+
+Focus on actionable improvements that will increase profile visibility and engagement.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const analysis = JSON.parse(response.choices[0].message.content);
+    return analysis;
+  } catch (error) {
+    console.error('LinkedIn profile analysis error:', error);
+    throw new Error('Failed to analyze LinkedIn profile');
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add session middleware
   app.use(sessionMiddleware);
@@ -498,6 +550,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Cover letter generation error:', error);
       res.status(500).json({
         message: "Failed to generate content",
+        error: error.message
+      });
+    }
+  });
+
+  app.post("/api/analyze-linkedin", requireAuth, async (req, res) => {
+    try {
+      const { profileUrl } = req.body;
+
+      if (!profileUrl) {
+        return res.status(400).json({
+          message: "LinkedIn profile URL is required"
+        });
+      }
+
+      // Validate URL format
+      if (!profileUrl.includes('linkedin.com/')) {
+        return res.status(400).json({
+          message: "Invalid LinkedIn profile URL"
+        });
+      }
+
+      const analysis = await analyzeLinkedInProfile(profileUrl);
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('LinkedIn analysis error:', error);
+      res.status(500).json({
+        message: "Failed to analyze LinkedIn profile",
         error: error.message
       });
     }
