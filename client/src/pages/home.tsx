@@ -19,6 +19,14 @@ export default function Home() {
             Analyze Resume
           </Button>
         </Link>
+        <Link href="/resume-editor">
+          <Button 
+            size="lg" 
+            className="min-w-[150px] transition-all hover:scale-105 hover:shadow-lg"
+          >
+            Resume Editor
+          </Button>
+        </Link>
         <Button 
           variant="outline" 
           size="lg" 
