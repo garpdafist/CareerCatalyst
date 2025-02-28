@@ -44,18 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("rate limit")) {
+          throw new Error("Too many sign in attempts. Please try again later.");
+        }
+        throw error;
+      }
 
-      toast({
-        title: "Check your email",
-        description: "We sent you a magic link to sign in.",
-      });
+      return; // Success - let the UI show the email sent message
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign in failed",
         description: error.message,
         variant: "destructive",
       });
+      throw error; // Re-throw to let the component handle the error state
     }
   };
 
@@ -68,13 +71,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("provider is not enabled")) {
+          throw new Error("Google sign in is not available yet. Please use email sign in.");
+        }
+        throw error;
+      }
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign in failed",
         description: error.message,
         variant: "destructive",
       });
+      throw error;
     }
   };
 
@@ -84,10 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign out failed",
         description: error.message,
         variant: "destructive",
       });
+      throw error;
     }
   };
 

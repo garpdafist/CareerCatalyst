@@ -6,10 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { SiGoogle } from "react-icons/si";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailAlert, setShowEmailAlert] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { user, signIn, signInWithGoogle } = useAuth();
@@ -31,8 +33,14 @@ export default function Auth() {
       return;
     }
     setIsLoading(true);
-    await signIn(email);
-    setIsLoading(false);
+    try {
+      await signIn(email);
+      setShowEmailAlert(true); // Show the email instructions
+    } catch (error) {
+      // Error is handled in useAuth
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,6 +51,15 @@ export default function Auth() {
             <CardTitle>Sign In</CardTitle>
           </CardHeader>
           <CardContent>
+            {showEmailAlert && (
+              <Alert className="mb-4">
+                <AlertDescription>
+                  A magic link has been sent to your email. Please check your spam folder if you don't see it in your inbox.
+                  The link will expire in 1 hour.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Input
@@ -77,10 +94,10 @@ export default function Auth() {
                 variant="outline"
                 className="w-full"
                 onClick={() => signInWithGoogle()}
-                disabled={isLoading}
+                disabled={isLoading || true} // Temporarily disable Google sign-in
               >
                 <SiGoogle className="mr-2 h-4 w-4" />
-                Google
+                Google (Coming Soon)
               </Button>
             </form>
           </CardContent>
