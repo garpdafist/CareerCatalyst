@@ -5,7 +5,7 @@ import { relations } from "drizzle-orm";
 
 // User table for authentication
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(), // Changed from serial to text
   email: text("email").notNull().unique(),
   emailVerified: timestamp("email_verified"),
   lastLoginAt: timestamp("last_login_at"),
@@ -16,7 +16,7 @@ export const users = pgTable("users", {
 // Resume analysis table with user relation
 export const resumeAnalyses = pgTable("resume_analyses", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull(), // Changed from integer to text
+  userId: text("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   score: integer("score").notNull(),
   feedback: text("feedback").array(),
