@@ -16,6 +16,73 @@ export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema
 
 // Rate limiting variables
 let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL_MS = 1000; // 1 second minimum between requests
+
+export async function analyzeResume(resumeText: string): Promise<ResumeAnalysisResponse> {
+  try {
+    // Implement rate limiting
+    const now = Date.now();
+    const timeElapsed = now - lastRequestTime;
+    if (timeElapsed < MIN_REQUEST_INTERVAL_MS) {
+      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL_MS - timeElapsed));
+    }
+    lastRequestTime = Date.now();
+
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional resume analyzer. Analyze the resume and provide feedback."
+        },
+        {
+          role: "user",
+          content: `Analyze this resume and provide the following:
+          1. A score from 0-100
+          2. A list of identified skills
+          3. A list of suggested improvements
+          4. A list of feedback points
+          5. A list of important keywords
+          
+          Resume: ${resumeText}`
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    // Parse the response
+    const responseText = completion.choices[0]?.message?.content || '{}';
+    const parsedResponse = JSON.parse(responseText);
+    
+    // Validate with zod schema
+    const validatedResponse = resumeAnalysisResponseSchema.parse({
+      score: parsedResponse.score || 0,
+      feedback: parsedResponse.feedback || [],
+      skills: parsedResponse.skills || [],
+      improvements: parsedResponse.improvements || [],
+      keywords: parsedResponse.keywords || [],
+    });
+
+    return validatedResponse;
+  } catch (error: any) {
+    console.error('OpenAI API error:', {
+      message: error.message,
+      type: error.constructor.name,
+      status: error.status,
+      details: error.response?.data
+    });
+    
+    // Return a default response on error
+    return {
+      score: 0,
+      feedback: ["Error analyzing resume. Please try again."],
+      skills: [],
+      improvements: ["Unable to analyze resume due to an error."],
+      keywords: []
+    };
+  }
+}
 const MIN_REQUEST_INTERVAL = 210; // 0.21 seconds in milliseconds
 
 async function waitForRateLimit() {

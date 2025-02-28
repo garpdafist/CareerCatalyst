@@ -205,7 +205,7 @@ export default function ResumeAnalyzer() {
                     Identified Skills
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {analyzeMutation.data.skills?.length > 0 ? (
+                    {analyzeMutation.data?.skills?.length > 0 ? (
                       analyzeMutation.data.skills.map((skill, index) => (
                         <Badge key={index} variant="secondary">
                           {skill}
@@ -223,7 +223,7 @@ export default function ResumeAnalyzer() {
                     Important Keywords
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {analyzeMutation.data.keywords?.length > 0 ? (
+                    {analyzeMutation.data?.keywords?.length > 0 ? (
                       analyzeMutation.data.keywords.map((keyword, index) => (
                         <Badge key={index} variant="outline">
                           {keyword}
@@ -241,7 +241,7 @@ export default function ResumeAnalyzer() {
                     Suggested Improvements
                   </h3>
                   <ul className="list-disc pl-5 space-y-1">
-                    {analyzeMutation.data.improvements?.length > 0 ? (
+                    {analyzeMutation.data?.improvements?.length > 0 ? (
                       analyzeMutation.data.improvements.map((improvement, index) => (
                         <li key={index} className="text-sm">{improvement}</li>
                       ))
@@ -257,7 +257,7 @@ export default function ResumeAnalyzer() {
                     General Feedback
                   </h3>
                   <ul className="list-disc pl-5 space-y-1">
-                    {analyzeMutation.data.feedback?.length > 0 ? (
+                    {analyzeMutation.data?.feedback?.length > 0 ? (
                       analyzeMutation.data.feedback.map((feedback, index) => (
                         <li key={index} className="text-sm">{feedback}</li>
                       ))

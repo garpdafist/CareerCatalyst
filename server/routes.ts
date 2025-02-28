@@ -77,6 +77,16 @@ const resumeAnalysisSchema = z.object({
   content: z.string().min(1, "Resume content cannot be empty").optional(),
 });
 
+// For debugging body content
+const logRequestBody = (req: Request) => {
+  console.log('Request body:', {
+    contentType: req.headers['content-type'],
+    hasBody: !!req.body,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+    bodyContent: req.body?.content ? req.body.content.substring(0, 50) + '...' : 'missing'
+  });
+};
+
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
     // Log buffer details
@@ -213,12 +223,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let content: string;
 
-        // Log request details
+        // Log request details with more information
         console.log('Resume analysis request:', {
           hasFile: !!req.file,
           bodyContent: req.body.content ? 'present' : 'absent',
-          contentLength: req.body.content?.length || 0
+          contentLength: req.body.content?.length || 0,
+          contentType: req.headers['content-type'],
+          bodyKeys: Object.keys(req.body)
         });
+        
+        // Log full request body for debugging
+        logRequestBody(req);
 
         if (req.file) {
           content = await extractTextFromFile(req.file);
@@ -321,8 +336,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add configuration endpoint
   app.get("/api/config", (_req, res) => {
     res.json({
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY
+      supabaseUrl: process.env.VITE_SUPABASE_URL || "",
+      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || ""
     });
   });
 
