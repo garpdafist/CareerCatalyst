@@ -31,17 +31,26 @@ async function waitForRateLimit() {
 }
 
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
-  const prompt = `Analyze the following resume and provide detailed feedback. Return the response in JSON format with the following structure:
-  {
-    "score": <number between 0-100>,
-    "feedback": [<array of general feedback points>],
-    "skills": [<array of identified skills>],
-    "improvements": [<array of specific improvement suggestions>],
-    "keywords": [<array of important keywords found>]
-  }
+  const prompt = `You are an expert resume analyzer. Analyze the following resume content and provide detailed, professional feedback. 
 
-  Resume content:
-  ${content}`;
+Your analysis should focus on:
+1. Overall resume strength and effectiveness
+2. Technical and soft skills identified
+3. Key industry-relevant keywords
+4. Specific areas for improvement
+5. General professional advice
+
+Return the response in JSON format with the following structure:
+{
+  "score": <number between 0-100 based on overall resume strength>,
+  "feedback": [<array of detailed, actionable feedback points>],
+  "skills": [<array of all identified technical and soft skills>],
+  "improvements": [<array of specific, actionable improvement suggestions>],
+  "keywords": [<array of important industry-relevant keywords found>]
+}
+
+Resume content to analyze:
+${content}`;
 
   try {
     // Wait for rate limit before making the request
