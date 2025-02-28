@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Download } from "lucide-react";
+import { GripVertical, Download, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { ResumeAnalysis } from "@shared/schema";
 
@@ -12,16 +12,42 @@ type ResumeSection = {
   id: string;
   title: string;
   content: string;
-  suggestion?: string;
+  suggestions: string[];
+  keywords?: string[];
 };
 
 // Standard ATS-friendly sections
 const initialSections: ResumeSection[] = [
-  { id: "summary", title: "Professional Summary", content: "" },
-  { id: "experience", title: "Work Experience", content: "" },
-  { id: "skills", title: "Technical Skills", content: "" },
-  { id: "education", title: "Education", content: "" },
-  { id: "certifications", title: "Certifications", content: "" },
+  { 
+    id: "summary", 
+    title: "Professional Summary", 
+    content: "",
+    suggestions: ["Keep your summary concise and impactful", "Highlight your key achievements"],
+  },
+  { 
+    id: "experience", 
+    title: "Work Experience", 
+    content: "",
+    suggestions: ["Use action verbs to start bullet points", "Include measurable achievements"],
+  },
+  { 
+    id: "skills", 
+    title: "Technical Skills", 
+    content: "",
+    suggestions: ["Group skills by category", "Prioritize skills mentioned in job descriptions"],
+  },
+  { 
+    id: "education", 
+    title: "Education", 
+    content: "",
+    suggestions: ["List degrees in reverse chronological order", "Include relevant coursework"],
+  },
+  { 
+    id: "certifications", 
+    title: "Certifications", 
+    content: "",
+    suggestions: ["Include expiration dates if applicable", "Highlight industry-recognized certifications"],
+  },
 ];
 
 export default function ResumeEditor() {
@@ -38,20 +64,52 @@ export default function ResumeEditor() {
 
       // Update sections with analysis feedback
       setSections(sections.map(section => {
-        if (section.id === "skills" && parsedAnalysis.skills?.length > 0) {
-          return {
-            ...section,
-            content: parsedAnalysis.skills.join(", "),
-            suggestion: "Consider organizing skills by category and highlighting those most relevant to your target role."
-          };
+        const sectionSuggestions = [];
+
+        // Add section-specific suggestions from analysis
+        if (parsedAnalysis.improvements) {
+          sectionSuggestions.push(
+            ...parsedAnalysis.improvements.filter(imp => 
+              imp.toLowerCase().includes(section.id.toLowerCase())
+            )
+          );
         }
-        if (section.id === "summary") {
-          return {
-            ...section,
-            suggestion: "Include your years of experience, key achievements, and target role objectives."
-          };
+
+        // Add keywords relevant to this section
+        const relevantKeywords = parsedAnalysis.keywords?.filter(keyword =>
+          keyword.toLowerCase().includes(section.id.toLowerCase())
+        );
+
+        switch (section.id) {
+          case "skills":
+            return {
+              ...section,
+              content: parsedAnalysis.skills?.join(", ") || "",
+              suggestions: [
+                ...section.suggestions,
+                ...sectionSuggestions,
+                "Match skills with job requirements",
+                "Include both technical and soft skills"
+              ],
+              keywords: parsedAnalysis.skills
+            };
+          case "summary":
+            return {
+              ...section,
+              suggestions: [
+                ...section.suggestions,
+                ...sectionSuggestions,
+                "Include years of experience",
+                "Highlight key achievements"
+              ]
+            };
+          default:
+            return {
+              ...section,
+              suggestions: [...section.suggestions, ...sectionSuggestions],
+              keywords: relevantKeywords
+            };
         }
-        return section;
       }));
     }
   }, []);
@@ -85,19 +143,20 @@ export default function ResumeEditor() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-2">Resume Editor</h2>
         <p className="text-muted-foreground">
-          Drag sections to reorder. Click to edit content. Follow ATS suggestions for better results.
+          Drag sections to reorder. Edit content using the suggestions to improve ATS compatibility.
         </p>
       </div>
 
       {analysis && (
         <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Resume Score: {analysis.score}/100. 
-            {analysis.improvements && analysis.improvements[0]}
+            Make the suggested improvements to increase your ATS compatibility score.
           </AlertDescription>
         </Alert>
       )}
@@ -132,21 +191,48 @@ export default function ResumeEditor() {
                         <CardTitle className="text-lg">{section.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <Textarea
-                          value={section.content}
-                          onChange={(e) => {
-                            const newSections = [...sections];
-                            newSections[index].content = e.target.value;
-                            setSections(newSections);
-                          }}
-                          placeholder={`Add your ${section.title.toLowerCase()} here...`}
-                          className="min-h-[100px] mb-2"
-                        />
-                        {section.suggestion && (
-                          <p className="text-sm text-muted-foreground mt-2">
-                            💡 Tip: {section.suggestion}
-                          </p>
-                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="md:col-span-2">
+                            <Textarea
+                              value={section.content}
+                              onChange={(e) => {
+                                const newSections = [...sections];
+                                newSections[index].content = e.target.value;
+                                setSections(newSections);
+                              }}
+                              placeholder={`Add your ${section.title.toLowerCase()} here...`}
+                              className="min-h-[200px] mb-2"
+                            />
+                          </div>
+                          <div className="space-y-4">
+                            <div className="bg-muted/50 rounded-lg p-4">
+                              <h4 className="font-medium mb-2">📝 Suggestions</h4>
+                              <ul className="space-y-2 text-sm text-muted-foreground">
+                                {section.suggestions.map((suggestion, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-primary">•</span>
+                                    {suggestion}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            {section.keywords && section.keywords.length > 0 && (
+                              <div className="bg-muted/50 rounded-lg p-4">
+                                <h4 className="font-medium mb-2">🎯 Keywords</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {section.keywords.map((keyword, i) => (
+                                    <span 
+                                      key={i}
+                                      className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                                    >
+                                      {keyword}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   )}
