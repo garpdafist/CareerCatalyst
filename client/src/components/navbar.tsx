@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <nav className="border-b">
@@ -17,15 +17,17 @@ export function Navbar() {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/resume-analyzer">
-              <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
-                Resume Analyzer
-              </a>
-            </Link>
+            {user && (
+              <Link href="/resume-analyzer">
+                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
+                  Resume Analyzer
+                </a>
+              </Link>
+            )}
             {user ? (
               <Button 
                 variant="ghost" 
-                onClick={() => logout()}
+                onClick={() => signOut()}
                 className="text-sm"
               >
                 Sign Out

@@ -2,18 +2,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { queryClient } from "@/lib/queryClient";
+import { SiGoogle } from "react-icons/si";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, signIn, signInWithGoogle } = useAuth();
 
   // Redirect if already logged in
   if (user) {
@@ -21,30 +20,7 @@ export default function Auth() {
     return null;
   }
 
-  const loginMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const res = await apiRequest("POST", "/api/auth/login", { email });
-      return res.json();
-    },
-    onSuccess: (user) => {
-      // Update the user data in the cache
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Success",
-        description: "Successfully signed in. Redirecting...",
-      });
-      setLocation("/resume-analyzer");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast({
@@ -54,7 +30,9 @@ export default function Auth() {
       });
       return;
     }
-    loginMutation.mutate(email);
+    setIsLoading(true);
+    await signIn(email);
+    setIsLoading(false);
   };
 
   return (
@@ -72,15 +50,37 @@ export default function Auth() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loginMutation.isPending}
+                  disabled={isLoading}
                 />
               </div>
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loginMutation.isPending}
+                disabled={isLoading}
               >
-                {loginMutation.isPending ? "Signing in..." : "Continue with Email"}
+                {isLoading ? "Sending magic link..." : "Continue with Email"}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => signInWithGoogle()}
+                disabled={isLoading}
+              >
+                <SiGoogle className="mr-2 h-4 w-4" />
+                Google
               </Button>
             </form>
           </CardContent>
