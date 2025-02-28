@@ -6,11 +6,19 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+
+  // Redirect if already logged in
+  if (user) {
+    setLocation("/resume-analyzer");
+    return null;
+  }
 
   const loginMutation = useMutation({
     mutationFn: async (email: string) => {
@@ -20,8 +28,9 @@ export default function Auth() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Authentication successful",
+        description: "Check your email for the magic link to sign in.",
       });
+      // For demo purposes, we auto-verify, so redirect immediately
       setLocation("/resume-analyzer");
     },
     onError: (error: Error) => {
@@ -61,6 +70,7 @@ export default function Auth() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loginMutation.isPending}
                 />
               </div>
               <Button
