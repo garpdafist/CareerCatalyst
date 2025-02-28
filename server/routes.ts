@@ -54,6 +54,15 @@ const resumeAnalysisSchema = z.object({
   contentType: z.enum(["application/pdf", "text/plain"]).default("text/plain")
 });
 
+// Add this helper function to clean content
+function cleanContent(content: string): string {
+  // Remove null bytes and invalid UTF-8 characters
+  return content
+    .replace(/\0/g, '') // Remove null bytes
+    .replace(/[^\x20-\x7E\x0A\x0D]/g, ' ') // Replace non-printable chars with space
+    .trim();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add session middleware
   app.use(sessionMiddleware);
@@ -127,16 +136,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      let cleanContent = result.data.content;
+      let processedContent = result.data.content;
 
-      // If content is PDF, extract text or use as is
+      // If content is PDF, clean it
       if (result.data.contentType === "application/pdf") {
-        // For now, we'll just remove the PDF header and handle it as text
-        cleanContent = cleanContent.replace(/^%PDF[^]*?(?=\w)/i, '').trim();
+        // Remove PDF header and clean content
+        processedContent = cleanContent(
+          processedContent.replace(/^%PDF[^]*?(?=\w)/i, '').trim()
+        );
       }
 
       const analysis = await storage.analyzeResume(
-        cleanContent,
+        processedContent,
         req.session.userId!
       );
       res.json(analysis);
