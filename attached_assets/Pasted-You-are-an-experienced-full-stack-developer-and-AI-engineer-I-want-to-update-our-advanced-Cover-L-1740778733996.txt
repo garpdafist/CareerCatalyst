@@ -1,0 +1,38 @@
+You are an experienced full-stack developer and AI engineer. 
+I want to update our advanced “Cover Letter Generator” with the following constraints and logic:
+
+1. **User Questions & Offerings**:
+   - Present a short list of **key questions** to the user (role/position, company details, top achievements, personal branding points, tone/style).
+   - Also show them **output format options**: “Generate Email,” “Generate Video Script,” “Generate LinkedIn Post,” etc.
+   - The user can choose which format(s) they want to generate. We do **not** automatically generate all outputs.
+
+2. **Fallback to Old Resume Data**:
+   - If the user **skips** certain questions or leaves them blank, the system should attempt to **pull** relevant info from:
+     1. Their **old resume** (previously saved).
+     2. Their **updated resume** (if they have one).
+   - Use the best available data to fill in gaps in the cover letter or alternative outputs.
+
+3. **Cover Letter Generation Flow**:
+   - **Multi-Step Form** (front end) that explains each question’s importance and how it will improve their cover letter.
+   - If a user doesn’t answer a question, log that as “unanswered” and rely on existing resume data to fill in details.
+   - After all questions, let them choose “Generate Email” or “Generate Video Script,” etc.
+
+4. **AI Logic**:
+   - The AI should:
+     - Merge user answers + any relevant resume data into a carefully crafted prompt.
+     - If user input is missing for certain fields, reference the older resume data for achievements, roles, or brand statements.
+     - Generate only the **specific** outputs the user requested (e.g., if they only want an Email version, don’t generate a video script).
+
+5. **Implementation Details**:
+   - **Front End**: Update the multi-step form to show the new “format selection” step at the end (Email, Video Script, etc.).
+   - **Back End / AI Integration**:
+     - Adjust the prompt logic to handle partial user inputs, pulling fallback data from stored resume content.
+     - Return only the user-selected outputs (cover letter + whichever additional formats they pick).
+   - **Testing**:
+     - Provide a sample flow where the user only answers some questions, picks “Generate Video Script,” and the system successfully merges old resume data for any missing pieces.
+
+6. **UX Considerations**:
+   - Display a short explanation for each question, so the user knows how it benefits the final cover letter or alternative format.
+   - If the user chooses not to answer or provide new info, reassure them we’ll use existing data from their old/updated resume.
+
+After implementing these updates, please share the revised code snippets and a brief walkthrough of how the user can pick specific output formats (Email, Video Script, etc.) and see results that incorporate both new answers and fallback resume data.

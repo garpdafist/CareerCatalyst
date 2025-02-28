@@ -29,6 +29,11 @@ export function Navbar() {
                     Resume Editor
                   </a>
                 </Link>
+                <Link href="/cover-letter">
+                  <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
+                    Cover Letter
+                  </a>
+                </Link>
               </>
             )}
             {user ? (
