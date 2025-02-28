@@ -14,6 +14,22 @@ const resumeAnalysisResponseSchema = z.object({
 
 export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
+// Rate limiting variables
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 210; // 0.21 seconds in milliseconds
+
+async function waitForRateLimit() {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const delay = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  lastRequestTime = Date.now();
+}
+
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
   const prompt = `Analyze the following resume and provide detailed feedback. Return the response in JSON format with the following structure:
   {
@@ -28,6 +44,9 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
   ${content}`;
 
   try {
+    // Wait for rate limit before making the request
+    await waitForRateLimit();
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
