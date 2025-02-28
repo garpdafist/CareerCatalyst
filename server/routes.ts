@@ -105,7 +105,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 
     try {
       const data = await pdf(buffer);
-      
+
       // Log extraction details
       console.log('PDF Extraction Results:', {
         pageCount: data.numpages || 'unknown',
@@ -124,16 +124,16 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         type: pdfError.constructor.name,
         stack: pdfError.stack
       });
-      
+
       // If PDF content is raw text (common issue) try to extract as text
-      if (buffer.toString('utf-8').includes('Abhay Sharma') || 
-          buffer.toString('utf-8').includes('Summary') || 
-          buffer.toString('utf-8').includes('Experience')) {
+      if (buffer.toString('utf-8').includes('Abhay Sharma') ||
+        buffer.toString('utf-8').includes('Summary') ||
+        buffer.toString('utf-8').includes('Experience')) {
         console.log('Attempting to recover text from buffer directly');
         const textContent = buffer.toString('utf-8');
         return textContent;
       }
-      
+
       throw pdfError;
     }
   } catch (error: any) {
@@ -160,16 +160,30 @@ async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
 
     if (file.mimetype === 'application/pdf') {
       content = await extractTextFromPDF(file.buffer);
-    } else if (file.mimetype === 'text/plain') {
-      // For text files, just decode the buffer
-      content = file.buffer.toString('utf-8');
+    } else if (file.mimetype === 'text/plain' || file.originalname.endsWith('.txt')) {
+      // For text files, decode buffer with proper error handling
+      try {
+        content = file.buffer.toString('utf-8');
+        console.log('Text file content details:', {
+          decodedLength: content.length,
+          hasContent: content.trim().length > 0,
+          firstChars: content.substring(0, 100) + '...'
+        });
+      } catch (decodeError) {
+        console.error('Text decoding error:', decodeError);
+        throw new Error('Failed to decode text file content');
+      }
     } else {
-      // For now, handle DOC/DOCX as text (you might want to add proper DOC parsing)
-      content = file.buffer.toString('utf-8');
+      throw new Error(`Unsupported file type: ${file.mimetype}`);
     }
 
-    // Log extracted content details
-    console.log('Extracted content:', {
+    // Validate extracted content
+    if (!content || !content.trim()) {
+      throw new Error('Extracted content is empty or invalid');
+    }
+
+    // Log successful extraction
+    console.log('Successfully extracted content:', {
       length: content.length,
       preview: content.substring(0, 100) + '...',
       hasContent: content.trim().length > 0
@@ -248,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         let content: string;
-        
+
         // Log detailed request information
         console.log('Resume analysis request:', {
           hasFile: !!req.file,
@@ -259,9 +273,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           method: req.method,
           url: req.url
         });
-        
-        // Log full request body for debugging
-        logRequestBody(req);
 
         if (req.file) {
           console.log('Processing file input:', {
@@ -269,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mimetype: req.file.mimetype,
             size: req.file.size
           });
-          
+
           try {
             content = await extractTextFromFile(req.file);
           } catch (fileError: any) {
@@ -307,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             hasBodyContent: !!req.body?.content,
             contentType: req.headers['content-type']
           });
-          
+
           return res.status(400).json({
             message: "Resume content is required",
             details: "Please provide a file or text content in the request body"
@@ -328,12 +339,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: `${req.file ? 'File' : 'Text'} content was empty after processing`
           });
         }
-
-        // Log content before analysis
-        console.log('Content ready for analysis:', {
-          length: content.length,
-          preview: content.substring(0, 100) + '...'
-        });
 
         const analysis = await storage.analyzeResume(content, req.session.userId!);
         res.json(analysis);

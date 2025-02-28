@@ -1,0 +1,76 @@
+You are an experienced full-stack developer. I want to implement the following advanced resume features in phases. Please help me plan the architecture, data flow, and provide sample code or guidance for each step.
+
+-----------------------------
+1. Feature Breakdown & Roadmap
+-----------------------------
+PHASE 1: CORE EDITING & PREVIEW
+A) **Drag-and-Drop Resume Section Reordering**
+   - Goal: Let users reorder Education, Experience, Skills, etc.
+   - Implementation Ideas:
+     1. Use a library like React Beautiful DnD or React-DnD.
+     2. Store sections in an array; reordering is swapping indices.
+     3. Update the UI in real-time and sync with the back end if needed.
+
+B) **Interactive PDF Resume Preview with Instant Form Updates**
+   - Goal: Show a live PDF preview while the user edits their resume in a form.
+   - Implementation Ideas:
+     1. Consider react-pdf for client-side preview or generate a PDF on the server side (e.g., pdfkit, puppeteer) and display it in an iframe.
+     2. Tie form data to state management (Redux or React Context) to re-render the PDF on changes.
+
+PHASE 2: ADVANCED RESUME INSIGHTS
+C) **Career Keyword Highlighting & Trend Analysis**
+   - Goal: Analyze the resume text for relevant keywords and show their popularity or relevance.
+   - Implementation Ideas:
+     1. Maintain a dictionary of top marketing or tech terms.
+     2. Use an external API (like Google Trends) to score or show popularity.
+     3. Highlight or color-code missing keywords in the UI.
+
+PHASE 3: INTERVIEW PREP & SKILL VISUALIZATION
+D) **Personalized Interview Preparation Chatbot**
+   - Goal: Provide AI-driven interview questions based on the user’s resume.
+   - Implementation Ideas:
+     1. Use an LLM like OpenAI GPT. Pass the user’s resume text as context.
+     2. Build a simple chat UI (react-chat-ui or a custom solution).
+     3. Let the user respond, and the AI follows up with role-specific questions.
+
+E) **Animated Skill Progression Visualization**
+   - Goal: Show how a user’s skills evolve over time or across multiple resume versions.
+   - Implementation Ideas:
+     1. Collect skill data from each version or let users input skill levels.
+     2. Use a chart library (D3.js, Recharts, Chart.js) to animate changes.
+     3. Display on a “progress” page or user dashboard.
+
+-----------------------------------
+2. Implementation Tips & Stack Notes
+-----------------------------------
+- **Front End**: Likely React or Next.js.
+- **Back End**: Node.js/Express (TypeScript if possible).
+- **Database**: Postgres or MongoDB for storing resume data & user info.
+- **AI**: Integrate with OpenAI or a similar LLM for the chatbot and possibly for keyword detection.
+- **PDF Parsing/Generation**: react-pdf (client-side) or pdfkit/puppeteer (server-side).
+
+------------------------------------
+3. Instructions for the Replit Agent
+------------------------------------
+1. **Set Up an Iterative Approach**:
+   - Create or modify existing routes and components in small sprints:
+     - Phase 1: drag-and-drop & PDF preview.
+     - Phase 2: keyword highlighting & trend analysis.
+     - Phase 3: interview chatbot & skill visualization.
+
+2. **Provide Sample Code Snippets**:
+   - For each feature, outline the main React components, back-end endpoints, and any data models needed.
+   - Suggest how to store or retrieve user data (resume content, skill data, etc.).
+
+3. **Guide Me Through Testing**:
+   - Explain how to test each feature (UI checks, console logs, unit tests).
+   - If we run into issues (e.g., PDF rendering or AI calls), give debug strategies.
+
+4. **Optimize Performance & UX**:
+   - For real-time PDF previews, consider caching or throttling updates.
+   - For AI calls, handle loading states and potential rate limits from OpenAI.
+
+5. **Show a Final Demo Flow**:
+   - Summarize how a user would reorder resume sections, see an instant PDF preview, get keyword/trend feedback, practice interview Q&A, and view skill progression.
+
+Please begin by setting up the **Phase 1** features (drag-and-drop and PDF preview), then proceed through the other phases. Include relevant code examples in each step, focusing on clarity and best practices. Let me know if you need additional details on any feature or if you have suggestions to improve the plan.
