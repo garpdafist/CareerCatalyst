@@ -18,11 +18,18 @@ export function Navbar() {
           </div>
           <div className="flex items-center space-x-4">
             {user && (
-              <Link href="/resume-analyzer">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
-                  Resume Analyzer
-                </a>
-              </Link>
+              <>
+                <Link href="/resume-analyzer">
+                  <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
+                    Resume Analyzer
+                  </a>
+                </Link>
+                <Link href="/resume-editor">
+                  <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
+                    Resume Editor
+                  </a>
+                </Link>
+              </>
             )}
             {user ? (
               <Button 
