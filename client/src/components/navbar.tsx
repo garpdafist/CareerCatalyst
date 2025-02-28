@@ -34,6 +34,11 @@ export function Navbar() {
                     Cover Letter
                   </a>
                 </Link>
+                <Link href="/linkedin-optimizer">
+                  <a className="inline-flex items-center px-1 pt-1 text-sm font-medium">
+                    LinkedIn Profile
+                  </a>
+                </Link>
               </>
             )}
             {user ? (
