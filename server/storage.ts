@@ -86,6 +86,12 @@ export class DatabaseStorage implements IStorage {
 
   async analyzeResume(content: string, userId: string): Promise<ResumeAnalysis> {
     try {
+      // Log content length before analysis
+      console.log('Analyzing resume content:', {
+        contentLength: content.length,
+        firstChars: content.substring(0, 100) + '...'
+      });
+
       const aiAnalysis = await analyzeResumeWithAI(content);
 
       const [analysis] = await db
@@ -99,7 +105,11 @@ export class DatabaseStorage implements IStorage {
 
       return analysis;
     } catch (error: any) {
-      console.error('Analysis error:', error);
+      console.error('Analysis error:', {
+        message: error.message,
+        type: error.constructor.name,
+        stack: error.stack
+      });
 
       // Always provide fallback mock data that matches our schema
       const mockAnalysis = {

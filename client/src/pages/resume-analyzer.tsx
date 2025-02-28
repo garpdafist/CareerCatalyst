@@ -54,13 +54,29 @@ export default function ResumeAnalyzer() {
 
   const handleFileUpload = async (file: File) => {
     try {
-      const text = await file.text();
-      setContent(text);
+      // Read file as ArrayBuffer first for PDF detection
+      const buffer = await file.arrayBuffer();
+      const firstBytes = new Uint8Array(buffer).slice(0, 4);
+      const isPDF = firstBytes[0] === 0x25 && // %
+                    firstBytes[1] === 0x50 && // P
+                    firstBytes[2] === 0x44 && // D
+                    firstBytes[3] === 0x46;   // F
+
+      // Convert ArrayBuffer to text
+      const decoder = new TextDecoder('utf-8');
+      let content = decoder.decode(buffer);
+
+      // Log content length for debugging
+      console.log('File content length:', content.length);
+      console.log('File type:', isPDF ? 'PDF' : 'text');
+
+      setContent(content);
       setFile(file);
     } catch (error) {
+      console.error('File reading error:', error);
       toast({
         title: "Error",
-        description: "Failed to read file. Please try a different file.",
+        description: "Failed to read file. Please try a different file or paste the content directly.",
         variant: "destructive",
       });
     }

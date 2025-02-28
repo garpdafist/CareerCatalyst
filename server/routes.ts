@@ -60,6 +60,9 @@ function cleanContent(content: string): string {
   return content
     .replace(/\0/g, '') // Remove null bytes
     .replace(/[^\x20-\x7E\x0A\x0D]/g, ' ') // Replace non-printable chars with space
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/^\s+|\s+$/g, '') // Trim ends
+    .replace(/(%PDF-.*?%%EOF)/gs, '') // Remove PDF markers
     .trim();
 }
 
@@ -140,10 +143,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If content is PDF, clean it
       if (result.data.contentType === "application/pdf") {
-        // Remove PDF header and clean content
-        processedContent = cleanContent(
-          processedContent.replace(/^%PDF[^]*?(?=\w)/i, '').trim()
-        );
+        processedContent = cleanContent(processedContent);
+
+        // Log processed content details
+        console.log('Processed PDF content:', {
+          originalLength: result.data.content.length,
+          processedLength: processedContent.length,
+          firstChars: processedContent.substring(0, 100) + '...'
+        });
+
+        // Verify we have actual content
+        if (!processedContent.trim()) {
+          throw new Error("No readable content found in PDF");
+        }
       }
 
       const analysis = await storage.analyzeResume(
