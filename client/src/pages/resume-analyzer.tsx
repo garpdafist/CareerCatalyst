@@ -76,7 +76,7 @@ export default function ResumeAnalyzer() {
       });
       return;
     }
-    console.log('Submitting content:', content); 
+    console.log('Submitting content:', content);
     analyzeMutation.mutate({ content: content.trim() });
   };
 
@@ -165,9 +165,9 @@ export default function ResumeAnalyzer() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Resume Score</span>
-                  <span>{analyzeMutation.data.score}/100</span>
+                  <span>{analyzeMutation.data.score || 0}/100</span>
                 </div>
-                <Progress value={analyzeMutation.data.score} />
+                <Progress value={analyzeMutation.data.score || 0} />
               </div>
 
               <div className="space-y-4">
@@ -177,11 +177,15 @@ export default function ResumeAnalyzer() {
                     Identified Skills
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {analyzeMutation.data.skills?.map((skill, index) => (
-                      <Badge key={index} variant="secondary">
-                        {skill}
-                      </Badge>
-                    )) ?? <span className="text-sm text-muted-foreground">No skills identified</span>}
+                    {analyzeMutation.data.skills?.length > 0 ? (
+                      analyzeMutation.data.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary">
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No skills identified</span>
+                    )}
                   </div>
                 </div>
 
@@ -191,11 +195,15 @@ export default function ResumeAnalyzer() {
                     Important Keywords
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {analyzeMutation.data.keywords?.map((keyword, index) => (
-                      <Badge key={index} variant="outline">
-                        {keyword}
-                      </Badge>
-                    )) ?? <span className="text-sm text-muted-foreground">No keywords found</span>}
+                    {analyzeMutation.data.keywords?.length > 0 ? (
+                      analyzeMutation.data.keywords.map((keyword, index) => (
+                        <Badge key={index} variant="outline">
+                          {keyword}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No keywords found</span>
+                    )}
                   </div>
                 </div>
 
@@ -205,9 +213,13 @@ export default function ResumeAnalyzer() {
                     Suggested Improvements
                   </h3>
                   <ul className="list-disc pl-5 space-y-1">
-                    {analyzeMutation.data.improvements?.map((improvement, index) => (
-                      <li key={index} className="text-sm">{improvement}</li>
-                    )) ?? <li className="text-sm text-muted-foreground">No specific improvements suggested</li>}
+                    {analyzeMutation.data.improvements?.length > 0 ? (
+                      analyzeMutation.data.improvements.map((improvement, index) => (
+                        <li key={index} className="text-sm">{improvement}</li>
+                      ))
+                    ) : (
+                      <li className="text-sm text-muted-foreground">No specific improvements suggested</li>
+                    )}
                   </ul>
                 </div>
 
@@ -217,9 +229,13 @@ export default function ResumeAnalyzer() {
                     General Feedback
                   </h3>
                   <ul className="list-disc pl-5 space-y-1">
-                    {analyzeMutation.data.feedback?.map((feedback, index) => (
-                      <li key={index} className="text-sm">{feedback}</li>
-                    )) ?? <li className="text-sm text-muted-foreground">No general feedback available</li>}
+                    {analyzeMutation.data.feedback?.length > 0 ? (
+                      analyzeMutation.data.feedback.map((feedback, index) => (
+                        <li key={index} className="text-sm">{feedback}</li>
+                      ))
+                    ) : (
+                      <li className="text-sm text-muted-foreground">No general feedback available</li>
+                    )}
                   </ul>
                 </div>
               </div>
