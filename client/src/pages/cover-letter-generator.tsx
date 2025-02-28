@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, FileText, MessageSquare, LinkedinIcon, Video, LightbulbIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 type FormStep = {
   id: string;
@@ -215,12 +216,9 @@ export default function CoverLetterGenerator() {
       );
     }
 
-    const savedResumeData = localStorage.getItem('resumeAnalysis');
-    const hasResumeData = !!savedResumeData;
-
     return (
       <div className="space-y-4">
-        {!currentStepData.isRequired && hasResumeData && (
+        {!currentStepData.isRequired && (
           <Alert className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
