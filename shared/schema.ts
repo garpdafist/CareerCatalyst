@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -17,6 +17,9 @@ export const resumeAnalysis = pgTable("resume_analysis", {
   content: text("content").notNull(),
   score: integer("score").notNull(),
   feedback: text("feedback").array(),
+  skills: text("skills").array(),
+  improvements: text("improvements").array(),
+  keywords: text("keywords").array(),
 });
 
 export const insertJobSchema = createInsertSchema(jobs).pick({
@@ -32,6 +35,9 @@ export const insertResumeAnalysisSchema = createInsertSchema(resumeAnalysis).pic
   content: true,
   score: true,
   feedback: true,
+  skills: true,
+  improvements: true,
+  keywords: true,
 });
 
 export type Job = typeof jobs.$inferSelect;

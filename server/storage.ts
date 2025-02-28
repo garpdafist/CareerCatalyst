@@ -1,4 +1,5 @@
 import { type Job, type InsertJob, type ResumeAnalysis, type InsertResumeAnalysis } from "@shared/schema";
+import { analyzeResumeWithAI } from "./services/openai";
 
 export interface IStorage {
   getJobs(): Promise<Job[]>;
@@ -68,19 +69,12 @@ export class MemStorage implements IStorage {
   }
 
   async analyzeResume(content: string): Promise<ResumeAnalysis> {
-    // Mock resume analysis logic
-    const score = Math.floor(Math.random() * 40) + 60; // Score between 60-100
-    const feedback = [
-      "Consider adding more quantifiable achievements",
-      "Include relevant keywords for your industry",
-      "Make sure to highlight your technical skills",
-    ];
+    const aiAnalysis = await analyzeResumeWithAI(content);
 
     const analysis: ResumeAnalysis = {
       id: this.analysisId++,
       content,
-      score,
-      feedback,
+      ...aiAnalysis,
     };
 
     this.resumeAnalyses.set(analysis.id, analysis);
