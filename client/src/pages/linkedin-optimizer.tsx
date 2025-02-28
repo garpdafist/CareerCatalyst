@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Trophy, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { AlertCircle, Trophy, Sparkles, ArrowRight, Loader2, Camera, CircleCheck } from "lucide-react";
 
 type ProfileSection = {
   id: string;
@@ -19,6 +19,16 @@ type ProfileSection = {
   characterLimit?: number;
   aiSuggestions?: string[];
 };
+
+const profilePhotoGuidelines = [
+  "Use a high-quality, professional headshot",
+  "Ensure your face takes up 60% of the frame",
+  "Choose a simple, non-distracting background",
+  "Wear professional attire appropriate for your industry",
+  "Use natural lighting and face the light source",
+  "Smile naturally and maintain eye contact with the camera",
+  "Update your photo every 2-3 years to stay current"
+];
 
 export default function LinkedInOptimizer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -194,27 +204,48 @@ export default function LinkedInOptimizer() {
         </Button>
       </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                Profile Strength
-              </h3>
-              <span className="text-sm font-medium">
-                {overallScore}% {overallScore >= 90 ? "✨" : ""}
-              </span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="md:col-span-2">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                  Profile Strength
+                </h3>
+                <span className="text-sm font-medium">
+                  {overallScore}% {overallScore >= 90 ? "✨" : ""}
+                </span>
+              </div>
+              <Progress value={overallScore} className="h-2" />
+              {overallScore < 90 && (
+                <p className="text-sm text-muted-foreground">
+                  Improve your profile score by following the AI suggestions and best practices
+                </p>
+              )}
             </div>
-            <Progress value={overallScore} className="h-2" />
-            {overallScore < 90 && (
-              <p className="text-sm text-muted-foreground">
-                Improve your profile score by following the AI suggestions and best practices
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5" />
+              Profile Photo Guide
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {profilePhotoGuidelines.map((guideline, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <CircleCheck className="h-4 w-4 text-primary shrink-0 mt-1" />
+                  <span>{guideline}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
 
       <Tabs value={activeSection} onValueChange={setActiveSection}>
         <TabsList className="w-full">
