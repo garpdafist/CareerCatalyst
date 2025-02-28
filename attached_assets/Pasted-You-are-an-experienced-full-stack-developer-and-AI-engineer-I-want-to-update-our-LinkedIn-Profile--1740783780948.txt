@@ -1,0 +1,46 @@
+You are an experienced full-stack developer and AI engineer. 
+I want to update our LinkedIn Profile Optimizer so it only collects data for the user’s last two jobs in a structured manner, rather than asking for all experience at once. 
+
+---------------------------
+A) Product Requirements
+---------------------------
+1. **Form for Most Recent Job**:
+   - Fields:
+     - Job Title (e.g., “Senior Marketing Manager”)
+     - Company Name
+     - Start & End Dates (or “Present”)
+     - Key Achievements & Responsibilities (2–3 bullet points, each with metrics if possible)
+   - Show short best-practice tooltips:
+     - Use action verbs (“Led,” “Optimized,” “Drove”)
+     - Include at least one metric or data point
+     - Keep bullet points concise
+
+2. **Form for Second Most Recent Job**:
+   - Identical structure to the first form (title, company, dates, bullet points).
+   - Same best-practice tips.
+
+3. **Data Storage & Flow**:
+   - Collect the user’s input from these two jobs in a structured format (JSON or DB records).
+   - We will later merge this data with other profile info (e.g., headline, summary) for AI analysis.
+   - Do NOT ask for older roles—only these last two jobs.
+
+----------------------------
+B) Implementation Details
+----------------------------
+- **Front End**:
+  - Possibly a two-step wizard or two separate forms. 
+  - Provide a “Next” or “Add Another Job” button to move from the first job to the second.
+  - Display best-practice tips inline or in a sidebar.
+
+- **Back End**:
+  - Use Node.js/Express (or similar) to handle form submissions.
+  - Store each job’s data in a database or in-memory object, keyed to the current user session.
+
+--------------------------
+C) Final Steps & Testing
+--------------------------
+1. After implementing, show me how each form is displayed and how the data is saved.
+2. Confirm we only collect these two jobs.
+3. Prepare the code so we can easily pass this structured data to our AI prompt in a later step (e.g., “Analyze Profile”).
+
+Please implement these changes now, removing any older approach that tried to capture a full job history at once.

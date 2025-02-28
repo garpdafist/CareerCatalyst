@@ -334,42 +334,55 @@ Focus on actionable improvements that will increase profile visibility and engag
 }
 
 async function analyzeLinkedInContent(sections: { id: string; content: string }[]): Promise<Record<string, string[]>> {
-  const systemPrompt = `You are an expert LinkedIn profile optimizer and career coach. Analyze the provided LinkedIn profile content and generate specific, actionable improvement suggestions. Focus on enhancing visibility, engagement, and professional impact.
+  const systemPrompt = `You are an expert LinkedIn profile optimizer and career coach. Analyze the provided job experiences and generate specific, actionable improvement suggestions. Focus on making the experience section more impactful and achievement-oriented.
 
-Key rules:
-1. Professional Headline (under 220 chars):
-   - Include current role and industry
-   - Add key specializations
-   - Use relevant keywords
-   - Keep professional, avoid buzzwords
+Key rules for experience optimization:
+1. Achievement Focus:
+   - Lead with measurable results and metrics
+   - Quantify impact wherever possible
+   - Show scope and scale of responsibilities
 
-2. About Section:
-   - Start with a compelling hook
-   - Include measurable achievements
-   - Show unique value proposition
-   - Add clear call to action
-   - Use industry keywords
-   - Structure in clear paragraphs
+2. Action Verbs:
+   - Use strong, specific action verbs
+   - Avoid passive language
+   - Demonstrate leadership and initiative
 
-3. Experience Section:
-   - Lead with achievements
-   - Use specific metrics
-   - Show leadership and scope
-   - Include tools and skills
-   - Keep bullets focused
+3. Technical Elements:
+   - Include relevant tools and technologies
+   - Highlight industry-specific skills
+   - Show progression and growth
 
-Provide 3-5 specific, actionable suggestions for each section.`;
+4. Formatting and Structure:
+   - Keep bullet points concise and focused
+   - Use consistent formatting
+   - Prioritize most impressive achievements
 
-  const userPrompt = `Analyze these LinkedIn profile sections:
+Provide 3-5 specific, actionable suggestions that will make the experience more compelling and impactful.`;
 
-${sections.map(section => `${section.id.toUpperCase()}:
-${section.content || '[Empty section]'}`).join('\n\n')}
+  const userPrompt = `Analyze these job experiences:
 
-Provide a JSON response with arrays of specific suggestions for each section:
+${sections.map(section => {
+    try {
+      const job = JSON.parse(section.content);
+      return `${section.id === 'currentJob' ? 'CURRENT ROLE' : 'PREVIOUS ROLE'}:
+Title: ${job.jobTitle}
+Company: ${job.companyName}
+Period: ${job.startDate} - ${job.endDate}
+Achievements:
+${job.achievements}`;
+    } catch (e) {
+      return `${section.id}: Unable to parse content`;
+    }
+  }).join('\n\n')}
+
+Provide a JSON response with an array of specific suggestions:
 {
-  "headlineSuggestions": ["suggestion 1", "suggestion 2", ...],
-  "aboutSuggestions": ["suggestion 1", "suggestion 2", ...],
-  "experienceSuggestions": ["suggestion 1", "suggestion 2", ...]
+  "experienceSuggestions": [
+    "Specific suggestion about metrics or impact...",
+    "Specific suggestion about action verbs...",
+    "Specific suggestion about technical elements...",
+    "Specific suggestion about structure..."
+  ]
 }`;
 
   try {
