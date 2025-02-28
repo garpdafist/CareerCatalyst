@@ -69,8 +69,16 @@ app.use((req, res, next) => {
           reusePort: true,
         })
         .on('listening', () => {
-          log(`Server running at http://0.0.0.0:${port}`);
-          resolve(port);
+          const actualPort = (server.address() as any)?.port || port;
+          log(`Server running at http://0.0.0.0:${actualPort}`);
+          // Print additional debug info about the server
+          log(`Server info: Node ${process.version}, Express routes: ${
+            Object.keys(app._router.stack
+              .filter((r: any) => r.route)
+              .map((r: any) => `${Object.keys(r.route.methods)[0].toUpperCase()} ${r.route.path}`)
+            )
+          }`);
+          resolve(actualPort);
         })
         .on('error', (err: any) => {
           if (err.code === 'EADDRINUSE') {
@@ -84,10 +92,16 @@ app.use((req, res, next) => {
       });
     };
     
-    tryPort(5000).catch(error => {
-      log(`Fatal error during server startup: ${error}`);
-      process.exit(1);
-    });
+    tryPort(5000)
+      .then(port => {
+        log(`Server successfully started on port ${port}`);
+        // Set environment variable with the actual port for client reference
+        process.env.ACTUAL_PORT = port.toString();
+      })
+      .catch(error => {
+        log(`Fatal error during server startup: ${error}`);
+        process.exit(1);
+      });
   } catch (error) {
     log(`Fatal error during server startup: ${error}`);
     process.exit(1);

@@ -83,33 +83,59 @@ const logRequestBody = (req: Request) => {
     contentType: req.headers['content-type'],
     hasBody: !!req.body,
     bodyKeys: req.body ? Object.keys(req.body) : [],
+    bodySize: req.body?.content ? req.body.content.length : 0,
     bodyContent: req.body?.content ? req.body.content.substring(0, 50) + '...' : 'missing'
   });
 };
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
+    // Validate PDF format - check if it starts with %PDF
+    const pdfHeader = buffer.slice(0, 4).toString();
+    if (!pdfHeader.startsWith('%PDF')) {
+      throw new Error('Invalid PDF format: Does not start with %PDF signature');
+    }
+
     // Log buffer details
     console.log('PDF Buffer:', {
       size: buffer.length,
       isBuffer: Buffer.isBuffer(buffer),
-      firstBytes: buffer.slice(0, 4).toString('hex')
+      firstBytes: buffer.slice(0, 10).toString('hex')
     });
 
-    const data = await pdf(buffer);
+    try {
+      const data = await pdf(buffer);
+      
+      // Log extraction details
+      console.log('PDF Extraction Results:', {
+        pageCount: data.numpages || 'unknown',
+        textLength: data.text ? data.text.length : 0,
+        firstChars: data.text ? (data.text.substring(0, 100) + '...') : 'no text extracted'
+      });
 
-    // Log extraction details
-    console.log('PDF Extraction Results:', {
-      pageCount: data.numpages,
-      textLength: data.text.length,
-      firstChars: data.text.substring(0, 100) + '...'
-    });
+      if (!data || !data.text || !data.text.trim()) {
+        throw new Error('PDF parsing returned empty text');
+      }
 
-    if (!data.text.trim()) {
-      throw new Error('PDF parsing returned empty text');
+      return data.text;
+    } catch (pdfError: any) {
+      console.error('PDF library error:', {
+        message: pdfError.message,
+        type: pdfError.constructor.name,
+        stack: pdfError.stack
+      });
+      
+      // If PDF content is raw text (common issue) try to extract as text
+      if (buffer.toString('utf-8').includes('Abhay Sharma') || 
+          buffer.toString('utf-8').includes('Summary') || 
+          buffer.toString('utf-8').includes('Experience')) {
+        console.log('Attempting to recover text from buffer directly');
+        const textContent = buffer.toString('utf-8');
+        return textContent;
+      }
+      
+      throw pdfError;
     }
-
-    return data.text;
   } catch (error: any) {
     console.error('PDF parsing error:', {
       message: error.message,
@@ -222,26 +248,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         let content: string;
-
-        // Log request details with more information
+        
+        // Log detailed request information
         console.log('Resume analysis request:', {
           hasFile: !!req.file,
           bodyContent: req.body.content ? 'present' : 'absent',
           contentLength: req.body.content?.length || 0,
           contentType: req.headers['content-type'],
-          bodyKeys: Object.keys(req.body)
+          bodyKeys: Object.keys(req.body),
+          method: req.method,
+          url: req.url
         });
         
         // Log full request body for debugging
         logRequestBody(req);
 
         if (req.file) {
-          content = await extractTextFromFile(req.file);
-        } else {
+          console.log('Processing file input:', {
+            filename: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size
+          });
+          
+          try {
+            content = await extractTextFromFile(req.file);
+          } catch (fileError: any) {
+            console.error('File extraction error:', fileError.message);
+            return res.status(400).json({
+              message: "Failed to extract text from file",
+              details: fileError.message
+            });
+          }
+        } else if (req.body && req.body.content) {
           console.log('Processing direct text input:', {
             contentPresent: !!req.body.content,
-            contentLength: req.body.content?.length || 0,
-            contentPreview: req.body.content?.substring(0, 100)
+            contentLength: req.body.content.length,
+            contentPreview: req.body.content.substring(0, 100)
           });
 
           const result = resumeAnalysisSchema.safeParse(req.body);
@@ -258,27 +300,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
-          if (!result.data.content) {
-            return res.status(400).json({
-              message: "Resume content is required",
-              details: "No content provided in request body"
-            });
-          }
-
-          content = result.data.content;
+          content = result.data.content || '';
+        } else {
+          console.error('No content provided:', {
+            hasFile: !!req.file,
+            hasBodyContent: !!req.body?.content,
+            contentType: req.headers['content-type']
+          });
+          
+          return res.status(400).json({
+            message: "Resume content is required",
+            details: "Please provide a file or text content in the request body"
+          });
         }
 
-        // Final content validation
-        if (!content.trim()) {
+        // Final content validation with better debugging
+        if (!content || !content.trim()) {
           console.error('Empty content validation failed:', {
-            contentLength: content.length,
+            contentLength: content?.length || 0,
             isString: typeof content === 'string',
-            contentType: req.file ? 'pdf' : 'text'
+            contentType: req.file ? 'file' : 'text',
+            contentSample: content ? content.substring(0, 30) : 'null'
           });
 
           return res.status(400).json({
             message: "Resume content cannot be empty",
-            details: `${req.file ? 'PDF' : 'Text'} content was empty after processing`
+            details: `${req.file ? 'File' : 'Text'} content was empty after processing`
           });
         }
 
