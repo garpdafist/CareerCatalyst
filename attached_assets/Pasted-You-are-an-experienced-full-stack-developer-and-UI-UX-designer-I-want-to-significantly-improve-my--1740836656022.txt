@@ -1,0 +1,44 @@
+You are an experienced full-stack developer and UI/UX designer. 
+I want to significantly improve my product’s design, user experience, and add small yet impactful details. 
+Here’s the plan:
+
+1. **Overall Design & UI Revamp**:
+   - Reference the visuals from KloudMate, Enterpret, Cobalt, and the mobile UI samples I shared. 
+   - Aim for a modern, clean look that’s friendly and approachable. 
+   - Introduce a consistent color palette, typography, and spacing rules across all pages (home, resume analyzer, resume editor, LinkedIn optimizer).
+
+2. **Page Redesigns**:
+   - **Home Page**: 
+     - Use bold, minimal hero text and a clear call-to-action (like “Analyze Resume” or “Resume Editor”).
+     - Possibly add subtle animations or transitions on hover (e.g., button hover states, micro-interactions).
+   - **Resume Analyzer**:
+     - Maintain a simple “Paste Content” or “Upload File” flow. 
+     - After analysis, show structured results with clear headings, bullet points, or a short checklist.
+   - **Resume Editor**:
+     - Adopt a card-based layout or well-structured sections for each resume part (summary, work experience, etc.).
+     - Provide side-panel best practices or tips with a visually appealing style.
+   - **LinkedIn Profile Optimizer**:
+     - Keep it minimal for now, focusing on 2–3 key inputs (headline, summary, current role).
+     - Show relevant tips or checklists, referencing a consistent style with the resume editor.
+
+3. **File Upload Fix**:
+   - Allow **docx & PDF** only. 
+   - Show an error if the user uploads another format.
+   - If needed, integrate libraries like `pdf-parse` (for PDFs) and a docx parser or a conversion step (e.g., `libreoffice` in serverless mode) for `.docx` → `.pdf`. 
+   - Provide instructions: “Upload a .docx or .pdf under 5MB,” etc.
+
+4. **Dummy Job Data**:
+   - Create a small “Jobs” section or page that displays mock marketing roles (Job Title, Company, Location, etc.).
+   - Keep it minimal—just a sample feed or a few cards to illustrate how a future job portal might look.
+
+5. **Subtle UI/UX Improvements**:
+   - Use micro-interactions: button hover effects, slight transitions for modals, etc.
+   - Add success/error toasts or alerts for uploads, analyses, or saving resumes.
+   - Keep the color palette consistent and brand-friendly (a fun yet professional vibe).
+
+6. **Implementation & Testing**:
+   - Provide me with updated page components (Home, Resume Analyzer, Resume Editor, LinkedIn Profile, Jobs).
+   - Show how you integrated docx/PDF parsing. 
+   - Confirm that the new design is cohesive, with a consistent look and feel.
+
+Please implement these changes, refine the UI/UX based on the references, fix the file upload logic, and add dummy job data for a small “Jobs” section.
