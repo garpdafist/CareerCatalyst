@@ -102,36 +102,36 @@ export default function Home() {
                           className="block h-full"
                           data-tour={feature.title.toLowerCase().replace(' ', '-')}
                         >
-                          <div className="relative h-full overflow-hidden rounded-lg border bg-card p-6 shadow-md transition-colors hover:bg-accent hover:text-accent-foreground">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <div className="relative h-full overflow-hidden rounded-lg border bg-[#F5F0E5] p-6 shadow-md transition-all duration-300">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#009963]/10 text-[#009963]">
                               <Icon className="h-6 w-6" />
                             </div>
-                            <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
-                            <p className="mt-2 text-sm text-muted-foreground">
+                            <h3 className="mt-4 text-lg font-semibold text-[#1C170D]">{feature.title}</h3>
+                            <p className="mt-2 text-sm text-[#757575]">
                               {feature.description}
                             </p>
                             <div className="mt-4">
                               <Button
-                                variant="ghost"
-                                className="p-0 font-semibold text-primary hover:text-primary/80"
+                                className="w-full btn-primary flex items-center justify-center gap-2"
                               >
-                                Try Now →
+                                Try Now
+                                <ChevronRight className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
                         </a>
                       </Link>
                     ) : (
-                      <div className="relative h-full overflow-hidden rounded-lg border border-dashed bg-card/50 p-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <div className="relative h-full overflow-hidden rounded-lg border border-dashed bg-[#F5F0E5]/50 p-6">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#E8DECF] text-[#757575]">
                           <Icon className="h-6 w-6" />
                         </div>
-                        <h3 className="mt-4 text-lg font-semibold text-muted-foreground">{feature.title}</h3>
-                        <p className="mt-2 text-sm text-muted-foreground/80">
+                        <h3 className="mt-4 text-lg font-semibold text-[#757575]">{feature.title}</h3>
+                        <p className="mt-2 text-sm text-[#757575]/80">
                           {feature.description}
                         </p>
                         <div className="mt-4">
-                          <span className="text-sm font-medium text-muted-foreground">
+                          <span className="text-sm font-medium text-[#757575]">
                             Coming Soon
                           </span>
                         </div>
