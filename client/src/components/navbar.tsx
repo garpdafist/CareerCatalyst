@@ -18,13 +18,13 @@ export function Navbar() {
     <motion.nav 
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 mb-16"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/">
-              <a className="flex items-center text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+              <a className="flex items-center text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
                 CareerAI
               </a>
             </Link>
@@ -36,7 +36,7 @@ export function Navbar() {
                   const Icon = item.icon;
                   return (
                     <Link key={item.href} href={item.href}>
-                      <a className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
+                      <a className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
                         <Icon className="h-4 w-4 mr-2" />
                         {item.label}
                       </a>
@@ -49,7 +49,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 onClick={() => signOut()}
-                className="text-sm flex items-center gap-2"
+                className="text-sm flex items-center gap-2 text-foreground"
               >
                 <LogOut className="h-4 w-4" />
                 Sign Out
