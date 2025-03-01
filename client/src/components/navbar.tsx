@@ -24,7 +24,7 @@ export function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/">
-              <a className="flex items-center text-xl font-bold text-white/90 hover:text-white transition-colors">
+              <a className="flex items-center text-xl font-bold text-[#1C170D] hover:text-[#1C170D]/80 transition-colors">
                 CareerAI
               </a>
             </Link>
@@ -36,7 +36,7 @@ export function Navbar() {
                   const Icon = item.icon;
                   return (
                     <Link key={item.href} href={item.href}>
-                      <a className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-white/80 transition-colors hover:text-white hover:bg-white/10">
+                      <a className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-[#1C170D] transition-colors hover:text-[#1C170D]/80 hover:bg-[#F5F0E5]">
                         <Icon className="h-4 w-4 mr-2" />
                         {item.label}
                       </a>
@@ -49,7 +49,7 @@ export function Navbar() {
               <Button 
                 variant="ghost" 
                 onClick={() => signOut()}
-                className="text-sm flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/10"
+                className="text-sm flex items-center gap-2 text-[#1C170D] hover:text-[#1C170D]/80 hover:bg-[#F5F0E5]"
               >
                 <LogOut className="h-4 w-4" />
                 Sign Out
