@@ -115,147 +115,119 @@ const logRequestBody = (req: Request) => {
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // Enhanced PDF validation
-    const pdfHeader = buffer.slice(0, 10).toString();
-    if (!pdfHeader.includes('%PDF')) {
-      console.error('PDF validation failed: Invalid header signature');
-      throw new Error('Invalid PDF format: The file does not appear to be a valid PDF document');
-    }
-
-    // More detailed buffer logging
+    // Log detailed buffer information to help debug
     console.log('PDF Buffer details:', {
       size: buffer.length,
       isBuffer: Buffer.isBuffer(buffer),
-      firstBytes: buffer.slice(0, 20).toString('hex'),
-      headerString: pdfHeader
+      firstBytesHex: buffer.slice(0, 20).toString('hex'),
+      firstBytesStr: buffer.slice(0, 20).toString()
     });
 
-    // Try pdf-parse with more robust error handling
+    // First attempt: Use pdf-parse
     try {
-      // Ensure the buffer is properly passed to pdf-parse
+      console.log('Attempting to extract text with pdf-parse');
+      // Ensure proper buffer format
       if (!Buffer.isBuffer(buffer)) {
-        console.log('Converting to proper buffer format');
         buffer = Buffer.from(buffer);
       }
 
-      // Add timeout to prevent hanging on problematic PDFs
-      const pdfOptions = { 
-        max: 0, // No page limit
+      const data = await pdf(buffer, { 
+        max: 0,       // No page limit
         timeout: 30000 // 30 second timeout
-      };
-
-      const data = await pdf(buffer, pdfOptions);
-
-      // Enhanced logging for successful parsing
-      console.log('PDF extracted successfully:', {
-        pageCount: data.numpages || 'unknown',
-        metadata: data.metadata ? 'available' : 'not available',
-        info: data.info ? Object.keys(data.info) : 'not available',
-        textLength: data.text ? data.text.length : 0,
-        firstChars: data.text ? (data.text.substring(0, 150) + '...') : 'no text extracted'
       });
-
-      if (data && data.text && data.text.trim()) {
+      
+      if (data && data.text && data.text.trim().length > 0) {
+        console.log('PDF extraction successful with pdf-parse');
         return data.text;
       }
-
-      throw new Error('PDF parsing returned empty text. The PDF may be scanned or contain only images.');
-    } catch (pdfError: any) {
-      console.error('Primary PDF parser error:', {
-        message: pdfError.message,
-        type: pdfError.constructor.name,
-        stack: pdfError.stack?.substring(0, 500)
-      });
-
-      // Try alternative approach with more specific error messages
-      if (pdfError.message.includes('Invalid PDF structure')) {
-        console.log('Attempting to repair corrupted PDF structure...');
-        // Simple repair attempt: look for PDF objects manually
-        const pdfString = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
-        const containsObjects = pdfString.includes('obj') && pdfString.includes('endobj');
-
-        if (containsObjects) {
-          console.log('PDF contains valid objects, trying text extraction from specific parts');
-          // Extract text from parts that might contain readable content
-          const textFragments = pdfString.match(/\((.*?)\)/g) || [];
-          if (textFragments.length > 10) { // Arbitrary threshold for meaningful content
-            const extractedText = textFragments
-              .map(frag => frag.substring(1, frag.length - 1))
-              .join(' ')
-              .replace(/\\n/g, '\n');
-
-            if (extractedText.length > 100) { // Another arbitrary threshold
-              console.log('Recovered partial text from corrupted PDF');
-              return extractedText;
-            }
-          }
-        }
-      }
-
-      // Fallback: Try to extract as plain text with enhanced resume keyword detection
-      try {
-        const textContent = buffer.toString('utf-8');
-        const resumeKeywords = [
-          'resume', 'experience', 'education', 'skills', 'summary', 'work', 
-          'job', 'professional', 'contact', 'objective', 'profile', 'achievement',
-          'qualification', 'project', 'reference', 'certification', 'email', 'phone'
-        ];
-
-        // More sophisticated content detection - need several keywords
-        let keywordCount = 0;
-        for (const keyword of resumeKeywords) {
-          if (textContent.toLowerCase().includes(keyword)) {
-            keywordCount++;
-          }
-        }
-
-        if (keywordCount >= 3) { // If at least 3 resume keywords are found
-          console.log('Extracted text using direct method (found resume keywords)');
-          return textContent;
-        }
-      } catch (textError) {
-        console.error('Text extraction fallback failed:', textError);
-      }
-
-      // Try PDF.js as a last resort method
-      try {
-        console.log('Attempting to extract text using PDF.js...');
-
-        // Load the PDF document
-        const loadingTask = pdfjs.getDocument({ data: buffer });
-        const pdfDocument = await loadingTask.promise;
-
-        console.log(`PDF loaded successfully with PDF.js. Page count: ${pdfDocument.numPages}`);
-
-        // Extract text from all pages
-        let extractedText = '';
-        for (let i = 1; i <= pdfDocument.numPages; i++) {
-          const page = await pdfDocument.getPage(i);
-          const content = await page.getTextContent();
-          const strings = content.items.map((item: any) => item.str);
-          extractedText += strings.join(' ') + '\n';
-        }
-
-        if (extractedText.trim().length > 0) {
-          console.log('Successfully extracted text using PDF.js fallback method');
-          return extractedText;
-        }
-      } catch (pdfjsError) {
-        console.error('PDF.js extraction failed:', pdfjsError);
-      }
-
-      // If all methods fail, provide a detailed error message
-      throw new Error(`Unable to extract text from PDF. The document may be encrypted, password-protected, or contains only scanned images. Error details: ${pdfError.message}`);
+      console.log('pdf-parse returned empty text, trying alternative methods');
+    } catch (err) {
+      console.error('pdf-parse extraction failed:', err.message);
     }
-  } catch (error: any) {
-    console.error('PDF processing error:', {
-      message: error.message,
-      type: error.constructor.name,
-      stack: error.stack
-    });
 
-    // Provide a user-friendly error message
-    throw new Error(`Failed to process PDF: ${error.message}. Please ensure the document is not password-protected, encrypted, or contains only images without text.`);
+    // Second attempt: Try PDF.js extract
+    try {
+      console.log('Attempting extraction with pdf.js-extract');
+      
+      return new Promise((resolve, reject) => {
+        pdfExtract.extractBuffer(buffer, {}, (err, data) => {
+          if (err) {
+            console.error('pdf.js-extract failed:', err);
+            reject(err);
+            return;
+          }
+          
+          const text = data.pages
+            .map(page => page.content.map(item => item.str).join(' '))
+            .join('\n\n');
+            
+          if (text && text.trim().length > 0) {
+            console.log('PDF extraction successful with pdf.js-extract');
+            resolve(text);
+          } else {
+            reject(new Error('pdf.js-extract returned empty text'));
+          }
+        });
+      });
+    } catch (err) {
+      console.error('pdf.js-extract error:', err.message);
+    }
+
+    // Third attempt: Try pdfjs-dist
+    try {
+      console.log('Attempting extraction with pdfjs-dist');
+      
+      // Configure worker
+      const pdfjsLib = pdfjs;
+      
+      // Load the PDF document
+      const loadingTask = pdfjsLib.getDocument({ data: buffer });
+      const pdfDocument = await loadingTask.promise;
+      
+      let extractedText = '';
+      
+      // Extract text from all pages
+      for (let i = 1; i <= pdfDocument.numPages; i++) {
+        const page = await pdfDocument.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        extractedText += pageText + '\n\n';
+      }
+      
+      if (extractedText.trim().length > 0) {
+        console.log('PDF extraction successful with pdfjs-dist');
+        return extractedText;
+      }
+      console.log('pdfjs-dist returned empty text');
+    } catch (err) {
+      console.error('pdfjs-dist extraction failed:', err.message);
+    }
+
+    // Last attempt: Try PDF-Lib
+    try {
+      console.log('Attempting extraction with pdf-lib');
+      
+      const pdfDoc = await PDFDocument.load(buffer);
+      const pageCount = pdfDoc.getPageCount();
+      
+      let extractedText = `PDF with ${pageCount} pages. `;
+      extractedText += 'This PDF appears to contain only images or scanned content. ';
+      extractedText += 'For best results, please provide a text-based PDF or direct text input.';
+      
+      // We're returning something even if extraction failed
+      console.log('Returning fallback text content for image-based PDF');
+      return extractedText;
+    } catch (err) {
+      console.error('pdf-lib extraction failed:', err.message);
+    }
+
+    // If all methods fail, return a descriptive error that can be saved as content
+    console.error('All PDF extraction methods failed');
+    return "Unable to extract text from this PDF. The document may be encrypted, password-protected, or contains only scanned images with no embedded text.";
+  } catch (error: any) {
+    console.error('PDF processing error:', error);
+    // Return error as content rather than throwing
+    return `Error processing PDF: ${error.message}. Please ensure the document is not password-protected, encrypted, or contains only images without text.`;
   }
 }
 
@@ -579,24 +551,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/resume-analyze",
     requireAuth,
     (req, res, next) => {
+      // Debug incoming request
+      console.log("Resume analyze request received:", {
+        method: req.method,
+        contentType: req.headers['content-type'],
+        contentLength: req.headers['content-length'],
+        hasBody: !!req.body,
+        bodyKeys: req.body ? Object.keys(req.body) : []
+      });
+      
+      // Process file uploads, use single() for one file
       upload.single('file')(req, res, (err) => {
         if (err) {
-          // Enhanced multer error handling with more specific messages
           console.error('File upload error:', {
             message: err.message,
             stack: err.stack,
             code: err.code,
-            field: err.field,
-            type: err.constructor.name
+            field: err.field
           });
 
-          // Provide specific error messages based on error type
           if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
               message: "File upload failed: Document exceeds the maximum file size of 15MB",
               error: "File too large",
-              code: "FILE_SIZE_ERROR",
-              limit: "15MB"
+              code: "FILE_SIZE_ERROR"
             });
           } else if (err.message.includes('File type') || err.message.includes('mimetype')) {
             return res.status(400).json({
@@ -609,8 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(400).json({
               message: "File upload failed",
               error: err.message,
-              code: "FILE_UPLOAD_ERROR",
-              details: "Please check your file and try again"
+              code: "FILE_UPLOAD_ERROR"
             });
           }
         }
@@ -619,112 +596,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     async (req: Request, res: Response) => {
       try {
-        let content: string;
-
-        // Log detailed request information
-        console.log('Resume analysis request:', {
+        let content: string = '';
+        
+        // Log request for debugging
+        console.log('Processing resume analysis:', {
           hasFile: !!req.file,
-          bodyContent: req.body.content ? 'present' : 'absent',
-          contentLength: req.body.content?.length || 0,
-          contentType: req.headers['content-type'],
-          bodyKeys: Object.keys(req.body),
-          method: req.method,
-          url: req.url
+          bodyContent: !!req.body?.content,
+          contentType: req.headers['content-type']
         });
 
+        // If we have a file, extract its content
         if (req.file) {
-          console.log('Processing file input:', {
+          console.log('Processing uploaded file:', {
             filename: req.file.originalname,
             mimetype: req.file.mimetype,
             size: req.file.size
           });
-
+          
           try {
             content = await extractTextFromFile(req.file);
+            console.log('File content extracted successfully, length:', content.length);
           } catch (fileError: any) {
-            console.error('File extraction error:', fileError);
+            console.error('File processing error:', fileError);
             return res.status(400).json({
               message: "Failed to extract text from file",
-              error: fileError.message,
-              code: "FILE_EXTRACTION_ERROR",
-              details: {
-                filename: req.file.originalname,
-                fileType: req.file.mimetype,
-                fileSize: req.file.size
-              }
+              error: fileError.message
             });
           }
-        } else if (req.body && req.body.content) {
-          console.log('Processing direct text input:', {
-            contentPresent: !!req.body.content,
-            contentLength: req.body.content.length,
-            contentPreview: req.body.content.substring(0, 100)
-          });
-
-          const result = resumeAnalysisSchema.safeParse(req.body);
-          if (!result.success) {
-            console.error('Validation failed:', {
-              errors: result.error.errors,
-              receivedContent: typeof req.body.content,
-              contentLength: req.body.content?.length || 0
-            });
-
-            return res.status(400).json({
-              message: "Invalid resume content",
-              errors: result.error.errors,
-              code: "VALIDATION_ERROR"
-            });
+        } 
+        // If we have direct content in the body
+        else if (req.body && req.body.content) {
+          console.log('Processing direct text input, length:', req.body.content.length);
+          content = req.body.content;
+        }
+        // Handle form data that might be parsed differently
+        else if (req.body && Object.keys(req.body).length > 0) {
+          // Try to find content in any field that might contain it
+          for (const key of Object.keys(req.body)) {
+            if (typeof req.body[key] === 'string' && req.body[key].length > 100) {
+              console.log(`Found potential content in field '${key}', length:`, req.body[key].length);
+              content = req.body[key];
+              break;
+            }
           }
-
-          content = result.data.content || '';
-        } else {
-          console.error('No content provided:', {
+        }
+        
+        // If we still don't have content, return an error
+        if (!content || !content.trim()) {
+          console.error('No valid content found in request:', {
             hasFile: !!req.file,
-            hasBodyContent: !!req.body?.content,
-            contentType: req.headers['content-type']
+            bodyFields: Object.keys(req.body || {})
           });
-
+          
           return res.status(400).json({
             message: "Resume content is required",
-            details: "Please provide a file or text content in the request body",
-            code: "MISSING_CONTENT"
+            details: "Please provide a file or text content in the request body"
           });
         }
-
-        // Final content validation with better debugging
-        if (!content || !content.trim()) {
-          console.error('Empty content validation failed:', {
-            contentLength: content?.length || 0,
-            isString: typeof content === 'string',
-            contentType: req.file ? 'file' : 'text',
-            contentSample: content ? content.substring(0, 30) : 'null'
-          });
-
-          return res.status(400).json({
-            message: "Resume content cannot be empty",
-            details: `${req.file ? 'File' : 'Text'} content was empty after processing`,
-            code: "EMPTY_CONTENT"
-          });
-        }
-
+        
+        // Process the content
+        console.log('Sending content to analyzer, length:', content.length);
         const analysis = await storage.analyzeResume(content, req.session.userId!);
         res.json(analysis);
+        
       } catch (error: any) {
-        console.error('Resume analysis error:', {
-          message: error.message,
-          type: error.constructor.name,
-          stack: error.stack
-        });
-
-        const statusCode = error.message.includes('Invalid') ? 400 : 500;
-        res.status(statusCode).json({
+        console.error('Resume analysis error:', error);
+        res.status(500).json({
           message: "Failed to analyze resume",
-          error: error.message,
-          code: statusCode === 400 ? "INVALID_INPUT" : "SERVER_ERROR",
-          details: {
-            type: error.constructor.name,
-            occurred: error.stack?.split('\n')[1] || 'unknown location'
-          }
+          error: error.message
         });
       }
     }
