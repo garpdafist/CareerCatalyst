@@ -6,63 +6,37 @@
 
 @layer base {
   :root {
-    /* Core backgrounds */
+    /* Base colors */
     --background: #121212;
     --foreground: #CCCCCC;
-
-    /* Card & component backgrounds */
     --card: #1E1E1E;
     --card-foreground: #F0F0F0;
-
-    /* Popover styles */
-    --popover: #121212;
-    --popover-foreground: #F0F0F0;
-
-    /* Primary accent color - Neon Blue */
     --primary: #6A84FF;
     --primary-foreground: #FFFFFF;
-
-    /* Secondary button & highlight colors */
     --secondary: #2A2A2A;
     --secondary-foreground: #6A84FF;
-
-    /* Muted elements */
-    --muted: #1E1E1E;
-    --muted-foreground: #A5A5A5;
-
-    /* Accent variations */
     --accent: #00E0B3;
     --accent-foreground: #FFFFFF;
-
-    /* System states */
-    --destructive: #FF5252;
-    --destructive-foreground: #F0F0F0;
-
-    /* Form elements */
-    --border: #1E1E1E;
+    --muted: #1E1E1E;
+    --muted-foreground: #A5A5A5;
+    --border: #2A2A2A;
     --input: #1E1E1E;
     --ring: #6A84FF;
-
-    --radius: 0.5rem;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  html {
-    font-family: 'Inter', system-ui, sans-serif;
   }
 
   body {
-    @apply font-sans antialiased selection:bg-primary/25;
+    @apply font-sans antialiased;
     background: linear-gradient(to bottom, #121212, #0F0F0F);
     min-height: 100vh;
   }
 
+  ::selection {
+    background-color: rgba(106, 132, 255, 0.25);
+  }
+
   /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight text-[#F0F0F0];
+    @apply font-semibold tracking-tight text-card-foreground;
   }
 
   h1 {
@@ -78,64 +52,41 @@
   }
 
   p {
-    @apply leading-7 text-[#CCCCCC];
+    @apply leading-7 text-foreground;
   }
 
   /* Links */
   a {
-    @apply text-[#6A84FF] transition-colors duration-300 hover:text-[#8198ff] hover:underline;
-  }
-
-  /* Modern scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-[#121212];
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-[#1E1E1E] rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-[#2A2A2A];
+    @apply text-primary transition-colors duration-300 hover:text-primary/80 hover:underline;
   }
 }
 
 @layer components {
-  /* Card styles */
   .card {
-    @apply rounded-lg border border-[#2A2A2A] bg-[#1E1E1E]/95 text-[#F0F0F0] shadow-custom-card backdrop-blur-sm transition-all duration-300 hover:shadow-custom-hover hover:border-[#6A84FF]/20;
+    @apply rounded-lg border border-border bg-card/95 text-card-foreground 
+    shadow-md backdrop-blur-sm transition-all duration-300 
+    hover:border-primary/20 hover:shadow-lg;
   }
 
-  /* Glass effect */
-  .glass {
-    @apply bg-[#121212]/95 backdrop-blur supports-[backdrop-filter]:bg-[#121212]/60;
-  }
-
-  /* Button styles */
   .btn-primary {
-    @apply bg-[#6A84FF] text-white shadow-custom transition-all duration-300 hover:bg-[#8198ff] hover:shadow-custom-hover hover:scale-[1.02];
+    @apply bg-primary text-primary-foreground shadow-md transition-all duration-300 
+    hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02];
   }
 
   .btn-secondary {
-    @apply bg-[#2A2A2A] text-[#6A84FF] border-2 border-[#6A84FF]/20 hover:border-[#6A84FF]/40 hover:bg-[#2A2A2A]/80 transition-all duration-300;
+    @apply bg-secondary text-secondary-foreground border-2 border-primary/20 
+    transition-all duration-300 hover:border-primary/40 hover:bg-secondary/80;
   }
 
-  /* Interactive elements */
   .interactive-scale {
     @apply transition-transform duration-300 hover:scale-[1.02];
   }
 
   .interactive-shadow {
-    @apply transition-shadow duration-300 hover:shadow-custom-hover;
+    @apply transition-shadow duration-300 hover:shadow-lg;
   }
 
-  /* Gradient text */
   .gradient-text {
-    @apply bg-gradient-to-r from-[#6A84FF] to-[#00E0B3] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 }

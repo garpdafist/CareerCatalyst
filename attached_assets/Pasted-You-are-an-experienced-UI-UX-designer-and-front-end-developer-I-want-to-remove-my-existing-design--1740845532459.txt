@@ -1,0 +1,62 @@
+You are an experienced UI/UX designer and front-end developer. 
+I want to remove my existing design on https://career-catalyst-abhay46.replit.app/ across all pages and replace it with a fresh layout and style inspired by the “SmartIrrigation” landing page. 
+Note: We are NOT building an irrigation product—this design is just a reference for visuals. 
+Our actual product is a resume analyzer and career tool. 
+Here’s what I need:
+
+------------------------------------
+1. Remove All Previous Design
+------------------------------------
+- Delete or comment out any old CSS, color palettes, or layout structures from every page (home, resume analyzer, resume editor, LinkedIn optimizer, etc.).
+- Reset each page so we can build from scratch.
+
+------------------------------------
+2. Incorporate the New Design
+------------------------------------
+I want a style similar to the SmartIrrigation reference, but the content should focus on resume analysis and career tools:
+
+A) **Layout & Sections** (across pages):
+   - **Hero Section** (Home Page):
+     - Large image or illustration (relevant to resumes/careers).
+     - Bold headline (e.g., “Optimize Your Resume Effortlessly”).
+     - Subtext about AI-driven improvements.
+     - Two CTAs (“Get Started,” “Learn More”).
+   - **Features / Why Choose Us**:
+     - A grid or card-based layout for each page that needs to display features (e.g., Resume Analyzer, Editor).
+     - Clean, minimal design with icons or small illustrations.
+   - **Analytics or Metrics**:
+     - If a page shows data (e.g., user stats, success rates), use a minimal, modern design with small charts or cards.
+   - **CTA & Footer**:
+     - Consistent final call-to-action across pages.
+     - Footer with brand name, privacy policy, terms of service, contact info.
+
+B) **Color Palette & Typography**:
+   - Light, clean color scheme (white/off-white background, a gentle accent color for headings/buttons).
+   - Replace any green or “garden” references with a color more suitable for a tech/career brand (e.g., teal, soft blue).
+   - Headings: modern sans-serif (e.g., Poppins, Inter), with bolder weights for emphasis.
+   - Body text: 14–16px, normal weight, comfortable line spacing.
+
+C) **Component Styling**:
+   - **Cards**: minimal boxes with subtle borders or shadows, icons at the top if needed.
+   - **Buttons**:
+     - Primary button with accent color, white text.
+     - Secondary button with outline or lighter background.
+   - **Consistent Spacing** (16–24px margins/padding).
+   - Subtle hover effects (scale, shadow) for buttons and cards.
+
+D) **Responsive & Micro-Interactions**:
+   - Ensure each page is fully responsive.
+   - Use slight transitions (0.2s) for hovers, focus states, and any interactive elements.
+
+-----------------------------------
+3. Implementation & Testing
+-----------------------------------
+1. **Front End**:
+   - Apply this new design system to **all** pages (Home, Resume Analyzer, Editor, LinkedIn Profile, etc.).
+   - Remove any leftover dark theme or conflicting CSS from the old design.
+2. **Show Me the Updated Pages**:
+   - Provide a working link on Replit where I can see the consistent new design across every page.
+   - Confirm the hero, features, analytics, CTA, and footer all match the new aesthetic.
+   - Make sure the color palette, typography, and component styling remain uniform site-wide.
+
+Remember, we’re keeping the content about **resume analysis** and career improvement—NOT irrigation. The SmartIrrigation layout and styling are purely for visual inspiration.
