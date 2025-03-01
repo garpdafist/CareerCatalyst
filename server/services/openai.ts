@@ -2,7 +2,6 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { resumeContentSchema, scoringCriteriaSchema, type ResumeContent, type ScoringCriteria } from "@shared/schema";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const resumeAnalysisResponseSchema = z.object({
@@ -36,6 +35,10 @@ async function waitForRateLimit() {
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
   try {
     await waitForRateLimit();
+
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not configured');
+    }
 
     const systemPrompt = `You are an expert resume analyzer. Analyze resumes and provide detailed feedback with specific scoring criteria. ALWAYS return a complete JSON response with ALL required fields.
 
@@ -93,6 +96,8 @@ Required fields and their format:
 
 ${content}`;
 
+    console.log('Making OpenAI request with content length:', content.length);
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -100,7 +105,7 @@ ${content}`;
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7 // Add some variability but keep it professional
+      temperature: 0.7
     });
 
     const responseContent = response.choices[0].message.content;
@@ -129,7 +134,8 @@ ${content}`;
     }
 
     try {
-      return resumeAnalysisResponseSchema.parse(parsedResponse);
+      const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
+      return validatedResponse;
     } catch (validationError: any) {
       console.error('Schema validation error:', {
         error: validationError.errors,
@@ -146,69 +152,13 @@ ${content}`;
       details: error.response?.data
     });
 
-    // Only use mock data if explicitly in development/test
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-      console.log('Development mode: Using mock data');
-      return mockResumeAnalysis;
+    // Enhance error messages for better user feedback
+    if (error.status === 429) {
+      throw new Error('Service is temporarily busy. Please try again in a few moments.');
+    } else if (error.status === 401 || error.status === 403) {
+      throw new Error('Authentication failed. Please try again or contact support if the issue persists.');
+    } else {
+      throw new Error(`Failed to analyze resume: ${error.message}`);
     }
-
-    throw new Error(`Failed to analyze resume: ${error.message}`);
   }
 }
-
-// Mock data for development/testing only
-const mockResumeAnalysis: ResumeAnalysisResponse = {
-  score: 75,
-  scoringCriteria: {
-    keywordUsage: {
-      score: 15,
-      maxScore: 20,
-      feedback: "Mock keyword analysis",
-      keywords: ["mock", "keywords"]
-    },
-    metricsAndAchievements: {
-      score: 20,
-      maxScore: 30,
-      feedback: "Mock metrics analysis",
-      highlights: ["mock achievement"]
-    },
-    structureAndReadability: {
-      score: 20,
-      maxScore: 25,
-      feedback: "Mock structure analysis"
-    },
-    overallImpression: {
-      score: 20,
-      maxScore: 25,
-      feedback: "Mock overall impression"
-    }
-  },
-  structuredContent: {
-    professionalSummary: "[DEV MODE] Professional summary",
-    workExperience: [{
-      company: "Dev Company",
-      position: "Test Position",
-      duration: "2020-Present",
-      achievements: ["Mock achievement"]
-    }],
-    technicalSkills: ["Dev Skill 1", "Dev Skill 2"],
-    education: [{
-      institution: "Dev University",
-      degree: "Test Degree",
-      year: "2020"
-    }],
-    certifications: ["Dev Certification"],
-    projects: [{
-      name: "Test Project",
-      description: "Development mode description",
-      technologies: ["Test Tech"]
-    }]
-  },
-  feedback: [
-    "Development mode: Mock feedback",
-    "Please ensure OpenAI API is properly configured in production"
-  ],
-  skills: ["Dev Skill 1", "Dev Skill 2"],
-  improvements: ["Development mode: Mock improvement suggestion"],
-  keywords: ["dev", "test"]
-};

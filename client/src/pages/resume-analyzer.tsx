@@ -12,31 +12,59 @@ import { Brain, FileText, ListChecks, Tags, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
+import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string } | FormData) => {
+      setAnalysisProgress(0);
+
       if (!data) {
         throw new Error("Resume content is required");
       }
 
-      // Don't set Content-Type for FormData, browser will set it automatically with boundary
-      const headers: Record<string, string> = {
-        Authorization: "Bearer mock-token-for-testing"
-      };
+      const progressInterval = setInterval(() => {
+        setAnalysisProgress(prev => Math.min(prev + 5, 90));
+      }, 500);
 
-      const res = await apiRequest("POST", "/api/resume-analyze", data, { headers });
-      return res.json() as Promise<ResumeAnalysis>;
+      try {
+        const headers: Record<string, string> = {
+          Authorization: "Bearer mock-token-for-testing"
+        };
+
+        const res = await apiRequest("POST", "/api/resume-analyze", data, { headers });
+        clearInterval(progressInterval);
+        setAnalysisProgress(100);
+        return res.json() as Promise<ResumeAnalysis>;
+      } catch (error) {
+        clearInterval(progressInterval);
+        throw error;
+      }
     },
     onError: (error: Error) => {
+      setAnalysisProgress(0);
       toast({
-        title: "Error",
-        description: error.message || "Failed to analyze resume. Please try again.",
+        title: "Analysis Failed",
+        description: "There was an error analyzing your resume. Please try again.",
         variant: "destructive",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setRetryCount(prev => prev + 1);
+              handleSubmit();
+            }}
+          >
+            Retry
+          </Button>
+        ),
       });
     },
   });
@@ -47,7 +75,6 @@ export default function ResumeAnalyzer() {
       return;
     }
 
-    // Detailed file logging
     console.log("File selected:", {
       name: file.name,
       type: file.type,
@@ -56,17 +83,14 @@ export default function ResumeAnalyzer() {
     });
 
     setFile(file);
-    // Reset content when file is selected
     setContent("");
   };
 
   const handleSubmit = () => {
     if (file) {
-      // Create FormData and append the file
       const formData = new FormData();
       formData.append('file', file);
 
-      // Log FormData details
       console.log("Submitting FormData:", {
         fileName: file.name,
         fileType: file.type,
@@ -90,7 +114,6 @@ export default function ResumeAnalyzer() {
   return (
     <div className="min-h-screen bg-background px-4 py-16">
       <div className="mx-auto max-w-5xl">
-        {/* Header */}
         <div className="text-center mb-12">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -106,12 +129,28 @@ export default function ResumeAnalyzer() {
           </motion.div>
         </div>
 
-        {/* Main Content */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-6"
         >
+          {analyzeMutation.isPending && (
+            <Card className="border-border/20">
+              <CardContent className="pt-6">
+                <AnimatedProgressPath 
+                  progress={analysisProgress}
+                  status={
+                    analysisProgress < 30 ? "Analyzing resume content..." :
+                    analysisProgress < 60 ? "Processing skills and experience..." :
+                    analysisProgress < 90 ? "Generating recommendations..." :
+                    "Finalizing analysis..."
+                  }
+                />
+              </CardContent>
+            </Card>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <Card className="border-border/20">
               <CardContent className="pt-6">
