@@ -6,24 +6,24 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
     --primary: 142 76% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 142 71% 36%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
     --accent: 142 76% 45%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 142 76% 45%;
     --radius: 0.75rem;
   }
@@ -65,23 +65,23 @@
 
 @layer components {
   .card {
-    @apply rounded-lg border bg-card p-6 shadow-sm transition-all duration-300
-           hover:shadow-md hover:border-primary/20;
+    @apply rounded-lg border-0 bg-white text-card-foreground p-6 shadow-sm transition-all duration-300
+           hover:shadow-md;
   }
 
   .btn-primary {
     @apply bg-primary text-primary-foreground shadow-sm transition-all duration-300 
-           hover:bg-primary/90 hover:shadow-md;
+           hover:bg-primary/90 hover:shadow-md rounded-full;
   }
 
   .btn-secondary {
-    @apply bg-white text-primary border-2 border-primary/20 
-           transition-all duration-300 hover:border-primary/40 hover:bg-primary/5;
+    @apply bg-secondary text-white border-2 border-border/20 rounded-full
+           transition-all duration-300 hover:bg-secondary/80;
   }
 
   .feature-card {
-    @apply rounded-xl border bg-white p-6 shadow-sm transition-all duration-300
-           hover:shadow-md hover:border-primary/20;
+    @apply rounded-xl bg-white p-6 shadow-sm transition-all duration-300
+           hover:shadow-md;
   }
 
   .stat-card {
@@ -90,7 +90,7 @@
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent;
   }
 
   .section-padding {
