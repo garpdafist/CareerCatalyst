@@ -1,0 +1,57 @@
+You are an experienced UI/UX designer and front-end developer. 
+I want to refine my current “irrigation-inspired” design to look more natural, modern, and consistent with the references I shared (the mobile UI screenshots and the irrigation dashboard cards). 
+Here’s what I need:
+
+-------------------------------------------
+1. Unify the Color Palette & Visual Style
+-------------------------------------------
+- Currently, the site uses a green accent on a white/gray background, but it feels disjointed. 
+- Please pick a cohesive set of greens (or complementary colors) that match the “natural” vibe (e.g., a medium green for accents, a lighter green for highlights, and neutral grays or off-white for backgrounds).
+- Reference the mobile UI screenshots for bold color usage and the irrigation card examples for how to present data in small, rounded cards with friendly, modern typography.
+
+-------------------------------------------
+2. Improve Buttons, Sections & Fonts
+-------------------------------------------
+A) **Buttons**:
+   - Adopt a consistent shape (slightly rounded corners) and a single accent color for primary buttons. 
+   - Use hover/active states with subtle color shifts or shadows.
+   - Possibly include an icon in the button if it adds clarity.
+
+B) **Sections**:
+   - Give each main section (hero, features, analytics, CTA) enough vertical spacing. 
+   - Use background tints or soft dividing lines to separate sections. 
+   - For feature cards (e.g., “Resume Analyzer,” “Resume Editor”), consider a clean card style with a subtle drop shadow or border, referencing the irrigation card style.
+
+C) **Typography**:
+   - Choose a friendly, modern sans-serif (e.g., “Inter,” “Poppins,” or “Nunito”). 
+   - Headings should be bold and larger, with consistent sizes across pages. 
+   - Body text in a readable size (14–16px) with comfortable line spacing.
+
+D) **Icons**:
+   - For each feature or section, use simple, minimal icons or small illustrations (like the references). 
+   - Keep icon style consistent (line icons vs. filled icons, same stroke width, etc.).
+
+-------------------------------------------
+3. Borrow Ideas from the Mobile UI & Irrigation References
+-------------------------------------------
+- **Mobile UI**: Notice the bold color blocks, simple shapes, and clear typography. 
+  - Integrate that sense of fun color usage for your feature cards or highlight areas. 
+- **Irrigation Cards**: They have small stats or toggles (e.g., “Monthly Adjustment 30%,” “Wind Speed 9 km/h”). 
+  - For your site, consider small “AI Score” or “Resume Quality” cards with bright backgrounds or icons. 
+  - Keep corners slightly rounded and use consistent spacing.
+
+-------------------------------------------
+4. Implementation & Testing
+-------------------------------------------
+1. **Front End**:
+   - Update the CSS/SCSS or Tailwind config to incorporate a new color scheme (greens, neutrals) and consistent typography. 
+   - Redesign the home page (hero + features), plus any other pages (Resume Analyzer, Editor, etc.) to match the references’ style: card-based sections, bright accent elements, and minimal clutter.
+2. **Review**:
+   - Provide a live preview link. 
+   - Ensure each section (hero, features, analytics/score cards, CTA) flows naturally, with consistent margins, fonts, and icons.
+   - If needed, add subtle animations or transitions for hover states on buttons/cards.
+3. **Ensure Cohesion**:
+   - The entire site should look like one cohesive product. 
+   - Same accent color usage, same font sizes for headings, same card style for feature boxes.
+
+After these changes, I want a more “natural looking, cool” design that closely follows the style of the references—friendly, modern, and visually consistent across all pages.
