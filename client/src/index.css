@@ -6,32 +6,36 @@
 
 @layer base {
   :root {
-    /* Base colors */
-    --background: #121212;
-    --foreground: #CCCCCC;
-    --card: #1E1E1E;
-    --card-foreground: #F0F0F0;
-    --primary: #6A84FF;
-    --primary-foreground: #FFFFFF;
-    --secondary: #2A2A2A;
-    --secondary-foreground: #6A84FF;
-    --accent: #00E0B3;
-    --accent-foreground: #FFFFFF;
-    --muted: #1E1E1E;
-    --muted-foreground: #A5A5A5;
-    --border: #2A2A2A;
-    --input: #1E1E1E;
-    --ring: #6A84FF;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 80%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 94%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 94%;
+    --primary: 228 100% 70%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 228 100% 70%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 166 100% 44%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 94%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 228 100% 70%;
+    --radius: 0.5rem;
   }
 
   body {
     @apply font-sans antialiased;
-    background: linear-gradient(to bottom, #121212, #0F0F0F);
+    background: linear-gradient(to bottom, hsl(var(--background)), hsl(0 0% 6%));
     min-height: 100vh;
   }
 
   ::selection {
-    background-color: rgba(106, 132, 255, 0.25);
+    @apply bg-primary/25;
   }
 
   /* Typography */
@@ -57,25 +61,25 @@
 
   /* Links */
   a {
-    @apply text-primary transition-colors duration-300 hover:text-primary/80 hover:underline;
+    @apply text-primary transition-colors hover:text-primary/80;
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-lg border border-border bg-card/95 text-card-foreground 
-    shadow-md backdrop-blur-sm transition-all duration-300 
-    hover:border-primary/20 hover:shadow-lg;
+    @apply rounded-lg border border-border/20 bg-card/95 text-card-foreground 
+           shadow-md backdrop-blur-sm transition-all duration-300 
+           hover:border-primary/20 hover:shadow-lg;
   }
 
   .btn-primary {
     @apply bg-primary text-primary-foreground shadow-md transition-all duration-300 
-    hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02];
+           hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02];
   }
 
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground border-2 border-primary/20 
-    transition-all duration-300 hover:border-primary/40 hover:bg-secondary/80;
+           transition-all duration-300 hover:border-primary/40 hover:bg-secondary/80;
   }
 
   .interactive-scale {
