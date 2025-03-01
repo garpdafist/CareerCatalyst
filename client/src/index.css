@@ -6,16 +6,15 @@
 
 @layer base {
   body {
-    @apply bg-[#FFFFFF] text-[#1C170D] font-sans antialiased;
-  }
-
-  ::selection {
-    @apply bg-[#009963]/20;
+    @apply font-sans antialiased;
+    background-color: #FFFFFF;
+    color: #1C170D;
   }
 
   /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight text-[#1C170D];
+    @apply font-semibold tracking-tight;
+    color: #1C170D;
   }
 
   h1 {
@@ -31,12 +30,8 @@
   }
 
   p {
-    @apply text-[#1C170D] leading-7;
-  }
-
-  /* Links */
-  a {
-    @apply text-[#009963] transition-colors hover:text-[#009963]/80;
+    color: #1C170D;
+    @apply leading-7;
   }
 }
 
@@ -46,43 +41,47 @@
   }
 
   .card {
-    @apply bg-[#F5F0E5] rounded-xl p-6 shadow-sm transition-all duration-300
-           hover:shadow-md;
+    background-color: #F5F0E5;
+    @apply rounded-xl p-6 shadow-sm transition-all duration-300;
   }
 
   .feature-card {
-    @apply bg-[#F5F0E5] rounded-xl p-6 shadow-sm transition-all duration-300
-           hover:shadow-md;
+    background-color: #F5F0E5;
+    @apply rounded-xl p-6 shadow-sm transition-all duration-300;
   }
 
   .btn-primary {
-    @apply bg-[#009963] text-white rounded-full px-6 py-2.5 font-medium
-           shadow-sm transition-all duration-300 
-           hover:bg-[#009963]/90 hover:shadow-md;
+    background-color: #009963;
+    color: #FFFFFF;
+    @apply rounded-full px-6 py-2.5 font-medium shadow-sm transition-all duration-300;
+  }
+  .btn-primary:hover {
+    @apply opacity-90 shadow-md;
   }
 
   .btn-secondary {
-    @apply bg-white text-[#009963] rounded-full px-6 py-2.5 font-medium
-           border-2 border-[#009963]/20 transition-all duration-300 
-           hover:border-[#009963]/40 hover:bg-[#009963]/5;
+    background-color: #FFFFFF;
+    color: #009963;
+    border: 2px solid rgba(0, 153, 99, 0.2);
+    @apply rounded-full px-6 py-2.5 font-medium transition-all duration-300;
+  }
+  .btn-secondary:hover {
+    background-color: rgba(0, 153, 99, 0.05);
+    border-color: rgba(0, 153, 99, 0.4);
   }
 
   .stat-card {
-    @apply bg-[#E8DECF] rounded-xl p-4 flex flex-col items-center justify-center
-           text-[#1C170D];
+    background-color: #E8DECF;
+    color: #1C170D;
+    @apply rounded-xl p-4 flex flex-col items-center justify-center;
   }
 
   .text-muted {
-    @apply text-[#757575];
+    color: #757575;
   }
 
   .text-accent {
-    @apply text-[#A1824A];
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-[#009963] via-[#009963] to-[#A1824A] 
-           bg-clip-text text-transparent;
+    color: #A1824A;
   }
 
   .section {
