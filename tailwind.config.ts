@@ -40,6 +40,9 @@ export default {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
       },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -47,6 +50,7 @@ export default {
       },
       boxShadow: {
         'custom': '0 4px 10px rgba(0, 0, 0, 0.3)',
+        'custom-lg': '0 8px 20px rgba(0, 0, 0, 0.4)',
       },
       keyframes: {
         "accordion-down": {

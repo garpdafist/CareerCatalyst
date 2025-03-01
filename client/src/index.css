@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,8 +41,38 @@
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
   body {
     @apply font-sans bg-background text-foreground antialiased selection:bg-primary/25;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  p {
+    @apply leading-7;
+  }
+
+  /* Links */
+  a {
+    @apply text-primary transition-colors hover:text-primary/80;
   }
 
   /* Modern scrollbar styling */
@@ -59,5 +91,30 @@
 
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted/80;
+  }
+}
+
+@layer components {
+  /* Card styles */
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-custom transition-all duration-200 hover:shadow-lg hover:border-primary/20;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02];
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-primary border-2 border-primary/20 hover:border-primary/40 hover:bg-secondary/80 transition-all duration-200;
+  }
+
+  /* Interactive elements */
+  .interactive-scale {
+    @apply transition-transform duration-200 hover:scale-[1.02];
+  }
+
+  .interactive-shadow {
+    @apply transition-shadow duration-200 hover:shadow-lg;
   }
 }
