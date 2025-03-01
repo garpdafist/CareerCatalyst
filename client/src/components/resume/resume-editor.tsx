@@ -103,56 +103,88 @@ export default function ResumeEditor() {
       const parsedAnalysis = JSON.parse(savedAnalysis);
       setAnalysis(parsedAnalysis);
 
-      // Update sections with analysis feedback
+      // Update sections with structured content from analysis
       setSections(sections.map(section => {
-        const sectionSuggestions = [];
-
-        // Add section-specific suggestions from analysis
-        if (parsedAnalysis.improvements) {
-          sectionSuggestions.push(
-            ...parsedAnalysis.improvements.filter(imp => 
-              imp.toLowerCase().includes(section.id.toLowerCase())
-            )
-          );
-        }
-
-        // Add keywords relevant to this section
-        const relevantKeywords = parsedAnalysis.keywords?.filter(keyword =>
-          keyword.toLowerCase().includes(section.id.toLowerCase())
-        );
+        const structuredContent = parsedAnalysis.structuredContent;
 
         switch (section.id) {
-          case "skills":
-            return {
-              ...section,
-              content: parsedAnalysis.skills?.join(", ") || "",
-              suggestions: [
-                ...section.suggestions,
-                ...sectionSuggestions,
-                "Match skills with job requirements",
-                "Include both technical and soft skills"
-              ],
-              keywords: parsedAnalysis.skills,
-              isCollapsed: false
-            };
           case "summary":
             return {
               ...section,
+              content: structuredContent.professionalSummary || "",
               suggestions: [
                 ...section.suggestions,
-                ...sectionSuggestions,
+                parsedAnalysis.scoringCriteria.overallImpression.feedback,
                 "Include years of experience",
                 "Highlight key achievements"
               ],
               isCollapsed: false
             };
-          default:
+          case "experience":
+            const workExperience = structuredContent.workExperience || [];
+            const formattedExperience = workExperience.map(job => (
+              `${job.company} - ${job.position}\n` +
+              `${job.duration}\n\n` +
+              job.achievements.map(achievement => `• ${achievement}`).join('\n')
+            )).join('\n\n');
+
             return {
               ...section,
-              suggestions: [...section.suggestions, ...sectionSuggestions],
-              keywords: relevantKeywords,
+              content: formattedExperience,
+              suggestions: [
+                ...section.suggestions,
+                parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
+                ...parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights.map(h => `Consider adding: ${h}`)
+              ],
+              keywords: parsedAnalysis.scoringCriteria.metricsAndAchievements.keywords,
               isCollapsed: false
             };
+          case "skills":
+            return {
+              ...section,
+              content: structuredContent.technicalSkills.join(", ") || "",
+              suggestions: [
+                ...section.suggestions,
+                parsedAnalysis.scoringCriteria.keywordUsage.feedback,
+                "Match skills with job requirements",
+                "Include both technical and soft skills"
+              ],
+              keywords: parsedAnalysis.scoringCriteria.keywordUsage.keywords,
+              isCollapsed: false
+            };
+          case "education":
+            const education = structuredContent.education || [];
+            const formattedEducation = education.map(edu => (
+              `${edu.institution}\n` +
+              `${edu.degree} (${edu.year})`
+            )).join('\n\n');
+
+            return {
+              ...section,
+              content: formattedEducation,
+              suggestions: [
+                ...section.suggestions,
+                ...parsedAnalysis.improvements.filter(imp => 
+                  imp.toLowerCase().includes('education')
+                )
+              ],
+              isCollapsed: false
+            };
+          case "achievements":
+            const achievements = parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights || [];
+            return {
+              ...section,
+              content: achievements.map(achievement => `• ${achievement}`).join('\n'),
+              suggestions: [
+                ...section.suggestions,
+                parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
+                "Focus on quantifiable results",
+                "Highlight leadership and impact"
+              ],
+              isCollapsed: false
+            };
+          default:
+            return section;
         }
       }));
     }
@@ -231,29 +263,43 @@ export default function ResumeEditor() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-[#1C170D]">Resume Quality Score</h3>
                 <span className="text-sm font-medium text-[#1C170D]">
-                  {completionScore}% {completionScore >= 90 ? "✨" : ""}
+                  {analysis ? analysis.score : completionScore}% {analysis && analysis.score >= 90 ? "✨" : ""}
                 </span>
               </div>
-              <Progress value={completionScore} className="h-2 bg-[#E8DECF]" />
-              {completionScore < 90 && (
+              <Progress value={analysis ? analysis.score : completionScore} className="h-2 bg-[#E8DECF]" />
+              {analysis && analysis.score < 90 && (
                 <p className="text-sm text-[#757575]">
                   Pro tip: Add specific metrics (%, $, growth rates) to improve your score
                 </p>
               )}
             </div>
+            {analysis && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {Object.entries(analysis.scoringCriteria).map(([key, criteria]) => (
+                  <div key={key} className="bg-white/50 rounded-lg p-4">
+                    <h4 className="font-medium mb-2 capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">Score</span>
+                      <span className="text-sm font-medium">
+                        {criteria.score}/{criteria.maxScore}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(criteria.score / criteria.maxScore) * 100} 
+                      className="h-1 bg-[#E8DECF]" 
+                    />
+                    <p className="text-sm mt-2 text-muted-foreground">
+                      {criteria.feedback}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {analysis && (
-          <Alert className="bg-[#F5F0E5] border-[#A1824A]/20">
-            <AlertCircle className="h-4 w-4 text-[#A1824A]" />
-            <AlertDescription className="text-[#1C170D]">
-              ATS Score: {analysis.score}/100
-              <br />
-              Make the suggested improvements to increase your ATS compatibility score.
-            </AlertDescription>
-          </Alert>
-        )}
 
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="resume-sections">
