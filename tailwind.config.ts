@@ -39,7 +39,6 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        highlight: "hsl(166, 100%, 44%)", // #00E0B3 teal accent
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

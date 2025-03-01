@@ -7,41 +7,41 @@
 @layer base {
   :root {
     /* Core backgrounds */
-    --background: 0 0% 7%;  /* #121212 */
-    --foreground: 0 0% 80%; /* #CCCCCC */
+    --background: #121212;
+    --foreground: #CCCCCC;
 
     /* Card & component backgrounds */
-    --card: 0 0% 12%;      /* #1E1E1E */
-    --card-foreground: 0 0% 94%; /* #F0F0F0 */
+    --card: #1E1E1E;
+    --card-foreground: #F0F0F0;
 
     /* Popover styles */
-    --popover: 0 0% 7%;    /* #121212 */
-    --popover-foreground: 0 0% 94%; /* #F0F0F0 */
+    --popover: #121212;
+    --popover-foreground: #F0F0F0;
 
-    /* Primary accent color */
-    --primary: 228 100% 70%;  /* #6A84FF */
-    --primary-foreground: 0 0% 100%;
+    /* Primary accent color - Neon Blue */
+    --primary: #6A84FF;
+    --primary-foreground: #FFFFFF;
 
     /* Secondary button & highlight colors */
-    --secondary: 0 0% 16%;    /* #2A2A2A */
-    --secondary-foreground: 228 100% 70%; /* #6A84FF */
+    --secondary: #2A2A2A;
+    --secondary-foreground: #6A84FF;
 
     /* Muted elements */
-    --muted: 0 0% 12%;       /* #1E1E1E */
-    --muted-foreground: 0 0% 65%; /* #A5A5A5 */
+    --muted: #1E1E1E;
+    --muted-foreground: #A5A5A5;
 
     /* Accent variations */
-    --accent: 228 100% 70%;  /* #6A84FF */
-    --accent-foreground: 0 0% 100%;
+    --accent: #00E0B3;
+    --accent-foreground: #FFFFFF;
 
     /* System states */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 94%;
+    --destructive: #FF5252;
+    --destructive-foreground: #F0F0F0;
 
     /* Form elements */
-    --border: 0 0% 12%;     /* #1E1E1E */
-    --input: 0 0% 12%;      /* #1E1E1E */
-    --ring: 228 100% 70%;   /* #6A84FF */
+    --border: #1E1E1E;
+    --input: #1E1E1E;
+    --ring: #6A84FF;
 
     --radius: 0.5rem;
   }
@@ -56,7 +56,7 @@
 
   body {
     @apply font-sans antialiased selection:bg-primary/25;
-    background: linear-gradient(to bottom, hsl(0 0% 7%), hsl(0 0% 5%));
+    background: linear-gradient(to bottom, #121212, #0F0F0F);
     min-height: 100vh;
   }
 
@@ -83,7 +83,7 @@
 
   /* Links */
   a {
-    @apply text-primary transition-colors duration-300 hover:text-primary/80 hover:underline;
+    @apply text-[#6A84FF] transition-colors duration-300 hover:text-[#8198ff] hover:underline;
   }
 
   /* Modern scrollbar styling */
@@ -93,22 +93,22 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-background;
+    @apply bg-[#121212];
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
+    @apply bg-[#1E1E1E] rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted/80;
+    @apply bg-[#2A2A2A];
   }
 }
 
 @layer components {
   /* Card styles */
   .card {
-    @apply rounded-lg border border-white/10 bg-[#1E1E1E]/95 text-card-foreground shadow-custom-card backdrop-blur-sm transition-all duration-300 hover:shadow-custom-hover hover:border-primary/20;
+    @apply rounded-lg border border-[#2A2A2A] bg-[#1E1E1E]/95 text-[#F0F0F0] shadow-custom-card backdrop-blur-sm transition-all duration-300 hover:shadow-custom-hover hover:border-[#6A84FF]/20;
   }
 
   /* Glass effect */
