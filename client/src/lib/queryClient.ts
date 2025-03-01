@@ -32,29 +32,49 @@ export async function apiRequest(
       ...(options?.headers || {}),
     };
 
-    // Only add Content-Type: application/json if data is not FormData
-    if (data && !(data instanceof FormData)) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    console.log(`Sending ${method} request to ${url}`, {
+    // Log request preparation
+    console.log('Preparing request:', {
+      method,
+      url,
       isFormData: data instanceof FormData,
-      headers,
-      dataType: data ? typeof data : 'undefined'
+      dataType: data ? typeof data : 'undefined',
+      hasHeaders: Object.keys(headers).length > 0
     });
 
-    const res = await fetch(url, {
+    // Only add Content-Type if NOT FormData
+    if (data && !(data instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+      console.log('Setting Content-Type: application/json');
+    } else if (data instanceof FormData) {
+      console.log('FormData detected - browser will set Content-Type automatically');
+      // Log FormData contents for debugging
+      console.log('FormData entries:', Array.from((data as FormData).entries()).map(([key]) => key));
+    }
+
+    const requestConfig = {
       method,
       headers,
       body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
-      credentials: "include",
+      credentials: "include" as RequestCredentials,
       ...options,
+    };
+
+    // Log final request configuration
+    console.log('Sending request with config:', {
+      method: requestConfig.method,
+      headers: requestConfig.headers,
+      hasBody: !!requestConfig.body,
+      bodyType: requestConfig.body ? requestConfig.body.constructor.name : 'none'
     });
 
+    const res = await fetch(url, requestConfig);
+
+    // Log response details
     console.log(`Response from ${url}:`, {
       status: res.status,
       statusText: res.statusText,
-      contentType: res.headers.get('content-type')
+      contentType: res.headers.get('content-type'),
+      size: res.headers.get('content-length')
     });
 
     await throwIfResNotOk(res);

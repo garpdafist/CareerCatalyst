@@ -42,12 +42,17 @@ export default function ResumeAnalyzer() {
   });
 
   const handleFileUpload = (file: File) => {
-    if (!file) return;
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
 
-    console.log("Handling file upload:", {
+    // Detailed file logging
+    console.log("File selected:", {
       name: file.name,
       type: file.type,
-      size: file.size
+      size: file.size,
+      lastModified: new Date(file.lastModified).toISOString()
     });
 
     setFile(file);
@@ -61,11 +66,13 @@ export default function ResumeAnalyzer() {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Log what we're sending for debugging
-      console.log("Submitting file:", {
-        name: file.name,
-        type: file.type,
-        size: file.size
+      // Log FormData details
+      console.log("Submitting FormData:", {
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        isFormData: formData instanceof FormData,
+        formDataEntries: Array.from(formData.entries()).map(([key]) => key)
       });
 
       analyzeMutation.mutate(formData);

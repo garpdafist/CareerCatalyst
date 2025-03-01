@@ -600,72 +600,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let content: string = '';
 
-        // Log request for debugging
-        console.log('Processing resume analysis:', {
+        // Enhanced request logging
+        console.log('Resume analysis request details:', {
+          method: req.method,
+          contentType: req.headers['content-type'],
+          contentLength: req.headers['content-length'],
+          isMultipart: req.headers['content-type']?.includes('multipart/form-data'),
           hasFile: !!req.file,
-          bodyContent: !!req.body?.content,
-          contentType: req.headers['content-type']
+          hasBody: !!req.body,
+          bodyKeys: req.body ? Object.keys(req.body) : []
         });
 
-        // If we have a file, extract its content
+        // Handle file upload
         if (req.file) {
           console.log('Processing uploaded file:', {
             filename: req.file.originalname,
             mimetype: req.file.mimetype,
             size: req.file.size,
-            buffer: req.file.buffer ? `Buffer present (${req.file.buffer.length} bytes)` : 'No buffer',
-            fieldname: req.file.fieldname
+            encoding: req.file.encoding,
+            hasBuffer: !!req.file.buffer,
+            bufferSize: req.file.buffer?.length
           });
 
           try {
             content = await extractTextFromFile(req.file);
-            console.log('File content extracted successfully, length:', content.length);
+            console.log('File content extracted:', {
+              success: true,
+              contentLength: content.length,
+              preview: content.substring(0, 100) + '...'
+            });
           } catch (fileError: any) {
-            console.error('File processing error:', fileError);
+            console.error('File processing error:', {
+              error: fileError.message,
+              stack: fileError.stack,
+              type: fileError.constructor.name
+            });
             return res.status(400).json({
-              message: "Failed to extract text from file",
-              error: fileError.message
+              message: "Failed to process file",
+              error: fileError.message,
+              details: "Please ensure the file is a valid PDF or text document"
             });
           }
-        }
-        // If we have direct content in the body
-        else if (req.body && req.body.content) {
-          console.log('Processing direct text input, length:', req.body.content.length);
+        } else if (req.body?.content) {
           content = req.body.content;
-        }
-        // Handle form data that might be parsed differently
-        else if (req.body && Object.keys(req.body).length > 0) {
-          // Try to find content in any field that might contain it
-          for (const key of Object.keys(req.body)) {
-            if (typeof req.body[key] === 'string' && req.body[key].length > 100) {
-              console.log(`Found potential content in field '${key}', length:`, req.body[key].length);
-              content = req.body[key];
-              break;
-            }
-          }
+          console.log('Using direct text input:', {
+            contentLength: content.length,
+            preview: content.substring(0, 100) + '...'
+          });
         }
 
-        // If we still don't have content, return an error
-        if (!content || !content.trim()) {
-          console.error('No valid content found in request:', {
+        // Validate content
+        if (!content?.trim()) {
+          console.error('Content validation failed:', {
             hasFile: !!req.file,
-            bodyFields: Object.keys(req.body || {})
+            hasContent: !!req.body?.content,
+            contentLength: content?.length || 0
           });
 
           return res.status(400).json({
             message: "Resume content is required",
-            details: "Please provide a file or text content in the request body"
+            details: "Please provide either a file upload or text content"
           });
         }
 
-        // Process the content
-        console.log('Sending content to analyzer, length:', content.length);
+        // Process content
+        console.log('Processing resume content:', {
+          contentLength: content.length,
+          userId: req.session.userId
+        });
+
         const analysis = await storage.analyzeResume(content, req.session.userId!);
-        res.json(analysis);
+        return res.json(analysis);
 
       } catch (error: any) {
-        console.error('Resume analysis error:', error);
-        res.status(500).json({
+        console.error('Resume analysis error:', {
+          message: error.message,
+          type: error.constructor.name,
+          stack: error.stack
+        });
+
+        return res.status(500).json({
           message: "Failed to analyze resume",
           error: error.message
         });
