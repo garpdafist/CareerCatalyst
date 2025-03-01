@@ -90,7 +90,7 @@ export class DatabaseStorage implements IStorage {
       if (!content || content.trim().length === 0) {
         throw new Error("Resume content is empty or invalid");
       }
-      
+
       // Log content length before analysis
       console.log('Analyzing resume content:', {
         contentLength: content.length,
@@ -99,14 +99,40 @@ export class DatabaseStorage implements IStorage {
 
       const aiAnalysis = await analyzeResumeWithAI(content);
 
+      // Log AI analysis results before storage
+      console.log('AI Analysis Results:', {
+        score: aiAnalysis.score,
+        hasStructuredContent: !!aiAnalysis.structuredContent,
+        structuredContentSections: Object.keys(aiAnalysis.structuredContent || {}),
+        hasScoringCriteria: !!aiAnalysis.scoringCriteria,
+        scoringCriteriaSections: Object.keys(aiAnalysis.scoringCriteria || {}),
+        feedbackCount: aiAnalysis.feedback?.length,
+        skillsCount: aiAnalysis.skills?.length,
+        keywordsCount: aiAnalysis.keywords?.length
+      });
+
       const [analysis] = await db
         .insert(resumeAnalyses)
         .values({
           userId,
           content: content.substring(0, 10000), // Limit content length for storage
-          ...aiAnalysis,
+          structuredContent: aiAnalysis.structuredContent,
+          scoringCriteria: aiAnalysis.scoringCriteria,
+          score: aiAnalysis.score,
+          feedback: aiAnalysis.feedback,
+          skills: aiAnalysis.skills,
+          improvements: aiAnalysis.improvements,
+          keywords: aiAnalysis.keywords,
         })
         .returning();
+
+      console.log('Successfully stored analysis:', {
+        id: analysis.id,
+        userId: analysis.userId,
+        score: analysis.score,
+        hasStructuredContent: !!analysis.structuredContent,
+        hasScoringCriteria: !!analysis.scoringCriteria
+      });
 
       return analysis;
     } catch (error: any) {
@@ -116,7 +142,6 @@ export class DatabaseStorage implements IStorage {
         stack: error.stack
       });
 
-      // Instead of using mock data, throw the error with details
       throw new Error(`Resume analysis failed: ${error.message}`);
     }
   }
