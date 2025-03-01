@@ -131,11 +131,11 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         buffer = Buffer.from(buffer);
       }
 
-      const data = await pdf(buffer, { 
+      const data = await pdf(buffer, {
         max: 0,       // No page limit
         timeout: 30000 // 30 second timeout
       });
-      
+
       if (data && data.text && data.text.trim().length > 0) {
         console.log('PDF extraction successful with pdf-parse');
         return data.text;
@@ -148,7 +148,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     // Second attempt: Try PDF.js extract
     try {
       console.log('Attempting extraction with pdf.js-extract');
-      
+
       return new Promise((resolve, reject) => {
         pdfExtract.extractBuffer(buffer, {}, (err, data) => {
           if (err) {
@@ -156,11 +156,11 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
             reject(err);
             return;
           }
-          
+
           const text = data.pages
             .map(page => page.content.map(item => item.str).join(' '))
             .join('\n\n');
-            
+
           if (text && text.trim().length > 0) {
             console.log('PDF extraction successful with pdf.js-extract');
             resolve(text);
@@ -176,16 +176,16 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     // Third attempt: Try pdfjs-dist
     try {
       console.log('Attempting extraction with pdfjs-dist');
-      
+
       // Configure worker
       const pdfjsLib = pdfjs;
-      
+
       // Load the PDF document
       const loadingTask = pdfjsLib.getDocument({ data: buffer });
       const pdfDocument = await loadingTask.promise;
-      
+
       let extractedText = '';
-      
+
       // Extract text from all pages
       for (let i = 1; i <= pdfDocument.numPages; i++) {
         const page = await pdfDocument.getPage(i);
@@ -193,7 +193,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
         extractedText += pageText + '\n\n';
       }
-      
+
       if (extractedText.trim().length > 0) {
         console.log('PDF extraction successful with pdfjs-dist');
         return extractedText;
@@ -206,14 +206,14 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     // Last attempt: Try PDF-Lib
     try {
       console.log('Attempting extraction with pdf-lib');
-      
+
       const pdfDoc = await PDFDocument.load(buffer);
       const pageCount = pdfDoc.getPageCount();
-      
+
       let extractedText = `PDF with ${pageCount} pages. `;
       extractedText += 'This PDF appears to contain only images or scanned content. ';
       extractedText += 'For best results, please provide a text-based PDF or direct text input.';
-      
+
       // We're returning something even if extraction failed
       console.log('Returning fallback text content for image-based PDF');
       return extractedText;
@@ -561,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasFile: !!req.files,
         hasFileField: !!req.file
       });
-      
+
       // Process file uploads, use single() for one file
       upload.single('file')(req, res, (err) => {
         if (err) {
@@ -599,7 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         let content: string = '';
-        
+
         // Log request for debugging
         console.log('Processing resume analysis:', {
           hasFile: !!req.file,
@@ -616,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             buffer: req.file.buffer ? `Buffer present (${req.file.buffer.length} bytes)` : 'No buffer',
             fieldname: req.file.fieldname
           });
-          
+
           try {
             content = await extractTextFromFile(req.file);
             console.log('File content extracted successfully, length:', content.length);
@@ -627,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               error: fileError.message
             });
           }
-        } 
+        }
         // If we have direct content in the body
         else if (req.body && req.body.content) {
           console.log('Processing direct text input, length:', req.body.content.length);
@@ -644,25 +644,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         }
-        
+
         // If we still don't have content, return an error
         if (!content || !content.trim()) {
           console.error('No valid content found in request:', {
             hasFile: !!req.file,
             bodyFields: Object.keys(req.body || {})
           });
-          
+
           return res.status(400).json({
             message: "Resume content is required",
             details: "Please provide a file or text content in the request body"
           });
         }
-        
+
         // Process the content
         console.log('Sending content to analyzer, length:', content.length);
         const analysis = await storage.analyzeResume(content, req.session.userId!);
         res.json(analysis);
-        
+
       } catch (error: any) {
         console.error('Resume analysis error:', error);
         res.status(500).json({

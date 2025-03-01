@@ -15,7 +15,7 @@ async function throwIfResNotOk(res: Response) {
     } catch (e) {
       errorDetails = res.statusText;
     }
-    
+
     console.error(`API Error ${res.status}:`, errorDetails);
     throw new Error(`${res.status}: ${errorDetails || res.statusText}`);
   }
@@ -28,18 +28,25 @@ export async function apiRequest(
   options?: RequestInit,
 ): Promise<Response> {
   try {
+    const headers: Record<string, string> = {
+      ...(options?.headers || {}),
+    };
+
+    // Only add Content-Type: application/json if data is not FormData
+    if (data && !(data instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+
     console.log(`Sending ${method} request to ${url}`, {
-      dataSize: data ? JSON.stringify(data).length : 0,
-      contentType: options?.headers?.['Content-Type'] || (data ? 'application/json' : 'none')
+      isFormData: data instanceof FormData,
+      headers,
+      dataType: data ? typeof data : 'undefined'
     });
 
     const res = await fetch(url, {
       method,
-      headers: {
-        ...(data ? { "Content-Type": "application/json" } : {}),
-        ...(options?.headers || {}),
-      },
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
       credentials: "include",
       ...options,
     });
