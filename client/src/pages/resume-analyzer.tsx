@@ -24,13 +24,10 @@ export default function ResumeAnalyzer() {
         throw new Error("Resume content is required");
       }
 
+      // Don't set Content-Type for FormData, browser will set it automatically with boundary
       const headers: Record<string, string> = {
         Authorization: "Bearer mock-token-for-testing"
       };
-
-      if (!(data instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-      }
 
       const res = await apiRequest("POST", "/api/resume-analyze", data, { headers });
       return res.json() as Promise<ResumeAnalysis>;
@@ -45,6 +42,14 @@ export default function ResumeAnalyzer() {
   });
 
   const handleFileUpload = (file: File) => {
+    if (!file) return;
+
+    console.log("Handling file upload:", {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
     setFile(file);
     // Reset content when file is selected
     setContent("");
@@ -57,7 +62,11 @@ export default function ResumeAnalyzer() {
       formData.append('file', file);
 
       // Log what we're sending for debugging
-      console.log("Submitting file:", file.name, file.type, file.size);
+      console.log("Submitting file:", {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
 
       analyzeMutation.mutate(formData);
     } else if (content.trim()) {
@@ -156,7 +165,7 @@ export default function ResumeAnalyzer() {
             </Card>
 
             <Button
-              type="button" // Changed to type="button" to avoid default form submission
+              type="button" 
               onClick={handleSubmit}
               size="lg"
               disabled={analyzeMutation.isPending}
