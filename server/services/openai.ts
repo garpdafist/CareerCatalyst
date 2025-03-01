@@ -3,7 +3,7 @@ import { z } from "zod";
 import { resumeContentSchema, scoringCriteriaSchema, type ResumeContent, type ScoringCriteria } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-const openai = new OpenAI();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
@@ -34,95 +34,110 @@ async function waitForRateLimit() {
 }
 
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
-  const prompt = `You are an expert resume analyzer. Analyze the following resume content and provide detailed, professional feedback with structured data and scoring criteria.
-
-Your analysis should include:
-1. Detailed scoring breakdown with these criteria:
-   - Keyword Usage (20% weight): Evaluate industry-relevant keywords
-   - Metrics & Achievements (30% weight): Quantifiable results and impact
-   - Structure & Readability (25% weight): Organization and clarity
-   - Overall Impression (25% weight): Professional impact
-
-2. Extract structured content in these sections:
-   - Professional Summary
-   - Work Experience (with company, position, duration, achievements)
-   - Technical Skills
-   - Education
-   - Optional: Certifications and Projects
-
-Return a JSON response with:
-{
-  "score": <overall score 0-100>,
-  "scoringCriteria": {
-    "keywordUsage": {
-      "score": <score out of 20>,
-      "maxScore": 20,
-      "feedback": "<specific feedback>",
-      "keywords": ["found", "relevant", "keywords"]
-    },
-    "metricsAndAchievements": {
-      "score": <score out of 30>,
-      "maxScore": 30,
-      "feedback": "<specific feedback>",
-      "highlights": ["quantified", "achievements"]
-    },
-    "structureAndReadability": {
-      "score": <score out of 25>,
-      "maxScore": 25,
-      "feedback": "<specific feedback>"
-    },
-    "overallImpression": {
-      "score": <score out of 25>,
-      "maxScore": 25,
-      "feedback": "<specific feedback>"
-    }
-  },
-  "structuredContent": {
-    "professionalSummary": "<extracted summary>",
-    "workExperience": [{
-      "company": "<company name>",
-      "position": "<job title>",
-      "duration": "<time period>",
-      "achievements": ["<achievement 1>", "<achievement 2>"]
-    }],
-    "technicalSkills": ["<skill 1>", "<skill 2>"],
-    "education": [{
-      "institution": "<school name>",
-      "degree": "<degree name>",
-      "year": "<graduation year>"
-    }],
-    "certifications": ["<cert 1>", "<cert 2>"],
-    "projects": [{
-      "name": "<project name>",
-      "description": "<project description>",
-      "technologies": ["<tech 1>", "<tech 2>"]
-    }]
-  },
-  "feedback": ["<general feedback point 1>", "<point 2>"],
-  "skills": ["<identified skill 1>", "<skill 2>"],
-  "improvements": ["<suggested improvement 1>", "<improvement 2>"],
-  "keywords": ["<important keyword 1>", "<keyword 2>"]
-}
-
-Resume content to analyze:
-${content}`;
-
   try {
     await waitForRateLimit();
 
+    const systemPrompt = `You are an expert resume analyzer. Analyze resumes and provide detailed feedback with specific scoring criteria. ALWAYS return a complete JSON response with ALL required fields.
+
+Required fields and their format:
+{
+  "score": (number between 0-100),
+  "feedback": (array of strings with general feedback),
+  "skills": (array of strings listing identified skills),
+  "improvements": (array of strings with specific suggestions),
+  "keywords": (array of relevant industry keywords),
+  "scoringCriteria": {
+    "keywordUsage": {
+      "score": (number out of 20),
+      "maxScore": 20,
+      "feedback": (specific feedback string),
+      "keywords": (array of found keywords)
+    },
+    "metricsAndAchievements": {
+      "score": (number out of 30),
+      "maxScore": 30,
+      "feedback": (specific feedback string),
+      "highlights": (array of achievements)
+    },
+    "structureAndReadability": {
+      "score": (number out of 25),
+      "maxScore": 25,
+      "feedback": (specific feedback string)
+    },
+    "overallImpression": {
+      "score": (number out of 25),
+      "maxScore": 25,
+      "feedback": (specific feedback string)
+    }
+  },
+  "structuredContent": {
+    "professionalSummary": (string),
+    "workExperience": [{
+      "company": (string),
+      "position": (string),
+      "duration": (string),
+      "achievements": (array of strings)
+    }],
+    "technicalSkills": (array of strings),
+    "education": [{
+      "institution": (string),
+      "degree": (string),
+      "year": (string)
+    }],
+    "certifications": (optional array of strings),
+    "projects": (optional array of project objects)
+  }
+}`;
+
+    const userPrompt = `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information:
+
+${content}`;
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7 // Add some variability but keep it professional
     });
 
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error('No response from OpenAI');
+    const responseContent = response.choices[0].message.content;
+    if (!responseContent) {
+      throw new Error('OpenAI returned an empty response');
     }
 
-    const result = JSON.parse(content);
-    return resumeAnalysisResponseSchema.parse(result);
+    console.log('OpenAI raw response:', {
+      contentLength: responseContent.length,
+      preview: responseContent.substring(0, 200) + '...'
+    });
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(responseContent);
+      console.log('Parsed response structure:', {
+        hasScore: 'score' in parsedResponse,
+        hasFeedback: Array.isArray(parsedResponse.feedback),
+        hasSkills: Array.isArray(parsedResponse.skills),
+        hasScoringCriteria: typeof parsedResponse.scoringCriteria === 'object',
+        hasStructuredContent: typeof parsedResponse.structuredContent === 'object'
+      });
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
+
+    try {
+      return resumeAnalysisResponseSchema.parse(parsedResponse);
+    } catch (validationError: any) {
+      console.error('Schema validation error:', {
+        error: validationError.errors,
+        receivedData: parsedResponse
+      });
+      throw new Error('OpenAI response did not match expected schema');
+    }
+
   } catch (error: any) {
     console.error('OpenAI API Error:', {
       message: error.message,
@@ -137,12 +152,11 @@ ${content}`;
       return mockResumeAnalysis;
     }
 
-    // In production, throw the error to be handled by the calling code
     throw new Error(`Failed to analyze resume: ${error.message}`);
   }
 }
 
-// Move mock data to a separate constant
+// Mock data for development/testing only
 const mockResumeAnalysis: ResumeAnalysisResponse = {
   score: 75,
   scoringCriteria: {
