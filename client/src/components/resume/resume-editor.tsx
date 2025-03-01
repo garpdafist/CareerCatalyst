@@ -225,18 +225,18 @@ export default function ResumeEditor() {
         transition={{ duration: 0.5 }}
         className="space-y-8"
       >
-        <Card className="border-white/10 bg-card/95 backdrop-blur">
+        <Card className="border-0 bg-[#F5F0E5]">
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-white/90">Resume Quality Score</h3>
-                <span className="text-sm font-medium text-white/80">
+                <h3 className="text-lg font-medium text-[#1C170D]">Resume Quality Score</h3>
+                <span className="text-sm font-medium text-[#1C170D]">
                   {completionScore}% {completionScore >= 90 ? "✨" : ""}
                 </span>
               </div>
-              <Progress value={completionScore} className="h-2" />
+              <Progress value={completionScore} className="h-2 bg-[#E8DECF]" />
               {completionScore < 90 && (
-                <p className="text-sm text-white/60">
+                <p className="text-sm text-[#757575]">
                   Pro tip: Add specific metrics (%, $, growth rates) to improve your score
                 </p>
               )}
@@ -245,9 +245,9 @@ export default function ResumeEditor() {
         </Card>
 
         {analysis && (
-          <Alert className="bg-primary/5 border-primary/20">
-            <AlertCircle className="h-4 w-4 text-primary" />
-            <AlertDescription className="text-primary">
+          <Alert className="bg-[#F5F0E5] border-[#A1824A]/20">
+            <AlertCircle className="h-4 w-4 text-[#A1824A]" />
+            <AlertDescription className="text-[#1C170D]">
               ATS Score: {analysis.score}/100
               <br />
               Make the suggested improvements to increase your ATS compatibility score.
@@ -278,7 +278,7 @@ export default function ResumeEditor() {
                         <Card
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="border-white/10 bg-card/95 backdrop-blur transition-all duration-200 hover:border-primary/20"
+                          className="border-0 bg-[#F5F0E5] transition-all duration-200"
                         >
                           <CardHeader 
                             className="flex flex-row items-center gap-4 py-3 cursor-pointer"
@@ -286,12 +286,12 @@ export default function ResumeEditor() {
                           >
                             <div
                               {...provided.dragHandleProps}
-                              className="cursor-grab hover:text-primary transition-colors"
+                              className="cursor-grab hover:text-[#009963] transition-colors"
                               title="Drag to reorder sections"
                             >
                               <GripVertical className="h-5 w-5" />
                             </div>
-                            <CardTitle className="text-lg flex items-center gap-2 text-white/90">
+                            <CardTitle className="text-lg flex items-center gap-2 text-[#1C170D]">
                               {section.title}
                               {section.isCollapsed ? (
                                 <ChevronDown className="h-4 w-4 ml-2" />
@@ -312,27 +312,27 @@ export default function ResumeEditor() {
                                       setSections(newSections);
                                     }}
                                     placeholder={section.placeholder}
-                                    className="mb-2 bg-background/50 border-white/10"
+                                    className="mb-2 bg-white border-[#E8DECF]"
                                   />
                                 </div>
                                 <div className="space-y-4">
-                                  <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                                    <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                  <div className="bg-white rounded-lg p-4 border border-[#E8DECF]">
+                                    <h4 className="font-medium mb-2 flex items-center gap-2 text-[#009963]">
                                       <Sparkles className="h-4 w-4" />
                                       Best Practices
                                     </h4>
                                     <ul className="space-y-2 text-sm">
                                       {section.suggestions.map((suggestion, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-white/70">
-                                          <span className="text-primary">•</span>
+                                        <li key={i} className="flex items-start gap-2 text-[#757575]">
+                                          <span className="text-[#009963]">•</span>
                                           {suggestion}
                                         </li>
                                       ))}
                                     </ul>
                                   </div>
                                   {section.keywords && section.keywords.length > 0 && (
-                                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                                      <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                    <div className="bg-white rounded-lg p-4 border border-[#E8DECF]">
+                                      <h4 className="font-medium mb-2 flex items-center gap-2 text-[#009963]">
                                         <Sparkles className="h-4 w-4" />
                                         Key Terms to Include
                                       </h4>
@@ -340,7 +340,7 @@ export default function ResumeEditor() {
                                         {section.keywords.map((keyword, i) => (
                                           <span 
                                             key={i}
-                                            className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                                            className="text-xs bg-[#009963]/10 text-[#009963] px-2 py-1 rounded-full"
                                           >
                                             {keyword}
                                           </span>
@@ -370,7 +370,7 @@ export default function ResumeEditor() {
         >
           <Button
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 bg-primary/90 hover:bg-primary text-white"
+            className="w-full flex items-center justify-center gap-2 bg-[#009963] hover:bg-[#009963]/90 text-white rounded-full"
           >
             <Download className="h-4 w-4" />
             Download Resume
