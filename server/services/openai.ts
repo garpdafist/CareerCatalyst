@@ -98,67 +98,88 @@ ${content}`;
 
     console.log('Making OpenAI request with content length:', content.length);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.7
-    });
+    const maxRetries = 3;
+    let retryCount = 0;
+    let lastError: any = null;
 
-    const responseContent = response.choices[0].message.content;
-    if (!responseContent) {
-      throw new Error('OpenAI returned an empty response');
+    while (retryCount < maxRetries) {
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4", // Fixed model name
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.7
+        });
+
+        const responseContent = response.choices[0].message.content;
+        if (!responseContent) {
+          throw new Error('OpenAI returned an empty response');
+        }
+
+        console.log('OpenAI raw response:', {
+          contentLength: responseContent.length,
+          preview: responseContent.substring(0, 200) + '...'
+        });
+
+        let parsedResponse;
+        try {
+          parsedResponse = JSON.parse(responseContent);
+          console.log('Parsed response structure:', {
+            hasScore: 'score' in parsedResponse,
+            hasFeedback: Array.isArray(parsedResponse.feedback),
+            hasSkills: Array.isArray(parsedResponse.skills),
+            hasScoringCriteria: typeof parsedResponse.scoringCriteria === 'object',
+            hasStructuredContent: typeof parsedResponse.structuredContent === 'object'
+          });
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error('Failed to parse OpenAI response as JSON');
+        }
+
+        const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
+        return validatedResponse;
+
+      } catch (error: any) {
+        lastError = error;
+        console.error(`OpenAI API Error (attempt ${retryCount + 1}/${maxRetries}):`, {
+          message: error.message,
+          type: error.constructor.name,
+          status: error.status,
+          details: error.response?.data
+        });
+
+        if (error.status === 429 || error.status === 503) {
+          // Rate limit or service temporarily unavailable, retry after delay
+          const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delay));
+          retryCount++;
+          continue;
+        }
+
+        // Don't retry other types of errors
+        break;
+      }
     }
 
-    console.log('OpenAI raw response:', {
-      contentLength: responseContent.length,
-      preview: responseContent.substring(0, 200) + '...'
-    });
-
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseContent);
-      console.log('Parsed response structure:', {
-        hasScore: 'score' in parsedResponse,
-        hasFeedback: Array.isArray(parsedResponse.feedback),
-        hasSkills: Array.isArray(parsedResponse.skills),
-        hasScoringCriteria: typeof parsedResponse.scoringCriteria === 'object',
-        hasStructuredContent: typeof parsedResponse.structuredContent === 'object'
-      });
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      throw new Error('Failed to parse OpenAI response as JSON');
-    }
-
-    try {
-      const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
-      return validatedResponse;
-    } catch (validationError: any) {
-      console.error('Schema validation error:', {
-        error: validationError.errors,
-        receivedData: parsedResponse
-      });
-      throw new Error('OpenAI response did not match expected schema');
+    // If we get here, all retries failed
+    if (lastError.status === 429) {
+      throw new Error('Service is experiencing high load. Please try again in a few moments.');
+    } else if (lastError.status === 401 || lastError.status === 403) {
+      throw new Error('API authentication failed. Please try again or contact support.');
+    } else {
+      throw new Error(`Failed to analyze resume: ${lastError.message}`);
     }
 
   } catch (error: any) {
-    console.error('OpenAI API Error:', {
+    console.error('Final OpenAI API Error:', {
       message: error.message,
       type: error.constructor.name,
       status: error.status,
       details: error.response?.data
     });
-
-    // Enhance error messages for better user feedback
-    if (error.status === 429) {
-      throw new Error('Service is temporarily busy. Please try again in a few moments.');
-    } else if (error.status === 401 || error.status === 403) {
-      throw new Error('Authentication failed. Please try again or contact support if the issue persists.');
-    } else {
-      throw new Error(`Failed to analyze resume: ${error.message}`);
-    }
+    throw error;
   }
 }
