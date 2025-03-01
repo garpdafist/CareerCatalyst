@@ -6,32 +6,32 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 220 25% 4%;
+    --foreground: 210 20% 98%;
 
-    --card: 240 10% 5.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 220 25% 5%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 25% 4%;
+    --popover-foreground: 210 20% 98%;
 
     --primary: 200 95% 45%;
-    --primary-foreground: 0 0% 98%;
+    --primary-foreground: 210 20% 98%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 25% 9%;
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 220 25% 9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
 
     --accent: 200 95% 45%;
-    --accent-foreground: 0 0% 98%;
+    --accent-foreground: 210 20% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 220 25% 9%;
+    --input: 220 25% 9%;
     --ring: 200 95% 45%;
 
     --radius: 0.75rem;
@@ -46,7 +46,9 @@
   }
 
   body {
-    @apply font-sans bg-background text-foreground antialiased selection:bg-primary/25;
+    @apply font-sans antialiased selection:bg-primary/25;
+    background: linear-gradient(to bottom, hsl(220 25% 4%), hsl(220 25% 2%));
+    min-height: 100vh;
   }
 
   /* Typography */
@@ -97,7 +99,12 @@
 @layer components {
   /* Card styles */
   .card {
-    @apply rounded-lg border bg-card text-card-foreground shadow-custom transition-all duration-200 hover:shadow-lg hover:border-primary/20;
+    @apply rounded-lg border bg-card/95 text-card-foreground shadow-custom backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:border-primary/20;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60;
   }
 
   /* Button styles */
@@ -116,5 +123,10 @@
 
   .interactive-shadow {
     @apply transition-shadow duration-200 hover:shadow-lg;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
   }
 }
