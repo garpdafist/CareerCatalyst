@@ -86,6 +86,11 @@ export class DatabaseStorage implements IStorage {
 
   async analyzeResume(content: string, userId: string): Promise<ResumeAnalysis> {
     try {
+      // Validate content
+      if (!content || content.trim().length === 0) {
+        throw new Error("Resume content is empty or invalid");
+      }
+      
       // Log content length before analysis
       console.log('Analyzing resume content:', {
         contentLength: content.length,
@@ -111,47 +116,8 @@ export class DatabaseStorage implements IStorage {
         stack: error.stack
       });
 
-      // Always provide fallback mock data that matches our schema
-      const mockAnalysis = {
-        userId,
-        content: content.substring(0, 100) + '...', // Store truncated content
-        score: 75,
-        feedback: [
-          'Strong technical background demonstrated',
-          'Clear project descriptions',
-          'Good use of action verbs',
-          'Consider adding more quantifiable achievements'
-        ],
-        skills: [
-          'JavaScript',
-          'React',
-          'Node.js',
-          'TypeScript',
-          'Database Management',
-          'API Development'
-        ],
-        improvements: [
-          'Add more specific examples of project impacts',
-          'Include metrics and quantifiable results',
-          'Highlight leadership experience',
-          'Consider adding certifications section'
-        ],
-        keywords: [
-          'full-stack development',
-          'web applications',
-          'software engineering',
-          'agile methodology',
-          'team collaboration',
-          'problem solving'
-        ],
-      };
-
-      const [analysis] = await db
-        .insert(resumeAnalyses)
-        .values(mockAnalysis)
-        .returning();
-
-      return analysis;
+      // Instead of using mock data, throw the error with details
+      throw new Error(`Resume analysis failed: ${error.message}`);
     }
   }
 

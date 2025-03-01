@@ -105,6 +105,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     });
 
     try {
+      // Try pdf-parse library first
       const data = await pdf(buffer);
 
       // Log extraction details
@@ -114,11 +115,11 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         firstChars: data.text ? (data.text.substring(0, 100) + '...') : 'no text extracted'
       });
 
-      if (!data || !data.text || !data.text.trim()) {
-        throw new Error('PDF parsing returned empty text');
+      if (data && data.text && data.text.trim()) {
+        return data.text;
       }
-
-      return data.text;
+      
+      throw new Error('PDF parsing returned empty text');
     } catch (pdfError: any) {
       console.error('PDF library error:', {
         message: pdfError.message,
@@ -126,16 +127,25 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         stack: pdfError.stack
       });
 
-      // If PDF content is raw text (common issue) try to extract as text
-      if (buffer.toString('utf-8').includes('Abhay Sharma') ||
-        buffer.toString('utf-8').includes('Summary') ||
-        buffer.toString('utf-8').includes('Experience')) {
-        console.log('Attempting to recover text from buffer directly');
+      // Fallback: Try to extract as text if the PDF might be text-based
+      try {
         const textContent = buffer.toString('utf-8');
-        return textContent;
+        // Check if the content looks like a resume (contains common resume keywords)
+        const resumeKeywords = ['resume', 'experience', 'education', 'skills', 'summary', 'work', 'job', 'professional'];
+        const containsResumeContent = resumeKeywords.some(keyword => 
+          textContent.toLowerCase().includes(keyword)
+        );
+        
+        if (containsResumeContent) {
+          console.log('Successfully extracted text from buffer directly');
+          return textContent;
+        }
+      } catch (textError) {
+        console.error('Text extraction fallback failed:', textError);
       }
 
-      throw pdfError;
+      // If both methods fail, throw the original error with details
+      throw new Error(`PDF parsing failed: ${pdfError.message}`);
     }
   } catch (error: any) {
     console.error('PDF parsing error:', {
@@ -466,7 +476,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Protected resume routes
   app.post("/api/resume-analyze",
     requireAuth,
-    upload.single('file'),
+    (req, res, next) => {
+      upload.single('file')(req, res, (err) => {
+        if (err) {
+          // Handle multer errors with specific messages
+          console.error('File upload error:', err);
+          return res.status(400).json({
+            message: "File upload failed",
+            error: err.message,
+            code: "FILE_UPLOAD_ERROR"
+          });
+        }
+        next();
+      });
+    },
     async (req: Request, res: Response) => {
       try {
         let content: string;
@@ -492,10 +515,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             content = await extractTextFromFile(req.file);
           } catch (fileError: any) {
-            console.error('File extraction error:', fileError.message);
+            console.error('File extraction error:', fileError);
             return res.status(400).json({
               message: "Failed to extract text from file",
-              details: fileError.message
+              error: fileError.message,
+              code: "FILE_EXTRACTION_ERROR",
+              details: {
+                filename: req.file.originalname,
+                fileType: req.file.mimetype,
+                fileSize: req.file.size
+              }
             });
           }
         } else if (req.body && req.body.content) {
@@ -515,7 +544,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             return res.status(400).json({
               message: "Invalid resume content",
-              details: result.error.errors
+              errors: result.error.errors,
+              code: "VALIDATION_ERROR"
             });
           }
 
@@ -529,7 +559,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           return res.status(400).json({
             message: "Resume content is required",
-            details: "Please provide a file or text content in the request body"
+            details: "Please provide a file or text content in the request body",
+            code: "MISSING_CONTENT"
           });
         }
 
@@ -544,7 +575,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           return res.status(400).json({
             message: "Resume content cannot be empty",
-            details: `${req.file ? 'File' : 'Text'} content was empty after processing`
+            details: `${req.file ? 'File' : 'Text'} content was empty after processing`,
+            code: "EMPTY_CONTENT"
           });
         }
 
@@ -561,6 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(statusCode).json({
           message: "Failed to analyze resume",
           error: error.message,
+          code: statusCode === 400 ? "INVALID_INPUT" : "SERVER_ERROR",
           details: {
             type: error.constructor.name,
             occurred: error.stack?.split('\n')[1] || 'unknown location'
