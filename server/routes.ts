@@ -9,6 +9,11 @@ import multer from 'multer';
 import pdf from 'pdf-parse/lib/pdf-parse.js';
 import OpenAI from "openai";
 import * as pdfjs from 'pdfjs-dist';
+import { PDFDocument } from 'pdf-lib';
+import { PDFExtract } from 'pdf.js-extract';
+
+// Initialize PDF extraction tools
+const pdfExtract = new PDFExtract();
 
 // Initialize Supabase client for auth verification
 const supabaseAdmin = createClient(
@@ -71,11 +76,11 @@ const upload = multer({
       'text/pdf',
       'text/x-pdf'
     ];
-    
+
     // Check file extension as a backup verification method
     const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
     const allowedExtensions = ['pdf', 'txt', 'doc', 'docx'];
-    
+
     // Log file details for debugging
     console.log('Uploaded file details:', {
       originalname: file.originalname,
@@ -132,15 +137,15 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         console.log('Converting to proper buffer format');
         buffer = Buffer.from(buffer);
       }
-      
+
       // Add timeout to prevent hanging on problematic PDFs
       const pdfOptions = { 
         max: 0, // No page limit
         timeout: 30000 // 30 second timeout
       };
-      
+
       const data = await pdf(buffer, pdfOptions);
-      
+
       // Enhanced logging for successful parsing
       console.log('PDF extracted successfully:', {
         pageCount: data.numpages || 'unknown',
@@ -153,7 +158,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
       if (data && data.text && data.text.trim()) {
         return data.text;
       }
-      
+
       throw new Error('PDF parsing returned empty text. The PDF may be scanned or contain only images.');
     } catch (pdfError: any) {
       console.error('Primary PDF parser error:', {
@@ -161,14 +166,14 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
         type: pdfError.constructor.name,
         stack: pdfError.stack?.substring(0, 500)
       });
-      
+
       // Try alternative approach with more specific error messages
       if (pdfError.message.includes('Invalid PDF structure')) {
         console.log('Attempting to repair corrupted PDF structure...');
         // Simple repair attempt: look for PDF objects manually
         const pdfString = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
         const containsObjects = pdfString.includes('obj') && pdfString.includes('endobj');
-        
+
         if (containsObjects) {
           console.log('PDF contains valid objects, trying text extraction from specific parts');
           // Extract text from parts that might contain readable content
@@ -178,7 +183,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
               .map(frag => frag.substring(1, frag.length - 1))
               .join(' ')
               .replace(/\\n/g, '\n');
-            
+
             if (extractedText.length > 100) { // Another arbitrary threshold
               console.log('Recovered partial text from corrupted PDF');
               return extractedText;
@@ -186,7 +191,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
           }
         }
       }
-      
+
       // Fallback: Try to extract as plain text with enhanced resume keyword detection
       try {
         const textContent = buffer.toString('utf-8');
@@ -195,7 +200,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
           'job', 'professional', 'contact', 'objective', 'profile', 'achievement',
           'qualification', 'project', 'reference', 'certification', 'email', 'phone'
         ];
-        
+
         // More sophisticated content detection - need several keywords
         let keywordCount = 0;
         for (const keyword of resumeKeywords) {
@@ -203,7 +208,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
             keywordCount++;
           }
         }
-        
+
         if (keywordCount >= 3) { // If at least 3 resume keywords are found
           console.log('Extracted text using direct method (found resume keywords)');
           return textContent;
@@ -215,13 +220,13 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
       // Try PDF.js as a last resort method
       try {
         console.log('Attempting to extract text using PDF.js...');
-        
+
         // Load the PDF document
         const loadingTask = pdfjs.getDocument({ data: buffer });
         const pdfDocument = await loadingTask.promise;
-        
+
         console.log(`PDF loaded successfully with PDF.js. Page count: ${pdfDocument.numPages}`);
-        
+
         // Extract text from all pages
         let extractedText = '';
         for (let i = 1; i <= pdfDocument.numPages; i++) {
@@ -230,7 +235,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
           const strings = content.items.map((item: any) => item.str);
           extractedText += strings.join(' ') + '\n';
         }
-        
+
         if (extractedText.trim().length > 0) {
           console.log('Successfully extracted text using PDF.js fallback method');
           return extractedText;
@@ -238,7 +243,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
       } catch (pdfjsError) {
         console.error('PDF.js extraction failed:', pdfjsError);
       }
-      
+
       // If all methods fail, provide a detailed error message
       throw new Error(`Unable to extract text from PDF. The document may be encrypted, password-protected, or contains only scanned images. Error details: ${pdfError.message}`);
     }
@@ -248,7 +253,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
       type: error.constructor.name,
       stack: error.stack
     });
-    
+
     // Provide a user-friendly error message
     throw new Error(`Failed to process PDF: ${error.message}. Please ensure the document is not password-protected, encrypted, or contains only images without text.`);
   }
@@ -584,7 +589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             field: err.field,
             type: err.constructor.name
           });
-          
+
           // Provide specific error messages based on error type
           if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
