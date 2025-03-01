@@ -1,0 +1,54 @@
+-------------------------------------------------------
+2. Typography, Buttons, and Component Styling
+-------------------------------------------------------
+1. **Typography**:
+   - Consider a modern sans-serif like “Inter,” “Poppins,” or “Roboto.”
+   - Headings: use a slightly heavier weight (600–700) and the accent color or a near-white color.
+   - Body text: `#E0E0E0` for normal text, `#BDBDBD` for placeholders or secondary text.
+
+2. **Buttons**:
+   - **Primary Button**: background `var(--color-accent)`, text `#FFFFFF`.
+   - **Hover State**: slightly brighten the accent color or add a subtle scale effect.
+   - **Secondary Button**: background `#2A2A2A`, text `var(--color-accent)`, border with `var(--color-accent)`.
+
+3. **Cards / Sections**:
+   - Use `--color-bg-secondary` for card backgrounds.
+   - Slight corner radius (6–8px).
+   - A subtle box-shadow for elevation: `0 4px 10px rgba(0,0,0,0.3)` or similar.
+
+4. **Links / Hover Effects**:
+   - Link text: `var(--color-accent)`.
+   - Hover: underline or a mild color shift (lighter accent).
+
+---------------------------------------------------
+3. Page Layout & Visual Hierarchy
+---------------------------------------------------
+1. **Hero Section (Home Page)**:
+   - Large, bold heading in near-white or accent color.
+   - A short subtext line in secondary text color.
+   - CTA buttons (e.g., “Analyze Resume”) in the accent color.
+
+2. **Card-Based Sections** (Resume Analyzer, Editor, LinkedIn Profile):
+   - Each card or panel uses `--color-bg-secondary`.
+   - Headline in near-white, smaller text in secondary color.
+
+3. **Navigation Bar**:
+   - Keep it minimal. Possibly a background of `#121212` with accent hover states on links.
+
+4. **Micro-Interactions**:
+   - Add slight transitions (0.2s–0.3s) for button hover, card hover scale, or shadows.
+
+-------------------------------------
+4. Implementation & Testing
+-------------------------------------
+1. **Update All Pages**:
+   - Apply the new color palette (dark base, bright accent).
+   - Use consistent spacing (8px multiples) and a single or double column layout.
+2. **Check Contrast**:
+   - Ensure text is readable on dark backgrounds (aim for at least 4.5:1 contrast ratio).
+3. **Refine Buttons & Cards**:
+   - Make sure the accent color stands out for primary actions.
+4. **Finalize**:
+   - Show me the updated site with the new dark theme, accent color, and refined typography.
+
+This should yield a **cool, polished** dark interface reminiscent of the references, with a bold accent color that stands out. Please implement these changes, ensuring a consistent, modern aesthetic across all pages.
