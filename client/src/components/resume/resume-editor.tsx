@@ -7,6 +7,8 @@ import { GripVertical, Download, AlertCircle, ChevronDown, ChevronUp, Sparkles }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import type { ResumeAnalysis } from "@shared/schema";
+import { motion } from "framer-motion";
+import { PageLayout, PageHeader, PageTitle, PageDescription } from "@/components/layout";
 
 // Define resume section structure
 type ResumeSection = {
@@ -209,151 +211,172 @@ export default function ResumeEditor() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-2">Resume Editor</h2>
-        <p className="text-muted-foreground">
+    <PageLayout>
+      <PageHeader>
+        <PageTitle>Resume Editor</PageTitle>
+        <PageDescription>
           Follow consulting-style best practices: quantify achievements, use action verbs, and highlight metrics.
-        </p>
-      </div>
+        </PageDescription>
+      </PageHeader>
 
-      <div className="mb-8 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Resume Quality Score</h3>
-          <span className="text-sm font-medium">
-            {completionScore}% {completionScore >= 90 ? "✨" : ""}
-          </span>
-        </div>
-        <Progress value={completionScore} className="h-2" />
-        {completionScore < 90 && (
-          <p className="text-sm text-muted-foreground">
-            Pro tip: Add specific metrics (%, $, growth rates) to improve your score
-          </p>
-        )}
-      </div>
-
-      {analysis && (
-        <Alert className="mb-6 bg-primary/5 border-primary/20">
-          <AlertCircle className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-primary">
-            ATS Score: {analysis.score}/100
-            <br />
-            Make the suggested improvements to increase your ATS compatibility score.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="resume-sections">
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-4"
-            >
-              {sections.map((section, index) => (
-                <Draggable
-                  key={section.id}
-                  draggableId={section.id}
-                  index={index}
-                >
-                  {(provided) => (
-                    <Card
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="border border-muted-foreground/20 hover:border-primary/50 transition-colors"
-                    >
-                      <CardHeader 
-                        className="flex flex-row items-center gap-4 py-3 cursor-pointer"
-                        onClick={() => toggleSection(index)}
-                      >
-                        <div
-                          {...provided.dragHandleProps}
-                          className="cursor-grab hover:text-primary transition-colors"
-                          title="Drag to reorder sections"
-                        >
-                          <GripVertical className="h-5 w-5" />
-                        </div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {section.title}
-                          {section.isCollapsed ? (
-                            <ChevronDown className="h-4 w-4 ml-2" />
-                          ) : (
-                            <ChevronUp className="h-4 w-4 ml-2" />
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      {!section.isCollapsed && (
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-2">
-                              <RichTextEditor
-                                value={section.content}
-                                onChange={(value) => {
-                                  const newSections = [...sections];
-                                  newSections[index].content = value;
-                                  setSections(newSections);
-                                }}
-                                placeholder={section.placeholder}
-                                className="mb-2"
-                              />
-                            </div>
-                            <div className="space-y-4">
-                              <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                                <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
-                                  <Sparkles className="h-4 w-4" />
-                                  Best Practices
-                                </h4>
-                                <ul className="space-y-2 text-sm">
-                                  {section.suggestions.map((suggestion, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                                      <span className="text-primary">•</span>
-                                      {suggestion}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                              {section.keywords && section.keywords.length > 0 && (
-                                <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                                  <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
-                                    <Sparkles className="h-4 w-4" />
-                                    Key Terms to Include
-                                  </h4>
-                                  <div className="flex flex-wrap gap-2">
-                                    {section.keywords.map((keyword, i) => (
-                                      <span 
-                                        key={i}
-                                        className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
-                                      >
-                                        {keyword}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-8"
+      >
+        <Card className="border-white/10 bg-card/95 backdrop-blur">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-white/90">Resume Quality Score</h3>
+                <span className="text-sm font-medium text-white/80">
+                  {completionScore}% {completionScore >= 90 ? "✨" : ""}
+                </span>
+              </div>
+              <Progress value={completionScore} className="h-2" />
+              {completionScore < 90 && (
+                <p className="text-sm text-white/60">
+                  Pro tip: Add specific metrics (%, $, growth rates) to improve your score
+                </p>
+              )}
             </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+          </CardContent>
+        </Card>
 
-      <div className="mt-6">
-        <Button
-          onClick={handleDownload}
-          className="w-full flex items-center justify-center gap-2"
+        {analysis && (
+          <Alert className="bg-primary/5 border-primary/20">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-primary">
+              ATS Score: {analysis.score}/100
+              <br />
+              Make the suggested improvements to increase your ATS compatibility score.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="resume-sections">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="space-y-4"
+              >
+                {sections.map((section, index) => (
+                  <Draggable
+                    key={section.id}
+                    draggableId={section.id}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                      >
+                        <Card
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="border-white/10 bg-card/95 backdrop-blur transition-all duration-200 hover:border-primary/20"
+                        >
+                          <CardHeader 
+                            className="flex flex-row items-center gap-4 py-3 cursor-pointer"
+                            onClick={() => toggleSection(index)}
+                          >
+                            <div
+                              {...provided.dragHandleProps}
+                              className="cursor-grab hover:text-primary transition-colors"
+                              title="Drag to reorder sections"
+                            >
+                              <GripVertical className="h-5 w-5" />
+                            </div>
+                            <CardTitle className="text-lg flex items-center gap-2 text-white/90">
+                              {section.title}
+                              {section.isCollapsed ? (
+                                <ChevronDown className="h-4 w-4 ml-2" />
+                              ) : (
+                                <ChevronUp className="h-4 w-4 ml-2" />
+                              )}
+                            </CardTitle>
+                          </CardHeader>
+                          {!section.isCollapsed && (
+                            <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="md:col-span-2">
+                                  <RichTextEditor
+                                    value={section.content}
+                                    onChange={(value) => {
+                                      const newSections = [...sections];
+                                      newSections[index].content = value;
+                                      setSections(newSections);
+                                    }}
+                                    placeholder={section.placeholder}
+                                    className="mb-2 bg-background/50 border-white/10"
+                                  />
+                                </div>
+                                <div className="space-y-4">
+                                  <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                                    <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                      <Sparkles className="h-4 w-4" />
+                                      Best Practices
+                                    </h4>
+                                    <ul className="space-y-2 text-sm">
+                                      {section.suggestions.map((suggestion, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-white/70">
+                                          <span className="text-primary">•</span>
+                                          {suggestion}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  {section.keywords && section.keywords.length > 0 && (
+                                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                                      <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                        <Sparkles className="h-4 w-4" />
+                                        Key Terms to Include
+                                      </h4>
+                                      <div className="flex flex-wrap gap-2">
+                                        {section.keywords.map((keyword, i) => (
+                                          <span 
+                                            key={i}
+                                            className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                                          >
+                                            {keyword}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      </motion.div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Download className="h-4 w-4" />
-          Download Marketing Resume
-        </Button>
-      </div>
-    </div>
+          <Button
+            onClick={handleDownload}
+            className="w-full flex items-center justify-center gap-2 bg-primary/90 hover:bg-primary text-white"
+          >
+            <Download className="h-4 w-4" />
+            Download Resume
+          </Button>
+        </motion.div>
+      </motion.div>
+    </PageLayout>
   );
 }
