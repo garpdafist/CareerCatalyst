@@ -7,7 +7,7 @@
 @layer base {
   :root {
     --background: 0 0% 7%;
-    --foreground: 0 0% 94%;
+    --foreground: 0 0% 80%;
 
     --card: 0 0% 12%;
     --card-foreground: 0 0% 94%;
@@ -18,8 +18,8 @@
     --primary: 228 100% 70%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 94%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 228 100% 70%;
 
     --muted: 0 0% 12%;
     --muted-foreground: 0 0% 65%;
@@ -53,7 +53,7 @@
 
   /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight text-white/90;
   }
 
   h1 {
@@ -69,12 +69,12 @@
   }
 
   p {
-    @apply leading-7;
+    @apply leading-7 text-white/80;
   }
 
   /* Links */
   a {
-    @apply text-primary transition-colors hover:text-primary/80;
+    @apply text-primary transition-colors duration-250 hover:text-primary/80;
   }
 
   /* Modern scrollbar styling */
@@ -99,7 +99,7 @@
 @layer components {
   /* Card styles */
   .card {
-    @apply rounded-lg border bg-card/95 text-card-foreground shadow-custom backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:border-primary/20;
+    @apply rounded-lg border border-white/10 bg-card/95 text-card-foreground shadow-custom-card backdrop-blur-sm transition-all duration-250 hover:shadow-custom-hover hover:border-primary/20;
   }
 
   /* Glass effect */
@@ -109,24 +109,24 @@
 
   /* Button styles */
   .btn-primary {
-    @apply bg-primary text-white hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02];
+    @apply bg-primary text-white shadow-custom transition-all duration-250 hover:bg-primary/90 hover:shadow-custom-hover hover:scale-[1.02];
   }
 
   .btn-secondary {
-    @apply bg-secondary text-primary border-2 border-primary/20 hover:border-primary/40 hover:bg-secondary/80 transition-all duration-200;
+    @apply bg-secondary text-primary border-2 border-primary/20 hover:border-primary/40 hover:bg-secondary/80 transition-all duration-250;
   }
 
   /* Interactive elements */
   .interactive-scale {
-    @apply transition-transform duration-200 hover:scale-[1.02];
+    @apply transition-transform duration-250 hover:scale-[1.02];
   }
 
   .interactive-shadow {
-    @apply transition-shadow duration-200 hover:shadow-lg;
+    @apply transition-shadow duration-250 hover:shadow-custom-hover;
   }
 
   /* Gradient text */
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-highlight bg-clip-text text-transparent;
   }
 }

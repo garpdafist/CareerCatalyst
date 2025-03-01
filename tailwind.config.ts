@@ -39,6 +39,7 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        highlight: "hsl(166, 100%, 44%)", // #00E0B3 teal accent
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -51,6 +52,11 @@ export default {
       boxShadow: {
         'custom': '0 4px 10px rgba(0, 0, 0, 0.3)',
         'custom-lg': '0 8px 20px rgba(0, 0, 0, 0.4)',
+        'custom-hover': '0 8px 30px rgba(106, 132, 255, 0.15)',
+        'custom-card': '0 4px 15px rgba(0, 0, 0, 0.2)',
+      },
+      transitionDuration: {
+        '250': '250ms',
       },
       keyframes: {
         "accordion-down": {
