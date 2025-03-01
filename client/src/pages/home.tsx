@@ -40,7 +40,7 @@ export default function Home() {
     <PageLayout>
       <div className="relative">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-16 md:pt-24">
+        <section className="relative overflow-hidden pt-8 md:pt-12">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <motion.div
