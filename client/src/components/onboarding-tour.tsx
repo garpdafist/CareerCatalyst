@@ -23,13 +23,25 @@ export function OnboardingTour() {
             const currentStepElement = newTour.currentStep?.el;
             if (currentStepElement) {
               currentStepElement.querySelector('.shepherd-button')?.classList.add(
-                'bg-[#009963]',
+                'btn',
+                'btn-primary',
                 'text-white',
-                'px-4',
-                'py-2',
                 'rounded-full',
-                'hover:bg-[#009963]/90',
-                'transition-colors'
+                'px-6',
+                'py-2.5',
+                'h-11',
+                'shadow-sm',
+                'transition-all',
+                'duration-300'
+              );
+
+              // Style the skip button differently
+              currentStepElement.querySelector('.shepherd-button:first-child')?.classList.add(
+                'btn-secondary',
+                'bg-white',
+                'text-[#009963]',
+                'border-2',
+                'border-[#009963]/20'
               );
             }
           },
@@ -52,7 +64,7 @@ export function OnboardingTour() {
               localStorage.setItem('hasTakenTour', 'true');
               newTour.complete();
             },
-            classes: 'mr-2 bg-white text-[#757575] border border-[#E8DECF]'
+            classes: 'mr-2'
           },
           {
             text: 'Start Tour',

@@ -6,14 +6,9 @@
 
 @layer base {
   body {
-    @apply font-sans antialiased bg-white;
+    @apply font-sans antialiased;
     background-color: #FFFFFF !important;
     color: #1C170D;
-  }
-
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
   }
 
   /* Typography */
@@ -55,24 +50,48 @@
     @apply rounded-xl p-6 shadow-sm transition-all duration-300;
   }
 
-  .btn-primary {
+  /* Standardized button styles */
+  .btn,
+  button[class*="btn"],
+  .button,
+  [type="button"],
+  [type="submit"] {
+    @apply rounded-full px-6 py-2.5 h-11 font-medium transition-all duration-300;
+  }
+
+  .btn-primary,
+  .button-primary,
+  button[class*="primary"] {
     background-color: #009963;
     color: #FFFFFF;
-    @apply rounded-full px-6 py-2.5 font-medium shadow-sm transition-all duration-300;
+    @apply shadow-sm;
   }
-  .btn-primary:hover {
+
+  .btn-primary:hover,
+  .button-primary:hover,
+  button[class*="primary"]:hover {
     @apply opacity-90 shadow-md;
   }
 
-  .btn-secondary {
+  .btn-secondary,
+  .button-secondary,
+  button[class*="secondary"] {
     background-color: #FFFFFF;
     color: #009963;
     border: 2px solid rgba(0, 153, 99, 0.2);
-    @apply rounded-full px-6 py-2.5 font-medium transition-all duration-300;
   }
-  .btn-secondary:hover {
+
+  .btn-secondary:hover,
+  .button-secondary:hover,
+  button[class*="secondary"]:hover {
     background-color: rgba(0, 153, 99, 0.05);
     border-color: rgba(0, 153, 99, 0.4);
+  }
+
+  .btn-ghost,
+  .button-ghost,
+  button[class*="ghost"] {
+    @apply bg-transparent text-[#009963] hover:bg-[#009963]/5 border-0;
   }
 
   .stat-card {
