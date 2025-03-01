@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { FileText, PenTool, Target, Compass, ChevronRight } from "lucide-react";
+import { OnboardingTour } from "@/components/onboarding-tour";
 
 const features = [
   {
@@ -38,6 +39,7 @@ const features = [
 export default function Home() {
   return (
     <PageLayout>
+      <OnboardingTour />
       <div className="relative">
         {/* Hero Section */}
         <section className="relative overflow-hidden pt-8 md:pt-12">
@@ -96,7 +98,10 @@ export default function Home() {
                   >
                     {feature.enabled ? (
                       <Link href={feature.href}>
-                        <a className="block h-full">
+                        <a
+                          className="block h-full"
+                          data-tour={feature.title.toLowerCase().replace(' ', '-')}
+                        >
                           <div className="relative h-full overflow-hidden rounded-lg border bg-card p-6 shadow-md transition-colors hover:bg-accent hover:text-accent-foreground">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                               <Icon className="h-6 w-6" />
@@ -106,8 +111,8 @@ export default function Home() {
                               {feature.description}
                             </p>
                             <div className="mt-4">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 className="p-0 font-semibold text-primary hover:text-primary/80"
                               >
                                 Try Now →
