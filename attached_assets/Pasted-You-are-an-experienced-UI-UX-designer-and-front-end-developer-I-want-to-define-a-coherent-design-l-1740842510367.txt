@@ -1,0 +1,39 @@
+You are an experienced UI/UX designer and front-end developer. 
+I want to define a coherent design language for my web product that’s modern, fun, and still professional. 
+Please create a design system outline covering:
+
+1. **Color Palette**:
+   - Choose 2–3 primary colors (e.g., a bold accent color, a neutral background, a text color).
+   - Provide hex or RGB codes, usage guidelines (e.g., “Primary #FF5E5E for call-to-action buttons,” “Neutral #F7F7F7 for backgrounds”).
+
+2. **Typography**:
+   - Recommend 1–2 font families (e.g., “Inter,” “Roboto,” “Poppins”). 
+   - Define headings (H1, H2, H3), body text, and small captions with sizes, weights, and line-heights.
+
+3. **Spacing & Layout**:
+   - Provide a spacing scale (e.g., 4px, 8px, 16px, etc.) for padding/margins.
+   - Suggest container widths or breakpoints (mobile, tablet, desktop).
+
+4. **UI Components**:
+   - **Buttons**: Primary, Secondary, Disabled states. 
+   - **Cards**: For displaying resume sections, job listings, or user info. 
+   - **Modals** or Overlays: For uploading files or showing success messages.
+   - **Navigation**: Top nav bar, side nav (if any). 
+   - **Forms**: Inputs, textareas, toggles, radio buttons, checkboxes.
+
+5. **Micro-Interactions & Animations**:
+   - Outline how buttons should animate on hover (e.g., scale 1.02, color shift).
+   - Mention any transitions (0.2s ease-in-out) for modals or toasts.
+   - If using Lottie or SVG animations, specify where and how.
+
+6. **Icons & Imagery**:
+   - Choose a simple icon set (e.g., Feather, Material Icons).
+   - If using illustrations, define a style (flat, minimal, 2D, etc.).
+
+7. **Naming Conventions & Maintenance**:
+   - Provide a naming scheme for classes or variables (e.g., “.btn-primary,” “.text-h2,” “--color-primary”).
+   - Suggest a folder structure or approach for storing design tokens (SCSS variables, Tailwind config, or styled-components theme).
+
+8. **Documentation**:
+   - Create a “Design Guidelines” page or doc summarizing these rules.
+   - Show sample code snippets for a few components.
