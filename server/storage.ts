@@ -97,44 +97,59 @@ export class DatabaseStorage implements IStorage {
         firstChars: content.substring(0, 100) + '...'
       });
 
-      const aiAnalysis = await analyzeResumeWithAI(content);
+      try {
+        const aiAnalysis = await analyzeResumeWithAI(content);
 
-      // Log AI analysis results before storage
-      console.log('AI Analysis Results:', {
-        score: aiAnalysis.score,
-        hasStructuredContent: !!aiAnalysis.structuredContent,
-        structuredContentSections: Object.keys(aiAnalysis.structuredContent || {}),
-        hasScoringCriteria: !!aiAnalysis.scoringCriteria,
-        scoringCriteriaSections: Object.keys(aiAnalysis.scoringCriteria || {}),
-        feedbackCount: aiAnalysis.feedback?.length,
-        skillsCount: aiAnalysis.skills?.length,
-        keywordsCount: aiAnalysis.keywords?.length
-      });
-
-      const [analysis] = await db
-        .insert(resumeAnalyses)
-        .values({
-          userId,
-          content: content.substring(0, 10000), // Limit content length for storage
-          structuredContent: aiAnalysis.structuredContent,
-          scoringCriteria: aiAnalysis.scoringCriteria,
+        // Log AI analysis results before storage
+        console.log('AI Analysis Results:', {
           score: aiAnalysis.score,
-          feedback: aiAnalysis.feedback,
-          skills: aiAnalysis.skills,
-          improvements: aiAnalysis.improvements,
-          keywords: aiAnalysis.keywords,
-        })
-        .returning();
+          hasStructuredContent: !!aiAnalysis.structuredContent,
+          structuredContentSections: Object.keys(aiAnalysis.structuredContent || {}),
+          hasScoringCriteria: !!aiAnalysis.scoringCriteria,
+          scoringCriteriaSections: Object.keys(aiAnalysis.scoringCriteria || {}),
+          feedbackCount: aiAnalysis.feedback?.length,
+          skillsCount: aiAnalysis.skills?.length,
+          keywordsCount: aiAnalysis.keywords?.length
+        });
 
-      console.log('Successfully stored analysis:', {
-        id: analysis.id,
-        userId: analysis.userId,
-        score: analysis.score,
-        hasStructuredContent: !!analysis.structuredContent,
-        hasScoringCriteria: !!analysis.scoringCriteria
-      });
+        const [analysis] = await db
+          .insert(resumeAnalyses)
+          .values({
+            userId,
+            content: content.substring(0, 10000), // Limit content length for storage
+            structuredContent: aiAnalysis.structuredContent,
+            scoringCriteria: aiAnalysis.scoringCriteria,
+            score: aiAnalysis.score,
+            feedback: aiAnalysis.feedback,
+            skills: aiAnalysis.skills,
+            improvements: aiAnalysis.improvements,
+            keywords: aiAnalysis.keywords,
+          })
+          .returning();
 
-      return analysis;
+        console.log('Successfully stored analysis:', {
+          id: analysis.id,
+          userId: analysis.userId,
+          score: analysis.score,
+          hasStructuredContent: !!analysis.structuredContent,
+          hasScoringCriteria: !!analysis.scoringCriteria
+        });
+
+        return analysis;
+
+      } catch (aiError: any) {
+        // Handle OpenAI-specific errors
+        console.error('AI Analysis error:', {
+          message: aiError.message,
+          type: aiError.constructor.name,
+          status: aiError.status
+        });
+
+        throw new Error(
+          `Unable to analyze resume: ${aiError.message}. Please try again later or contact support if the issue persists.`
+        );
+      }
+
     } catch (error: any) {
       console.error('Analysis error:', {
         message: error.message,

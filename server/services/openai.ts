@@ -124,69 +124,77 @@ ${content}`;
     const result = JSON.parse(content);
     return resumeAnalysisResponseSchema.parse(result);
   } catch (error: any) {
-    console.error('OpenAI API Error:', error);
+    console.error('OpenAI API Error:', {
+      message: error.message,
+      type: error.constructor.name,
+      status: error.status,
+      details: error.response?.data
+    });
 
-    // Handle rate limit errors specially
-    if (error.status === 429) {
-      console.log('Rate limit hit, falling back to mock data');
+    // Only use mock data if explicitly in development/test
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      console.log('Development mode: Using mock data');
+      return mockResumeAnalysis;
     }
 
-    // Fallback to mock analysis when OpenAI fails
-    return {
-      score: 75,
-      scoringCriteria: {
-        keywordUsage: {
-          score: 15,
-          maxScore: 20,
-          feedback: "Unable to analyze keywords at the moment",
-          keywords: ["sample", "keywords"]
-        },
-        metricsAndAchievements: {
-          score: 20,
-          maxScore: 30,
-          feedback: "Unable to analyze metrics at the moment",
-          highlights: ["sample achievement"]
-        },
-        structureAndReadability: {
-          score: 20,
-          maxScore: 25,
-          feedback: "Unable to analyze structure at the moment"
-        },
-        overallImpression: {
-          score: 20,
-          maxScore: 25,
-          feedback: "Unable to analyze overall impression at the moment"
-        }
-      },
-      structuredContent: {
-        professionalSummary: "Sample professional summary",
-        workExperience: [{
-          company: "Sample Company",
-          position: "Sample Position",
-          duration: "2020-Present",
-          achievements: ["Sample achievement"]
-        }],
-        technicalSkills: ["Sample Skill 1", "Sample Skill 2"],
-        education: [{
-          institution: "Sample University",
-          degree: "Sample Degree",
-          year: "2020"
-        }],
-        certifications: ["Sample Certification"],
-        projects: [{
-          name: "Sample Project",
-          description: "Sample description",
-          technologies: ["Sample Tech"]
-        }]
-      },
-      feedback: [
-        "Unable to perform AI analysis at the moment",
-        "Please try again later",
-        "Using sample feedback in the meantime"
-      ],
-      skills: ["Sample Skill 1", "Sample Skill 2"],
-      improvements: ["This is a sample improvement suggestion"],
-      keywords: ["sample", "keywords"]
-    };
+    // In production, throw the error to be handled by the calling code
+    throw new Error(`Failed to analyze resume: ${error.message}`);
   }
 }
+
+// Move mock data to a separate constant
+const mockResumeAnalysis: ResumeAnalysisResponse = {
+  score: 75,
+  scoringCriteria: {
+    keywordUsage: {
+      score: 15,
+      maxScore: 20,
+      feedback: "Mock keyword analysis",
+      keywords: ["mock", "keywords"]
+    },
+    metricsAndAchievements: {
+      score: 20,
+      maxScore: 30,
+      feedback: "Mock metrics analysis",
+      highlights: ["mock achievement"]
+    },
+    structureAndReadability: {
+      score: 20,
+      maxScore: 25,
+      feedback: "Mock structure analysis"
+    },
+    overallImpression: {
+      score: 20,
+      maxScore: 25,
+      feedback: "Mock overall impression"
+    }
+  },
+  structuredContent: {
+    professionalSummary: "[DEV MODE] Professional summary",
+    workExperience: [{
+      company: "Dev Company",
+      position: "Test Position",
+      duration: "2020-Present",
+      achievements: ["Mock achievement"]
+    }],
+    technicalSkills: ["Dev Skill 1", "Dev Skill 2"],
+    education: [{
+      institution: "Dev University",
+      degree: "Test Degree",
+      year: "2020"
+    }],
+    certifications: ["Dev Certification"],
+    projects: [{
+      name: "Test Project",
+      description: "Development mode description",
+      technologies: ["Test Tech"]
+    }]
+  },
+  feedback: [
+    "Development mode: Mock feedback",
+    "Please ensure OpenAI API is properly configured in production"
+  ],
+  skills: ["Dev Skill 1", "Dev Skill 2"],
+  improvements: ["Development mode: Mock improvement suggestion"],
+  keywords: ["dev", "test"]
+};
