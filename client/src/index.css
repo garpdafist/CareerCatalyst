@@ -6,35 +6,44 @@
 
 @layer base {
   :root {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 80%;
+    /* Core backgrounds */
+    --background: 0 0% 7%;  /* #121212 */
+    --foreground: 0 0% 80%; /* #CCCCCC */
 
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 94%;
+    /* Card & component backgrounds */
+    --card: 0 0% 12%;      /* #1E1E1E */
+    --card-foreground: 0 0% 94%; /* #F0F0F0 */
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 94%;
+    /* Popover styles */
+    --popover: 0 0% 7%;    /* #121212 */
+    --popover-foreground: 0 0% 94%; /* #F0F0F0 */
 
-    --primary: 228 100% 70%;
+    /* Primary accent color */
+    --primary: 228 100% 70%;  /* #6A84FF */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 16%;
-    --secondary-foreground: 228 100% 70%;
+    /* Secondary button & highlight colors */
+    --secondary: 0 0% 16%;    /* #2A2A2A */
+    --secondary-foreground: 228 100% 70%; /* #6A84FF */
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 65%;
+    /* Muted elements */
+    --muted: 0 0% 12%;       /* #1E1E1E */
+    --muted-foreground: 0 0% 65%; /* #A5A5A5 */
 
-    --accent: 228 100% 70%;
+    /* Accent variations */
+    --accent: 228 100% 70%;  /* #6A84FF */
     --accent-foreground: 0 0% 100%;
 
+    /* System states */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 94%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 228 100% 70%;
+    /* Form elements */
+    --border: 0 0% 12%;     /* #1E1E1E */
+    --input: 0 0% 12%;      /* #1E1E1E */
+    --ring: 228 100% 70%;   /* #6A84FF */
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 
   * {
@@ -53,7 +62,7 @@
 
   /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight text-white/90;
+    @apply font-semibold tracking-tight text-[#F0F0F0];
   }
 
   h1 {
@@ -69,12 +78,12 @@
   }
 
   p {
-    @apply leading-7 text-white/80;
+    @apply leading-7 text-[#CCCCCC];
   }
 
   /* Links */
   a {
-    @apply text-primary transition-colors duration-250 hover:text-primary/80;
+    @apply text-primary transition-colors duration-300 hover:text-primary/80 hover:underline;
   }
 
   /* Modern scrollbar styling */
@@ -99,34 +108,34 @@
 @layer components {
   /* Card styles */
   .card {
-    @apply rounded-lg border border-white/10 bg-card/95 text-card-foreground shadow-custom-card backdrop-blur-sm transition-all duration-250 hover:shadow-custom-hover hover:border-primary/20;
+    @apply rounded-lg border border-white/10 bg-[#1E1E1E]/95 text-card-foreground shadow-custom-card backdrop-blur-sm transition-all duration-300 hover:shadow-custom-hover hover:border-primary/20;
   }
 
   /* Glass effect */
   .glass {
-    @apply bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60;
+    @apply bg-[#121212]/95 backdrop-blur supports-[backdrop-filter]:bg-[#121212]/60;
   }
 
   /* Button styles */
   .btn-primary {
-    @apply bg-primary text-white shadow-custom transition-all duration-250 hover:bg-primary/90 hover:shadow-custom-hover hover:scale-[1.02];
+    @apply bg-[#6A84FF] text-white shadow-custom transition-all duration-300 hover:bg-[#8198ff] hover:shadow-custom-hover hover:scale-[1.02];
   }
 
   .btn-secondary {
-    @apply bg-secondary text-primary border-2 border-primary/20 hover:border-primary/40 hover:bg-secondary/80 transition-all duration-250;
+    @apply bg-[#2A2A2A] text-[#6A84FF] border-2 border-[#6A84FF]/20 hover:border-[#6A84FF]/40 hover:bg-[#2A2A2A]/80 transition-all duration-300;
   }
 
   /* Interactive elements */
   .interactive-scale {
-    @apply transition-transform duration-250 hover:scale-[1.02];
+    @apply transition-transform duration-300 hover:scale-[1.02];
   }
 
   .interactive-shadow {
-    @apply transition-shadow duration-250 hover:shadow-custom-hover;
+    @apply transition-shadow duration-300 hover:shadow-custom-hover;
   }
 
   /* Gradient text */
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-highlight bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#6A84FF] to-[#00E0B3] bg-clip-text text-transparent;
   }
 }

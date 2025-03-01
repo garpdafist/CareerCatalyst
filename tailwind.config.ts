@@ -56,7 +56,7 @@ export default {
         'custom-card': '0 4px 15px rgba(0, 0, 0, 0.2)',
       },
       transitionDuration: {
-        '250': '250ms',
+        '300': '300ms',
       },
       keyframes: {
         "accordion-down": {
