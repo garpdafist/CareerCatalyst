@@ -44,40 +44,30 @@ export default function ResumeAnalyzer() {
     },
   });
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      setFile(file);
-      const formData = new FormData();
-      formData.append('file', file);
-      analyzeMutation.mutate(formData);
-    } catch (error) {
-      console.error('File handling error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to process file. Please try a different file or paste the content directly.",
-        variant: "destructive",
-      });
-    }
+  const handleFileUpload = (file: File) => {
+    setFile(file);
+    // Reset content when file is selected
+    setContent("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!content.trim() && !file) {
-      toast({
-        title: "Error",
-        description: "Please paste your resume content or upload a file",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSubmit = () => {
     if (file) {
+      // Create FormData and append the file
       const formData = new FormData();
       formData.append('file', file);
+
+      // Log what we're sending for debugging
+      console.log("Submitting file:", file.name, file.type, file.size);
+
       analyzeMutation.mutate(formData);
+    } else if (content.trim()) {
+      analyzeMutation.mutate({ content });
     } else {
-      analyzeMutation.mutate({ content: content.trim() });
+      toast({
+        title: "Error",
+        description: "Please provide a resume file or text content",
+        variant: "destructive"
+      });
     }
   };
 
@@ -166,7 +156,8 @@ export default function ResumeAnalyzer() {
             </Card>
 
             <Button
-              type="submit"
+              type="button" // Changed to type="button" to avoid default form submission
+              onClick={handleSubmit}
               size="lg"
               disabled={analyzeMutation.isPending}
               className="w-full"

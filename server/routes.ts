@@ -551,13 +551,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/resume-analyze",
     requireAuth,
     (req, res, next) => {
-      // Debug incoming request
+      // Enhanced debugging for incoming request
       console.log("Resume analyze request received:", {
         method: req.method,
         contentType: req.headers['content-type'],
         contentLength: req.headers['content-length'],
         hasBody: !!req.body,
-        bodyKeys: req.body ? Object.keys(req.body) : []
+        bodyKeys: req.body ? Object.keys(req.body) : [],
+        hasFile: !!req.files,
+        hasFileField: !!req.file
       });
       
       // Process file uploads, use single() for one file
@@ -610,7 +612,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Processing uploaded file:', {
             filename: req.file.originalname,
             mimetype: req.file.mimetype,
-            size: req.file.size
+            size: req.file.size,
+            buffer: req.file.buffer ? `Buffer present (${req.file.buffer.length} bytes)` : 'No buffer',
+            fieldname: req.file.fieldname
           });
           
           try {
