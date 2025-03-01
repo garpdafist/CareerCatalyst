@@ -100,93 +100,100 @@ export default function ResumeEditor() {
     // Load analysis results from localStorage
     const savedAnalysis = localStorage.getItem('resumeAnalysis');
     if (savedAnalysis) {
-      const parsedAnalysis = JSON.parse(savedAnalysis);
-      setAnalysis(parsedAnalysis);
+      try {
+        const parsedAnalysis = JSON.parse(savedAnalysis);
+        console.log('Loaded analysis:', parsedAnalysis);
+        setAnalysis(parsedAnalysis);
 
-      // Update sections with structured content from analysis
-      setSections(sections.map(section => {
-        const structuredContent = parsedAnalysis.structuredContent;
+        // Map the structured content to sections
+        if (parsedAnalysis.structuredContent) {
+          const structuredContent = parsedAnalysis.structuredContent;
 
-        switch (section.id) {
-          case "summary":
-            return {
-              ...section,
-              content: structuredContent.professionalSummary || "",
-              suggestions: [
-                ...section.suggestions,
-                parsedAnalysis.scoringCriteria.overallImpression.feedback,
-                "Include years of experience",
-                "Highlight key achievements"
-              ],
-              isCollapsed: false
-            };
-          case "experience":
-            const workExperience = structuredContent.workExperience || [];
-            const formattedExperience = workExperience.map(job => (
-              `${job.company} - ${job.position}\n` +
-              `${job.duration}\n\n` +
-              job.achievements.map(achievement => `• ${achievement}`).join('\n')
-            )).join('\n\n');
+          setSections(sections.map(section => {
+            switch (section.id) {
+              case "summary":
+                return {
+                  ...section,
+                  content: structuredContent.professionalSummary || "",
+                  suggestions: [
+                    ...section.suggestions,
+                    parsedAnalysis.scoringCriteria.overallImpression.feedback,
+                    "Include years of experience",
+                    "Highlight key achievements"
+                  ],
+                  isCollapsed: false
+                };
+              case "experience":
+                const workExperience = structuredContent.workExperience || [];
+                const formattedExperience = workExperience.map(job => (
+                  `${job.company} - ${job.position}\n` +
+                  `${job.duration}\n\n` +
+                  job.achievements.map(achievement => `• ${achievement}`).join('\n')
+                )).join('\n\n');
 
-            return {
-              ...section,
-              content: formattedExperience,
-              suggestions: [
-                ...section.suggestions,
-                parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
-                ...parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights.map(h => `Consider adding: ${h}`)
-              ],
-              keywords: parsedAnalysis.scoringCriteria.metricsAndAchievements.keywords,
-              isCollapsed: false
-            };
-          case "skills":
-            return {
-              ...section,
-              content: structuredContent.technicalSkills.join(", ") || "",
-              suggestions: [
-                ...section.suggestions,
-                parsedAnalysis.scoringCriteria.keywordUsage.feedback,
-                "Match skills with job requirements",
-                "Include both technical and soft skills"
-              ],
-              keywords: parsedAnalysis.scoringCriteria.keywordUsage.keywords,
-              isCollapsed: false
-            };
-          case "education":
-            const education = structuredContent.education || [];
-            const formattedEducation = education.map(edu => (
-              `${edu.institution}\n` +
-              `${edu.degree} (${edu.year})`
-            )).join('\n\n');
+                return {
+                  ...section,
+                  content: formattedExperience,
+                  suggestions: [
+                    ...section.suggestions,
+                    parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
+                    ...parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights.map(h => `Consider adding: ${h}`)
+                  ],
+                  keywords: parsedAnalysis.scoringCriteria.metricsAndAchievements.keywords,
+                  isCollapsed: false
+                };
+              case "skills":
+                return {
+                  ...section,
+                  content: structuredContent.technicalSkills.join(", ") || "",
+                  suggestions: [
+                    ...section.suggestions,
+                    parsedAnalysis.scoringCriteria.keywordUsage.feedback,
+                    "Match skills with job requirements",
+                    "Include both technical and soft skills"
+                  ],
+                  keywords: parsedAnalysis.scoringCriteria.keywordUsage.keywords,
+                  isCollapsed: false
+                };
+              case "education":
+                const education = structuredContent.education || [];
+                const formattedEducation = education.map(edu => (
+                  `${edu.institution}\n` +
+                  `${edu.degree} (${edu.year})`
+                )).join('\n\n');
 
-            return {
-              ...section,
-              content: formattedEducation,
-              suggestions: [
-                ...section.suggestions,
-                ...parsedAnalysis.improvements.filter(imp => 
-                  imp.toLowerCase().includes('education')
-                )
-              ],
-              isCollapsed: false
-            };
-          case "achievements":
-            const achievements = parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights || [];
-            return {
-              ...section,
-              content: achievements.map(achievement => `• ${achievement}`).join('\n'),
-              suggestions: [
-                ...section.suggestions,
-                parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
-                "Focus on quantifiable results",
-                "Highlight leadership and impact"
-              ],
-              isCollapsed: false
-            };
-          default:
-            return section;
+                return {
+                  ...section,
+                  content: formattedEducation,
+                  suggestions: [
+                    ...section.suggestions,
+                    ...parsedAnalysis.improvements.filter(imp => 
+                      imp.toLowerCase().includes('education')
+                    )
+                  ],
+                  isCollapsed: false
+                };
+              case "achievements":
+                const achievements = parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights || [];
+                return {
+                  ...section,
+                  content: achievements.map(achievement => `• ${achievement}`).join('\n'),
+                  suggestions: [
+                    ...section.suggestions,
+                    parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
+                    "Focus on quantifiable results",
+                    "Highlight leadership and impact"
+                  ],
+                  isCollapsed: false
+                };
+              default:
+                return section;
+            }
+          }));
         }
-      }));
+      } catch (error) {
+        console.error('Error parsing analysis:', error);
+      }
     }
   }, []);
 
