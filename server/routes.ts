@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 import pdf from 'pdf-parse/lib/pdf-parse.js';
 import OpenAI from "openai";
+import * as pdfjs from 'pdfjs-dist';
 
 // Initialize Supabase client for auth verification
 const supabaseAdmin = createClient(
@@ -51,24 +52,42 @@ const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-// Configure multer with file type validation
+// Configure multer with enhanced file type validation
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 15 * 1024 * 1024 // 15MB limit
   },
   fileFilter: (_req, file, cb) => {
     const allowedTypes = [
       'application/pdf',
       'text/plain',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      // Allow common PDF variations
+      'application/x-pdf',
+      'application/acrobat',
+      'application/vnd.pdf',
+      'text/pdf',
+      'text/x-pdf'
     ];
+    
+    // Check file extension as a backup verification method
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['pdf', 'txt', 'doc', 'docx'];
+    
+    // Log file details for debugging
+    console.log('Uploaded file details:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      extension: fileExtension
+    });
 
-    if (allowedTypes.includes(file.mimetype)) {
+    if (allowedTypes.includes(file.mimetype) || (fileExtension && allowedExtensions.includes(fileExtension))) {
       cb(null, true);
     } else {
-      cb(new Error(`File type ${file.mimetype} not supported. Please upload PDF, TXT, DOC, or DOCX files.`));
+      cb(new Error(`File type "${file.mimetype}" not supported. Please upload PDF, TXT, DOC, or DOCX files. Your file: ${file.originalname}`));
     }
   }
 });
@@ -91,69 +110,147 @@ const logRequestBody = (req: Request) => {
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // Validate PDF format - check if it starts with %PDF
-    const pdfHeader = buffer.slice(0, 4).toString();
-    if (!pdfHeader.startsWith('%PDF')) {
-      throw new Error('Invalid PDF format: Does not start with %PDF signature');
+    // Enhanced PDF validation
+    const pdfHeader = buffer.slice(0, 10).toString();
+    if (!pdfHeader.includes('%PDF')) {
+      console.error('PDF validation failed: Invalid header signature');
+      throw new Error('Invalid PDF format: The file does not appear to be a valid PDF document');
     }
 
-    // Log buffer details
-    console.log('PDF Buffer:', {
+    // More detailed buffer logging
+    console.log('PDF Buffer details:', {
       size: buffer.length,
       isBuffer: Buffer.isBuffer(buffer),
-      firstBytes: buffer.slice(0, 10).toString('hex')
+      firstBytes: buffer.slice(0, 20).toString('hex'),
+      headerString: pdfHeader
     });
 
+    // Try pdf-parse with more robust error handling
     try {
-      // Try pdf-parse library first
-      const data = await pdf(buffer);
-
-      // Log extraction details
-      console.log('PDF Extraction Results:', {
+      // Ensure the buffer is properly passed to pdf-parse
+      if (!Buffer.isBuffer(buffer)) {
+        console.log('Converting to proper buffer format');
+        buffer = Buffer.from(buffer);
+      }
+      
+      // Add timeout to prevent hanging on problematic PDFs
+      const pdfOptions = { 
+        max: 0, // No page limit
+        timeout: 30000 // 30 second timeout
+      };
+      
+      const data = await pdf(buffer, pdfOptions);
+      
+      // Enhanced logging for successful parsing
+      console.log('PDF extracted successfully:', {
         pageCount: data.numpages || 'unknown',
+        metadata: data.metadata ? 'available' : 'not available',
+        info: data.info ? Object.keys(data.info) : 'not available',
         textLength: data.text ? data.text.length : 0,
-        firstChars: data.text ? (data.text.substring(0, 100) + '...') : 'no text extracted'
+        firstChars: data.text ? (data.text.substring(0, 150) + '...') : 'no text extracted'
       });
 
       if (data && data.text && data.text.trim()) {
         return data.text;
       }
       
-      throw new Error('PDF parsing returned empty text');
+      throw new Error('PDF parsing returned empty text. The PDF may be scanned or contain only images.');
     } catch (pdfError: any) {
-      console.error('PDF library error:', {
+      console.error('Primary PDF parser error:', {
         message: pdfError.message,
         type: pdfError.constructor.name,
-        stack: pdfError.stack
+        stack: pdfError.stack?.substring(0, 500)
       });
-
-      // Fallback: Try to extract as text if the PDF might be text-based
+      
+      // Try alternative approach with more specific error messages
+      if (pdfError.message.includes('Invalid PDF structure')) {
+        console.log('Attempting to repair corrupted PDF structure...');
+        // Simple repair attempt: look for PDF objects manually
+        const pdfString = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
+        const containsObjects = pdfString.includes('obj') && pdfString.includes('endobj');
+        
+        if (containsObjects) {
+          console.log('PDF contains valid objects, trying text extraction from specific parts');
+          // Extract text from parts that might contain readable content
+          const textFragments = pdfString.match(/\((.*?)\)/g) || [];
+          if (textFragments.length > 10) { // Arbitrary threshold for meaningful content
+            const extractedText = textFragments
+              .map(frag => frag.substring(1, frag.length - 1))
+              .join(' ')
+              .replace(/\\n/g, '\n');
+            
+            if (extractedText.length > 100) { // Another arbitrary threshold
+              console.log('Recovered partial text from corrupted PDF');
+              return extractedText;
+            }
+          }
+        }
+      }
+      
+      // Fallback: Try to extract as plain text with enhanced resume keyword detection
       try {
         const textContent = buffer.toString('utf-8');
-        // Check if the content looks like a resume (contains common resume keywords)
-        const resumeKeywords = ['resume', 'experience', 'education', 'skills', 'summary', 'work', 'job', 'professional'];
-        const containsResumeContent = resumeKeywords.some(keyword => 
-          textContent.toLowerCase().includes(keyword)
-        );
+        const resumeKeywords = [
+          'resume', 'experience', 'education', 'skills', 'summary', 'work', 
+          'job', 'professional', 'contact', 'objective', 'profile', 'achievement',
+          'qualification', 'project', 'reference', 'certification', 'email', 'phone'
+        ];
         
-        if (containsResumeContent) {
-          console.log('Successfully extracted text from buffer directly');
+        // More sophisticated content detection - need several keywords
+        let keywordCount = 0;
+        for (const keyword of resumeKeywords) {
+          if (textContent.toLowerCase().includes(keyword)) {
+            keywordCount++;
+          }
+        }
+        
+        if (keywordCount >= 3) { // If at least 3 resume keywords are found
+          console.log('Extracted text using direct method (found resume keywords)');
           return textContent;
         }
       } catch (textError) {
         console.error('Text extraction fallback failed:', textError);
       }
 
-      // If both methods fail, throw the original error with details
-      throw new Error(`PDF parsing failed: ${pdfError.message}`);
+      // Try PDF.js as a last resort method
+      try {
+        console.log('Attempting to extract text using PDF.js...');
+        
+        // Load the PDF document
+        const loadingTask = pdfjs.getDocument({ data: buffer });
+        const pdfDocument = await loadingTask.promise;
+        
+        console.log(`PDF loaded successfully with PDF.js. Page count: ${pdfDocument.numPages}`);
+        
+        // Extract text from all pages
+        let extractedText = '';
+        for (let i = 1; i <= pdfDocument.numPages; i++) {
+          const page = await pdfDocument.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map((item: any) => item.str);
+          extractedText += strings.join(' ') + '\n';
+        }
+        
+        if (extractedText.trim().length > 0) {
+          console.log('Successfully extracted text using PDF.js fallback method');
+          return extractedText;
+        }
+      } catch (pdfjsError) {
+        console.error('PDF.js extraction failed:', pdfjsError);
+      }
+      
+      // If all methods fail, provide a detailed error message
+      throw new Error(`Unable to extract text from PDF. The document may be encrypted, password-protected, or contains only scanned images. Error details: ${pdfError.message}`);
     }
   } catch (error: any) {
-    console.error('PDF parsing error:', {
+    console.error('PDF processing error:', {
       message: error.message,
       type: error.constructor.name,
       stack: error.stack
     });
-    throw new Error(`Failed to parse PDF: ${error.message}`);
+    
+    // Provide a user-friendly error message
+    throw new Error(`Failed to process PDF: ${error.message}. Please ensure the document is not password-protected, encrypted, or contains only images without text.`);
   }
 }
 
@@ -479,13 +576,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     (req, res, next) => {
       upload.single('file')(req, res, (err) => {
         if (err) {
-          // Handle multer errors with specific messages
-          console.error('File upload error:', err);
-          return res.status(400).json({
-            message: "File upload failed",
-            error: err.message,
-            code: "FILE_UPLOAD_ERROR"
+          // Enhanced multer error handling with more specific messages
+          console.error('File upload error:', {
+            message: err.message,
+            stack: err.stack,
+            code: err.code,
+            field: err.field,
+            type: err.constructor.name
           });
+          
+          // Provide specific error messages based on error type
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+              message: "File upload failed: Document exceeds the maximum file size of 15MB",
+              error: "File too large",
+              code: "FILE_SIZE_ERROR",
+              limit: "15MB"
+            });
+          } else if (err.message.includes('File type') || err.message.includes('mimetype')) {
+            return res.status(400).json({
+              message: "File upload failed: Invalid file format",
+              error: err.message,
+              code: "FILE_FORMAT_ERROR",
+              acceptedFormats: "PDF, TXT, DOC, DOCX"
+            });
+          } else {
+            return res.status(400).json({
+              message: "File upload failed",
+              error: err.message,
+              code: "FILE_UPLOAD_ERROR",
+              details: "Please check your file and try again"
+            });
+          }
         }
         next();
       });
