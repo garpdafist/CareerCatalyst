@@ -1,0 +1,39 @@
+You are an experienced UI/UX designer and front-end developer. 
+My current homepage color scheme looks dull and doesn’t have enough contrast. 
+Please overhaul it using a modern, dark-themed palette with a bold accent color. 
+Here are the specific requirements:
+
+1. **Differentiate Backgrounds**:
+   - Use a near-black base (e.g., #121212 or #0F0F0F) for the main background.
+   - For sections or cards, use a slightly lighter dark gray (e.g., #1E1E1E) so they stand out.
+   - This two-tone approach adds depth and separates content blocks.
+
+2. **Bright Accent Color**:
+   - Choose a bold, vibrant accent color (e.g., neon blue #6A84FF or a bright teal #00E0B3). 
+   - Apply it consistently to headings, primary buttons, link hovers, and key callouts.
+   - Consider a second accent if needed (e.g., a bright pink or teal) for minor highlights.
+
+3. **Text Contrast**:
+   - Headings in near-white (#F0F0F0) or the accent color to ensure they pop against the dark background.
+   - Body text in a light gray (#CCCCCC) for readability; use a darker gray (#A5A5A5) for secondary text or placeholders.
+   - Maintain at least a 4.5:1 contrast ratio for accessibility.
+
+4. **Cards & Sections**:
+   - For each feature card (e.g., Resume Analyzer, Editor), use #1E1E1E or similar with a subtle box-shadow or border to create separation from the background.
+   - Round corners slightly (6–8px) and add consistent spacing (e.g., 16px or 24px margins).
+
+5. **Buttons & Links**:
+   - **Primary Button**: background = accent color, text = white. On hover, slightly lighten or saturate the accent (e.g., #8198ff).
+   - **Secondary Button**: a darker background (#2A2A2A) with accent color text or border.
+   - Links: use the accent color; on hover, underline or shift to a lighter tone.
+
+6. **Micro-Interactions**:
+   - Subtle scale or box-shadow on hover for buttons and cards (0.2s–0.3s transitions).
+   - Ensure focus states are clear for accessibility.
+
+7. **Implementation & Testing**:
+   - Provide me with updated CSS variables or Tailwind config for the new palette (backgrounds, accent, text).
+   - Apply these changes to the homepage, ensuring the hero section, feature cards, and nav bar all use the revised colors.
+   - Confirm everything is visually cohesive and has strong contrast.
+
+The end result should be a **modern, eye-catching dark theme** with enough contrast, a bold accent color, and clear visual hierarchy. Please implement these color improvements across the homepage and ensure it looks polished and professional.
