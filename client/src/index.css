@@ -6,9 +6,14 @@
 
 @layer base {
   body {
-    @apply font-sans antialiased;
-    background-color: #FFFFFF;
+    @apply font-sans antialiased bg-white;
+    background-color: #FFFFFF !important;
     color: #1C170D;
+  }
+
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
   }
 
   /* Typography */
