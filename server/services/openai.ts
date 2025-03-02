@@ -111,11 +111,10 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
           model: "gpt-4o",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information:
+            { role: "user", content: `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information. Return the response as a valid JSON object:
 
 ${content}`}
           ],
-          response_format: { type: "json_object" },
           temperature: 0.7
         });
 
