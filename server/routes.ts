@@ -346,7 +346,7 @@ For the cover letter/email format, use this structure:
 <p>[Skills & Alignment Paragraph highlighting <strong>key capabilities</strong>]</p>
 <p>[Strong Closing with Call to Action]</p>
 
-For all formats, ensure content is well-structured with appropriate HTML formatting for emphasis and organization. Respond with a JSON object where each key is the format name and the value is the generated content with HTML formatting.`;
+For all formats, ensure content is well-structured with appropriate HTML formatting for emphasis and organization. IMPORTANT: Your response must be ONLY a JSON object where each key is the format name and the value is the generated content with HTML formatting. Provide no other text.`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -354,11 +354,36 @@ For all formats, ensure content is well-structured with appropriate HTML formatt
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" }
+      ]
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('OpenAI returned an empty response');
+    }
+
+    // Try to extract JSON from response content
+    let jsonContent = content.trim();
+    
+    // Remove any markdown code block indicators if present
+    if (jsonContent.startsWith("```json")) {
+      jsonContent = jsonContent.substring(7);
+    } else if (jsonContent.startsWith("```")) {
+      jsonContent = jsonContent.substring(3);
+    }
+    
+    if (jsonContent.endsWith("```")) {
+      jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+    }
+    
+    jsonContent = jsonContent.trim();
+    
+    try {
+      return JSON.parse(jsonContent);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Content:', jsonContent.substring(0, 100) + '...');
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
   } catch (error) {
     console.error('OpenAI API error:', error);
     throw new Error('Failed to generate content');
@@ -397,6 +422,7 @@ Provide a JSON response with the following structure:
   "experienceSuggestions": ["Array of specific suggestions for improving the experience section"]
 }
 
+IMPORTANT: Your response must ONLY be the JSON object with no other text before or after.
 Focus on actionable improvements that will increase profile visibility and engagement.`;
 
   try {
@@ -405,12 +431,36 @@ Focus on actionable improvements that will increase profile visibility and engag
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" }
+      ]
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content);
-    return analysis;
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('OpenAI returned an empty response');
+    }
+    
+    // Try to extract JSON from response content
+    let jsonContent = content.trim();
+    
+    // Remove any markdown code block indicators if present
+    if (jsonContent.startsWith("```json")) {
+      jsonContent = jsonContent.substring(7);
+    } else if (jsonContent.startsWith("```")) {
+      jsonContent = jsonContent.substring(3);
+    }
+    
+    if (jsonContent.endsWith("```")) {
+      jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+    }
+    
+    jsonContent = jsonContent.trim();
+    
+    try {
+      return JSON.parse(jsonContent);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Content:', jsonContent.substring(0, 100) + '...');
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
   } catch (error) {
     console.error('LinkedIn profile analysis error:', error);
     throw new Error('Failed to analyze LinkedIn profile');
@@ -468,7 +518,7 @@ ${section.content || '[Empty section]'}`;
     }
   }).join('\n\n')}
 
-Provide a JSON response with specific suggestions for each section:
+IMPORTANT: Your response must ONLY be a JSON object with no other text before or after. Provide specific suggestions for each section:
 {
   "headlineSuggestions": ["Specific suggestion about headline format...", "Suggestion about keywords..."],
   "aboutSuggestions": ["Specific suggestion about story structure...", "Suggestion about achievements..."],
@@ -481,11 +531,36 @@ Provide a JSON response with specific suggestions for each section:
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" }
+      ]
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('OpenAI returned an empty response');
+    }
+    
+    // Try to extract JSON from response content
+    let jsonContent = content.trim();
+    
+    // Remove any markdown code block indicators if present
+    if (jsonContent.startsWith("```json")) {
+      jsonContent = jsonContent.substring(7);
+    } else if (jsonContent.startsWith("```")) {
+      jsonContent = jsonContent.substring(3);
+    }
+    
+    if (jsonContent.endsWith("```")) {
+      jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+    }
+    
+    jsonContent = jsonContent.trim();
+    
+    try {
+      return JSON.parse(jsonContent);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Content:', jsonContent.substring(0, 100) + '...');
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
   } catch (error) {
     console.error('LinkedIn content analysis error:', error);
     throw new Error('Failed to analyze LinkedIn content');

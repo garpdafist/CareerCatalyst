@@ -107,11 +107,12 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
       try {
         console.log(`Attempt ${retryCount + 1}/${maxRetries} to call OpenAI API`);
 
+        // Updated prompt to explicitly request JSON format in the instructions
         const response = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information. Return the response as a valid JSON object:
+            { role: "user", content: `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information. IMPORTANT: Your response must be ONLY a valid JSON object with no other text before or after:
 
 ${content}`}
           ],
@@ -130,16 +131,32 @@ ${content}`}
           throw new Error('OpenAI returned an empty response');
         }
 
+        // Try to extract JSON from response content
+        let jsonContent = responseContent.trim();
+        
+        // Remove any markdown code block indicators if present
+        if (jsonContent.startsWith("```json")) {
+          jsonContent = jsonContent.substring(7);
+        } else if (jsonContent.startsWith("```")) {
+          jsonContent = jsonContent.substring(3);
+        }
+        
+        if (jsonContent.endsWith("```")) {
+          jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+        }
+        
+        jsonContent = jsonContent.trim();
+        
         let parsedResponse;
         try {
-          parsedResponse = JSON.parse(responseContent);
+          parsedResponse = JSON.parse(jsonContent);
           console.log('Response parsed successfully:', {
             hasScore: 'score' in parsedResponse,
             hasStructuredContent: 'structuredContent' in parsedResponse,
             hasScoringCriteria: 'scoringCriteria' in parsedResponse
           });
         } catch (parseError) {
-          console.error('JSON parse error:', parseError);
+          console.error('JSON parse error:', parseError, 'Content:', jsonContent.substring(0, 100) + '...');
           throw new Error('Failed to parse OpenAI response as JSON');
         }
 
