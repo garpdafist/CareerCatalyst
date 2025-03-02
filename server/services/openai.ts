@@ -32,15 +32,7 @@ async function waitForRateLimit() {
   lastRequestTime = Date.now();
 }
 
-export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
-  try {
-    await waitForRateLimit();
-
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured');
-    }
-
-    const systemPrompt = `You are an expert resume analyzer. Analyze resumes and provide detailed feedback with specific scoring criteria. ALWAYS return a complete JSON response with ALL required fields.
+const systemPrompt = `You are an expert resume analyzer. Analyze resumes and provide detailed feedback with specific scoring criteria. ALWAYS return a complete JSON response with ALL required fields.
 
 Required fields and their format:
 {
@@ -92,11 +84,20 @@ Required fields and their format:
   }
 }`;
 
-    const userPrompt = `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information:
+export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
+  try {
+    await waitForRateLimit();
 
-${content}`;
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key missing');
+      throw new Error('OpenAI API key is not configured');
+    }
 
-    console.log('Making OpenAI request with content length:', content.length);
+    console.log('Starting OpenAI analysis:', {
+      contentLength: content.length,
+      apiKeyExists: !!process.env.OPENAI_API_KEY,
+      apiKeyFirstChars: process.env.OPENAI_API_KEY?.substring(0, 3)
+    });
 
     const maxRetries = 3;
     let retryCount = 0;
@@ -104,14 +105,25 @@ ${content}`;
 
     while (retryCount < maxRetries) {
       try {
+        console.log(`Attempt ${retryCount + 1}/${maxRetries} to call OpenAI API`);
+
         const response = await openai.chat.completions.create({
-          model: "gpt-4", // Fixed model name
+          model: "gpt-4",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
+            { role: "user", content: `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information:
+
+${content}`}
           ],
           response_format: { type: "json_object" },
           temperature: 0.7
+        });
+
+        console.log('OpenAI API response received:', {
+          status: 'success',
+          responseId: response.id,
+          model: response.model,
+          hasChoices: response.choices?.length > 0
         });
 
         const responseContent = response.choices[0].message.content;
@@ -119,28 +131,30 @@ ${content}`;
           throw new Error('OpenAI returned an empty response');
         }
 
-        console.log('OpenAI raw response:', {
-          contentLength: responseContent.length,
-          preview: responseContent.substring(0, 200) + '...'
-        });
-
         let parsedResponse;
         try {
           parsedResponse = JSON.parse(responseContent);
-          console.log('Parsed response structure:', {
+          console.log('Response parsed successfully:', {
             hasScore: 'score' in parsedResponse,
-            hasFeedback: Array.isArray(parsedResponse.feedback),
-            hasSkills: Array.isArray(parsedResponse.skills),
-            hasScoringCriteria: typeof parsedResponse.scoringCriteria === 'object',
-            hasStructuredContent: typeof parsedResponse.structuredContent === 'object'
+            hasStructuredContent: 'structuredContent' in parsedResponse,
+            hasScoringCriteria: 'scoringCriteria' in parsedResponse
           });
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
           throw new Error('Failed to parse OpenAI response as JSON');
         }
 
-        const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
-        return validatedResponse;
+        try {
+          const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
+          console.log('Response validation successful');
+          return validatedResponse;
+        } catch (validationError: any) {
+          console.error('Schema validation error:', {
+            errors: validationError.errors,
+            receivedData: parsedResponse
+          });
+          throw new Error('OpenAI response did not match expected schema');
+        }
 
       } catch (error: any) {
         lastError = error;
@@ -152,23 +166,21 @@ ${content}`;
         });
 
         if (error.status === 429 || error.status === 503) {
-          // Rate limit or service temporarily unavailable, retry after delay
-          const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+          const delay = Math.pow(2, retryCount) * 1000;
+          console.log(`Rate limited, waiting ${delay}ms before retry`);
           await new Promise(resolve => setTimeout(resolve, delay));
           retryCount++;
           continue;
         }
 
-        // Don't retry other types of errors
         break;
       }
     }
 
-    // If we get here, all retries failed
     if (lastError.status === 429) {
       throw new Error('Service is experiencing high load. Please try again in a few moments.');
     } else if (lastError.status === 401 || lastError.status === 403) {
-      throw new Error('API authentication failed. Please try again or contact support.');
+      throw new Error('API authentication failed. Please check your API key configuration.');
     } else {
       throw new Error(`Failed to analyze resume: ${lastError.message}`);
     }
