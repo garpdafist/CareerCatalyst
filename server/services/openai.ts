@@ -108,7 +108,7 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
         console.log(`Attempt ${retryCount + 1}/${maxRetries} to call OpenAI API`);
 
         const response = await openai.chat.completions.create({
-          model: "gpt-4",
+          model: "gpt-4o",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: `Analyze this resume content and provide a complete analysis with ALL required fields as specified. If any section of the resume is missing, provide appropriate feedback about the missing information:
