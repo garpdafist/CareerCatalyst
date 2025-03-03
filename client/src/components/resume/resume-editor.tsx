@@ -100,30 +100,28 @@ export default function ResumeEditor() {
     if (savedAnalysis) {
       try {
         const parsedAnalysis = JSON.parse(savedAnalysis);
-        console.log('Loaded analysis:', parsedAnalysis);
+        console.log('Loading analysis data:', parsedAnalysis);
         setAnalysis(parsedAnalysis);
 
-        // Map the structured content to sections
         if (parsedAnalysis.structuredContent) {
-          const structuredContent = parsedAnalysis.structuredContent;
-          const criteriaFeedback = parsedAnalysis.scoringCriteria;
+          const content = parsedAnalysis.structuredContent;
+          const criteria = parsedAnalysis.scoringCriteria;
 
-          setSections(sections.map(section => {
+          const updatedSections = sections.map(section => {
             switch (section.id) {
               case "summary":
                 return {
                   ...section,
-                  content: structuredContent.professionalSummary || "",
+                  content: content.professionalSummary || "",
                   suggestions: [
                     ...section.suggestions,
-                    criteriaFeedback.summary.feedback,
-                    "Add years of experience",
-                    "Highlight key achievements"
+                    criteria.summary.feedback
                   ],
                   isCollapsed: false
                 };
+
               case "experience":
-                const workExperience = structuredContent.workExperience || [];
+                const workExperience = content.workExperience || [];
                 const formattedExperience = workExperience.map(job => (
                   `${job.company} - ${job.position}\n` +
                   `${job.duration}\n\n` +
@@ -135,28 +133,26 @@ export default function ResumeEditor() {
                   content: formattedExperience,
                   suggestions: [
                     ...section.suggestions,
-                    criteriaFeedback.achievementsAndMetrics.feedback,
-                    "Add more quantifiable results",
-                    "Use strong action verbs"
+                    criteria.achievementsAndMetrics.feedback
                   ],
                   keywords: parsedAnalysis.keywords,
                   isCollapsed: false
                 };
+
               case "skills":
                 return {
                   ...section,
-                  content: structuredContent.technicalSkills.join(", ") || "",
+                  content: content.technicalSkills.join(", ") || "",
                   suggestions: [
                     ...section.suggestions,
-                    criteriaFeedback.skills.feedback,
-                    "Group skills by category",
-                    "Add proficiency levels"
+                    criteria.skills.feedback
                   ],
                   keywords: parsedAnalysis.skills,
                   isCollapsed: false
                 };
+
               case "education":
-                const education = structuredContent.education || [];
+                const education = content.education || [];
                 const formattedEducation = education.map(edu => (
                   `${edu.institution}\n` +
                   `${edu.degree} (${edu.year})`
@@ -167,29 +163,29 @@ export default function ResumeEditor() {
                   content: formattedEducation,
                   suggestions: [
                     ...section.suggestions,
-                    criteriaFeedback.education.feedback,
-                    "Add relevant coursework",
-                    "Include GPA if above 3.5"
+                    criteria.education.feedback
                   ],
                   isCollapsed: false
                 };
+
               case "achievements":
-                const achievements = parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights || [];
                 return {
                   ...section,
-                  content: achievements.map(achievement => `• ${achievement}`).join('\n'),
+                  content: parsedAnalysis.improvements.map(improvement => `• ${improvement}`).join('\n'),
                   suggestions: [
                     ...section.suggestions,
-                    parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
-                    "Focus on quantifiable results",
-                    "Highlight leadership and impact"
+                    criteria.achievementsAndMetrics.feedback
                   ],
                   isCollapsed: false
                 };
+
               default:
                 return section;
             }
-          }));
+          });
+
+          console.log('Updated sections with analysis data:', updatedSections);
+          setSections(updatedSections);
         }
       } catch (error) {
         console.error('Error parsing analysis:', error);
