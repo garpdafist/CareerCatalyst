@@ -364,20 +364,20 @@ For all formats, ensure content is well-structured with appropriate HTML formatt
 
     // Try to extract JSON from response content
     let jsonContent = content.trim();
-    
+
     // Remove any markdown code block indicators if present
     if (jsonContent.startsWith("```json")) {
       jsonContent = jsonContent.substring(7);
     } else if (jsonContent.startsWith("```")) {
       jsonContent = jsonContent.substring(3);
     }
-    
+
     if (jsonContent.endsWith("```")) {
       jsonContent = jsonContent.substring(0, jsonContent.length - 3);
     }
-    
+
     jsonContent = jsonContent.trim();
-    
+
     try {
       return JSON.parse(jsonContent);
     } catch (parseError) {
@@ -438,23 +438,23 @@ Focus on actionable improvements that will increase profile visibility and engag
     if (!content) {
       throw new Error('OpenAI returned an empty response');
     }
-    
+
     // Try to extract JSON from response content
     let jsonContent = content.trim();
-    
+
     // Remove any markdown code block indicators if present
     if (jsonContent.startsWith("```json")) {
       jsonContent = jsonContent.substring(7);
     } else if (jsonContent.startsWith("```")) {
       jsonContent = jsonContent.substring(3);
     }
-    
+
     if (jsonContent.endsWith("```")) {
       jsonContent = jsonContent.substring(0, jsonContent.length - 3);
     }
-    
+
     jsonContent = jsonContent.trim();
-    
+
     try {
       return JSON.parse(jsonContent);
     } catch (parseError) {
@@ -538,23 +538,23 @@ IMPORTANT: Your response must ONLY be a JSON object with no other text before or
     if (!content) {
       throw new Error('OpenAI returned an empty response');
     }
-    
+
     // Try to extract JSON from response content
     let jsonContent = content.trim();
-    
+
     // Remove any markdown code block indicators if present
     if (jsonContent.startsWith("```json")) {
       jsonContent = jsonContent.substring(7);
     } else if (jsonContent.startsWith("```")) {
       jsonContent = jsonContent.substring(3);
     }
-    
+
     if (jsonContent.endsWith("```")) {
       jsonContent = jsonContent.substring(0, jsonContent.length - 3);
     }
-    
+
     jsonContent = jsonContent.trim();
-    
+
     try {
       return JSON.parse(jsonContent);
     } catch (parseError) {
@@ -722,7 +722,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy(() => {
+    // Clear the session
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error during logout:', err);
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.clearCookie('connect.sid'); // Clear the session cookie
       res.json({ message: "Logged out successfully" });
     });
   });
