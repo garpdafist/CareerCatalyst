@@ -50,7 +50,7 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     await waitForRateLimit();
 
-    const response = await openai.chat.completions.create({
+    const requestBody = {
       model: ANALYSIS_MODEL,
       messages: [
         {
@@ -80,8 +80,12 @@ ${content}`
         }
       ],
       temperature: 0.7
-      // The response_format parameter was removed as it's not compatible with all models
-    });
+    };
+
+    // Log final request payload for debugging
+    console.log('OpenAI request payload:', JSON.stringify(requestBody, null, 2));
+
+    const response = await openai.chat.completions.create(requestBody);
 
     // Log API response
     console.log('OpenAI API response received:', {
