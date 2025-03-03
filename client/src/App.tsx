@@ -20,11 +20,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={Home} />
-      <ProtectedRoute path="/resume-analyzer" component={ResumeAnalyzer} />
-      <ProtectedRoute path="/resume-editor" component={ResumeEditor} />
-      <ProtectedRoute path="/cover-letter" component={CoverLetterGenerator} />
-      <ProtectedRoute path="/linkedin-optimizer" component={LinkedInOptimizer} />
+      <Route path="/" component={Home} />
+      <ProtectedRoute path="/resume-analyzer" component={ResumeAnalyzer} showContentWithoutAuth={true} />
+      <ProtectedRoute path="/resume-editor" component={ResumeEditor} showContentWithoutAuth={true} />
+      <ProtectedRoute path="/cover-letter" component={CoverLetterGenerator} showContentWithoutAuth={true} />
+      <ProtectedRoute path="/linkedin-optimizer" component={LinkedInOptimizer} showContentWithoutAuth={true} />
       <Route component={NotFound} />
     </Switch>
   );
