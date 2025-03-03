@@ -94,131 +94,110 @@ export default function ResumeEditor() {
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
   const [completionScore, setCompletionScore] = useState(0);
 
+  // Load and process analysis data
   useEffect(() => {
-    // Load analysis results from localStorage
     const savedAnalysis = localStorage.getItem('resumeAnalysis');
     if (savedAnalysis) {
       try {
         const parsedAnalysis = JSON.parse(savedAnalysis);
-        console.log('Loading analysis data:', parsedAnalysis);
         setAnalysis(parsedAnalysis);
 
         if (parsedAnalysis.structuredContent) {
           const content = parsedAnalysis.structuredContent;
           const criteria = parsedAnalysis.scoringCriteria;
 
+          // Create new sections with updated content
           const updatedSections = sections.map(section => {
+            let updatedSection = { ...section };
+
             switch (section.id) {
               case "summary":
-                return {
-                  ...section,
-                  content: content.professionalSummary || "",
-                  suggestions: [
-                    ...section.suggestions,
-                    criteria.summary.feedback
-                  ],
-                  isCollapsed: false
-                };
+                updatedSection.content = content.professionalSummary || "";
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.summary.feedback
+                ];
+                break;
 
               case "experience":
                 const workExperience = content.workExperience || [];
-                const formattedExperience = workExperience.map(job => (
+                updatedSection.content = workExperience.map(job => (
                   `${job.company} - ${job.position}\n` +
                   `${job.duration}\n\n` +
                   job.achievements.map(achievement => `• ${achievement}`).join('\n')
                 )).join('\n\n');
-
-                return {
-                  ...section,
-                  content: formattedExperience,
-                  suggestions: [
-                    ...section.suggestions,
-                    criteria.achievementsAndMetrics.feedback
-                  ],
-                  keywords: parsedAnalysis.keywords,
-                  isCollapsed: false
-                };
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.achievementsAndMetrics.feedback
+                ];
+                updatedSection.keywords = parsedAnalysis.keywords;
+                break;
 
               case "skills":
-                return {
-                  ...section,
-                  content: content.technicalSkills.join(", ") || "",
-                  suggestions: [
-                    ...section.suggestions,
-                    criteria.skills.feedback
-                  ],
-                  keywords: parsedAnalysis.skills,
-                  isCollapsed: false
-                };
+                updatedSection.content = content.technicalSkills.join(", ") || "";
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.skills.feedback
+                ];
+                updatedSection.keywords = parsedAnalysis.skills;
+                break;
 
               case "education":
                 const education = content.education || [];
-                const formattedEducation = education.map(edu => (
+                updatedSection.content = education.map(edu => (
                   `${edu.institution}\n` +
                   `${edu.degree} (${edu.year})`
                 )).join('\n\n');
-
-                return {
-                  ...section,
-                  content: formattedEducation,
-                  suggestions: [
-                    ...section.suggestions,
-                    criteria.education.feedback
-                  ],
-                  isCollapsed: false
-                };
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.education.feedback
+                ];
+                break;
 
               case "achievements":
-                return {
-                  ...section,
-                  content: parsedAnalysis.improvements.map(improvement => `• ${improvement}`).join('\n'),
-                  suggestions: [
-                    ...section.suggestions,
-                    criteria.achievementsAndMetrics.feedback
-                  ],
-                  isCollapsed: false
-                };
-
-              default:
-                return section;
+                updatedSection.content = parsedAnalysis.improvements.map(improvement => `• ${improvement}`).join('\n');
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.achievementsAndMetrics.feedback
+                ];
+                break;
             }
+
+            return updatedSection;
           });
 
-          console.log('Updated sections with analysis data:', updatedSections);
           setSections(updatedSections);
         }
       } catch (error) {
-        console.error('Error parsing analysis:', error);
+        console.error('Error processing analysis:', error);
       }
     }
-  }, []);
+  }, []); // Only run on mount
 
-  // Calculate completion score based on filled sections and metrics usage
+  // Calculate completion score
   useEffect(() => {
     const filledSections = sections.filter(s => s.content.trim().length > 0).length;
     const hasMetrics = sections.some(s =>
-      /\d+%|\$\d+|\d+x/i.test(s.content) || // Check for percentages, dollar amounts, or multipliers
-      /increased|decreased|improved|reduced/i.test(s.content) // Check for improvement-related words
+      /\d+%|\$\d+|\d+x/i.test(s.content) ||
+      /increased|decreased|improved|reduced/i.test(s.content)
     );
-    const baseScore = (filledSections / sections.length) * 80; // Base score out of 80
-    const metricsBonus = hasMetrics ? 20 : 0; // Bonus 20 points for using metrics
+    const baseScore = (filledSections / sections.length) * 80;
+    const metricsBonus = hasMetrics ? 20 : 0;
     setCompletionScore(Math.round(baseScore + metricsBonus));
   }, [sections]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
-
     const items = Array.from(sections);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-
     setSections(items);
   };
 
   const toggleSection = (index: number) => {
-    const newSections = [...sections];
-    newSections[index].isCollapsed = !newSections[index].isCollapsed;
-    setSections(newSections);
+    setSections(prev => prev.map((section, i) => 
+      i === index ? { ...section, isCollapsed: !section.isCollapsed } : section
+    ));
   };
 
   const handleDownload = () => {
