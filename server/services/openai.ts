@@ -106,13 +106,12 @@ Your response must be a valid JSON object with the following structure:
         },
         {
           role: "user",
-          content: `Analyze this resume and provide detailed feedback with the exact JSON structure specified:
+          content: `Analyze this resume and provide detailed feedback with the following structure:
 
 ${content}`
         }
       ],
-      temperature: 0.7,
-      response_format: { type: "json_object" }
+      temperature: 0.7
     });
 
     // Log API response
