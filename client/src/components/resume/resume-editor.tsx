@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { GripVertical, Download, Sparkles } from "lucide-react";
+import { GripVertical, Download, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { ResumeAnalysis } from "@shared/schema";
 import { motion } from "framer-motion";
