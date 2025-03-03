@@ -13,6 +13,8 @@ type AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
+const isDevelopment = import.meta.env.DEV;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -24,6 +26,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initAuth() {
       try {
+        if (isDevelopment) {
+          // In development, create a mock user
+          const mockUser = {
+            id: 'test-user',
+            email: 'test@example.com',
+            aud: 'authenticated',
+            role: 'authenticated',
+            email_confirmed_at: new Date().toISOString(),
+            confirmed_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            app_metadata: { provider: 'email' },
+            user_metadata: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          if (mounted) {
+            setUser(mockUser as User);
+            setIsLoading(false);
+          }
+          return;
+        }
+
         const supabase = await getSupabase();
 
         // Check for initial session
@@ -59,6 +84,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string) => {
     setIsLoading(true);
     try {
+      if (isDevelopment) {
+        // In development, auto-sign in with mock user
+        const mockUser = {
+          id: 'test-user',
+          email: email,
+          aud: 'authenticated',
+          role: 'authenticated',
+          email_confirmed_at: new Date().toISOString(),
+          confirmed_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          app_metadata: { provider: 'email' },
+          user_metadata: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        setUser(mockUser as User);
+        toast({
+          title: "Development Mode",
+          description: "Signed in with mock user.",
+        });
+        setLocation('/');
+        return;
+      }
+
       const supabase = await getSupabase();
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -88,6 +138,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     setIsLoading(true);
     try {
+      if (isDevelopment) {
+        setUser(null);
+        toast({
+          title: "Signed out",
+          description: "Development mode: Successfully signed out.",
+        });
+        setLocation('/auth');
+        return;
+      }
+
       const supabase = await getSupabase();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;

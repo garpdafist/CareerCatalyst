@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,38 @@ import { motion } from "framer-motion";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
+  const [showResend, setShowResend] = useState(false);
+  const [countdown, setCountdown] = useState(60);
   const { signIn, isLoading } = useAuth();
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showResend && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      setShowResend(false);
+      setCountdown(60);
+    }
+    return () => clearInterval(timer);
+  }, [showResend, countdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await signIn(email);
+      setShowResend(true);
+    } catch (error) {
+      // Error is handled in useAuth
+    }
+  };
+
+  const handleResend = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await signIn(email);
+      setCountdown(60);
     } catch (error) {
       // Error is handled in useAuth
     }
@@ -52,6 +78,20 @@ export default function AuthPage() {
               >
                 {isLoading ? "Sending magic link..." : "Continue with Email"}
               </Button>
+
+              {showResend && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full mt-2"
+                  onClick={handleResend}
+                  disabled={countdown > 0 || isLoading}
+                >
+                  {countdown > 0
+                    ? `Resend in ${countdown}s`
+                    : "Resend magic link"}
+                </Button>
+              )}
             </form>
             <p className="mt-4 text-center text-sm text-muted-foreground">
               We'll send you a magic link to sign in instantly
