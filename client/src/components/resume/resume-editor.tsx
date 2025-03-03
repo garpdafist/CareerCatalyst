@@ -3,8 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { GripVertical, Download, AlertCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { GripVertical, Download, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { ResumeAnalysis } from "@shared/schema";
 import { motion } from "framer-motion";
@@ -23,9 +22,9 @@ type ResumeSection = {
 
 // Standard ATS-friendly sections with consulting-style guidance
 const initialSections: ResumeSection[] = [
-  { 
-    id: "summary", 
-    title: "Professional Summary", 
+  {
+    id: "summary",
+    title: "Professional Summary",
     content: "",
     suggestions: [
       "Start with years of marketing experience and key specializations",
@@ -36,9 +35,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "Marketing professional with X years of experience in [specialization]. Achieved [specific metric]% growth in [key area] through [strategy]. Expert in [tools/platforms] with proven success in [specific achievement with numbers].",
     isCollapsed: false,
   },
-  { 
-    id: "experience", 
-    title: "Work Experience", 
+  {
+    id: "experience",
+    title: "Work Experience",
     content: "",
     suggestions: [
       "Start bullets with strong action verbs (Launched, Optimized, Spearheaded)",
@@ -49,9 +48,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "• Spearheaded digital campaign delivering 45% ROI, reducing CPC from $2.30 to $1.15\n• Led 5-person team to achieve 150% YoY growth in user acquisition\n• Optimized conversion funnel, improving CTR by 60% through A/B testing",
     isCollapsed: false,
   },
-  { 
-    id: "skills", 
-    title: "Technical Skills", 
+  {
+    id: "skills",
+    title: "Technical Skills",
     content: "",
     suggestions: [
       "Group by category: Analytics, Paid Media, Content, etc.",
@@ -62,9 +61,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "Analytics: Google Analytics, Firebase, AppsFlyer (Advanced)\nPaid Media: Meta Ads, Google Ads, LinkedIn Ads (Expert)\nTools: HubSpot, Salesforce, Mailchimp (Proficient)\nAnalysis: SQL, Excel, Tableau (Advanced)",
     isCollapsed: false,
   },
-  { 
-    id: "education", 
-    title: "Education", 
+  {
+    id: "education",
+    title: "Education",
     content: "",
     suggestions: [
       "List degrees in reverse chronological order",
@@ -75,9 +74,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "MBA, Marketing Analytics (GPA: 3.8)\nUniversity Name, Year\n• Led market research project resulting in 25% improvement in campaign targeting\n• Selected for Marketing Leadership Program (Top 5%)",
     isCollapsed: false,
   },
-  { 
-    id: "achievements", 
-    title: "Key Achievements", 
+  {
+    id: "achievements",
+    title: "Key Achievements",
     content: "",
     suggestions: [
       "List 2-3 most impressive quantifiable wins",
@@ -93,7 +92,6 @@ const initialSections: ResumeSection[] = [
 export default function ResumeEditor() {
   const [sections, setSections] = useState(initialSections);
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [completionScore, setCompletionScore] = useState(0);
 
   useEffect(() => {
@@ -108,6 +106,7 @@ export default function ResumeEditor() {
         // Map the structured content to sections
         if (parsedAnalysis.structuredContent) {
           const structuredContent = parsedAnalysis.structuredContent;
+          const criteriaFeedback = parsedAnalysis.scoringCriteria;
 
           setSections(sections.map(section => {
             switch (section.id) {
@@ -117,8 +116,8 @@ export default function ResumeEditor() {
                   content: structuredContent.professionalSummary || "",
                   suggestions: [
                     ...section.suggestions,
-                    parsedAnalysis.scoringCriteria.overallImpression.feedback,
-                    "Include years of experience",
+                    criteriaFeedback.summary.feedback,
+                    "Add years of experience",
                     "Highlight key achievements"
                   ],
                   isCollapsed: false
@@ -136,10 +135,11 @@ export default function ResumeEditor() {
                   content: formattedExperience,
                   suggestions: [
                     ...section.suggestions,
-                    parsedAnalysis.scoringCriteria.metricsAndAchievements.feedback,
-                    ...parsedAnalysis.scoringCriteria.metricsAndAchievements.highlights.map(h => `Consider adding: ${h}`)
+                    criteriaFeedback.achievementsAndMetrics.feedback,
+                    "Add more quantifiable results",
+                    "Use strong action verbs"
                   ],
-                  keywords: parsedAnalysis.scoringCriteria.metricsAndAchievements.keywords,
+                  keywords: parsedAnalysis.keywords,
                   isCollapsed: false
                 };
               case "skills":
@@ -148,11 +148,11 @@ export default function ResumeEditor() {
                   content: structuredContent.technicalSkills.join(", ") || "",
                   suggestions: [
                     ...section.suggestions,
-                    parsedAnalysis.scoringCriteria.keywordUsage.feedback,
-                    "Match skills with job requirements",
-                    "Include both technical and soft skills"
+                    criteriaFeedback.skills.feedback,
+                    "Group skills by category",
+                    "Add proficiency levels"
                   ],
-                  keywords: parsedAnalysis.scoringCriteria.keywordUsage.keywords,
+                  keywords: parsedAnalysis.skills,
                   isCollapsed: false
                 };
               case "education":
@@ -167,9 +167,9 @@ export default function ResumeEditor() {
                   content: formattedEducation,
                   suggestions: [
                     ...section.suggestions,
-                    ...parsedAnalysis.improvements.filter(imp => 
-                      imp.toLowerCase().includes('education')
-                    )
+                    criteriaFeedback.education.feedback,
+                    "Add relevant coursework",
+                    "Include GPA if above 3.5"
                   ],
                   isCollapsed: false
                 };
@@ -200,7 +200,7 @@ export default function ResumeEditor() {
   // Calculate completion score based on filled sections and metrics usage
   useEffect(() => {
     const filledSections = sections.filter(s => s.content.trim().length > 0).length;
-    const hasMetrics = sections.some(s => 
+    const hasMetrics = sections.some(s =>
       /\d+%|\$\d+|\d+x/i.test(s.content) || // Check for percentages, dollar amounts, or multipliers
       /increased|decreased|improved|reduced/i.test(s.content) // Check for improvement-related words
     );
@@ -254,7 +254,7 @@ export default function ResumeEditor() {
       <PageHeader>
         <PageTitle>Resume Editor</PageTitle>
         <PageDescription>
-          Follow consulting-style best practices: quantify achievements, use action verbs, and highlight metrics.
+          Follow best practices: quantify achievements, use action verbs, and highlight metrics.
         </PageDescription>
       </PageHeader>
 
@@ -274,11 +274,6 @@ export default function ResumeEditor() {
                 </span>
               </div>
               <Progress value={analysis ? analysis.score : completionScore} className="h-2 bg-[#E8DECF]" />
-              {analysis && analysis.score < 90 && (
-                <p className="text-sm text-[#757575]">
-                  Pro tip: Add specific metrics (%, $, growth rates) to improve your score
-                </p>
-              )}
             </div>
             {analysis && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -288,14 +283,13 @@ export default function ResumeEditor() {
                       {key.replace(/([A-Z])/g, ' $1').trim()}
                     </h4>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">Score</span>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm text-muted-foreground">
                         {criteria.score}/{criteria.maxScore}
                       </span>
                     </div>
-                    <Progress 
-                      value={(criteria.score / criteria.maxScore) * 100} 
-                      className="h-1 bg-[#E8DECF]" 
+                    <Progress
+                      value={(criteria.score / criteria.maxScore) * 100}
+                      className="h-1 bg-[#E8DECF]"
                     />
                     <p className="text-sm mt-2 text-muted-foreground">
                       {criteria.feedback}
@@ -333,7 +327,7 @@ export default function ResumeEditor() {
                           {...provided.draggableProps}
                           className="border-0 bg-[#F5F0E5] transition-all duration-200"
                         >
-                          <CardHeader 
+                          <CardHeader
                             className="flex flex-row items-center gap-4 py-3 cursor-pointer"
                             onClick={() => toggleSection(index)}
                           >
@@ -391,7 +385,7 @@ export default function ResumeEditor() {
                                       </h4>
                                       <div className="flex flex-wrap gap-2">
                                         {section.keywords.map((keyword, i) => (
-                                          <span 
+                                          <span
                                             key={i}
                                             className="text-xs bg-[#009963]/10 text-[#009963] px-2 py-1 rounded-full"
                                           >
