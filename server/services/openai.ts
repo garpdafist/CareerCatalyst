@@ -18,7 +18,7 @@ export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema
 
 // Rate limiting variables
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 210; // 0.21 seconds in milliseconds
+const MIN_REQUEST_INTERVAL = 2000; // 2 seconds in milliseconds
 
 async function waitForRateLimit() {
   const now = Date.now();
@@ -31,6 +31,8 @@ async function waitForRateLimit() {
 
   lastRequestTime = Date.now();
 }
+
+const ANALYSIS_MODEL = "gpt-3.5-turbo"; // Define the model to use here.  This should be configured elsewhere ideally
 
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
   try {
@@ -49,57 +51,23 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
     await waitForRateLimit();
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4", // Using the standard GPT-4 model
+      model: ANALYSIS_MODEL,
       messages: [
         {
           role: "system",
-          content: `You are an expert resume analyzer. Analyze the resume content and provide structured feedback.
-Your response must be a valid JSON object with the following structure:
+          content: `You are an expert resume analyzer who provides constructive feedback to improve job application documents. Analyze the resume content and respond with a JSON object containing:
 {
-  "score": number between 0-100,
-  "feedback": array of feedback strings,
-  "skills": array of identified skills,
-  "improvements": array of improvement suggestions,
-  "keywords": array of relevant keywords,
-  "scoringCriteria": {
-    "keywordUsage": {
-      "score": number (max 20),
-      "maxScore": 20,
-      "feedback": string,
-      "keywords": array of strings
-    },
-    "metricsAndAchievements": {
-      "score": number (max 30),
-      "maxScore": 30,
-      "feedback": string,
-      "highlights": array of strings
-    },
-    "structureAndReadability": {
-      "score": number (max 25),
-      "maxScore": 25,
-      "feedback": string
-    },
-    "overallImpression": {
-      "score": number (max 25),
-      "maxScore": 25,
-      "feedback": string
-    }
-  },
+  "score": a number from 0-100 representing the overall quality,
+  "feedback": an array of strings with general feedback about the resume,
+  "skills": an array of strings identifying technical and soft skills present,
+  "improvements": an array of strings with specific improvement suggestions,
+  "keywords": an array of important industry keywords found,
   "structuredContent": {
-    "professionalSummary": string,
-    "workExperience": array of {
-      company: string,
-      position: string,
-      duration: string,
-      achievements: array of strings
-    },
-    "technicalSkills": array of strings,
-    "education": array of {
-      institution: string,
-      degree: string,
-      year: string
-    },
-    "certifications": array of strings,
+    "summary": extracted professional summary,
+    "experience": array of work experiences,
+    "education": array of education entries,
+    "skills": array of skills mentioned,
+    "certifications": array of certifications if present,
     "projects": array of objects
   }
 }`
@@ -112,6 +80,7 @@ ${content}`
         }
       ],
       temperature: 0.7
+      // The response_format parameter was removed as it's not compatible with all models
     });
 
     // Log API response
@@ -122,16 +91,33 @@ ${content}`
       hasContent: !!response.choices[0]?.message?.content
     });
 
-    const responseContent = response.choices[0]?.message?.content;
-    if (!responseContent) {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('OpenAI returned an empty response');
     }
 
+    // Parse the response content
     try {
-      const parsedResponse = JSON.parse(responseContent);
+      // Clean the response to handle potential markdown code blocks
+      let jsonContent = content.trim();
+
+      // Remove any markdown code block indicators if present
+      if (jsonContent.startsWith("```json")) {
+        jsonContent = jsonContent.substring(7);
+      } else if (jsonContent.startsWith("```")) {
+        jsonContent = jsonContent.substring(3);
+      }
+
+      if (jsonContent.endsWith("```")) {
+        jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+      }
+
+      jsonContent = jsonContent.trim();
+
+      const parsedData = JSON.parse(jsonContent);
 
       // Validate response structure
-      const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
+      const validatedResponse = resumeAnalysisResponseSchema.parse(parsedData);
 
       console.log('Analysis completed successfully:', {
         score: validatedResponse.score,
@@ -144,7 +130,7 @@ ${content}`
     } catch (parseError: any) {
       console.error('Response parsing/validation error:', {
         error: parseError.message,
-        response: responseContent.substring(0, 200) + '...'
+        response: content.substring(0, 200) + '...'
       });
       throw new Error('Failed to parse OpenAI response: ' + parseError.message);
     }
