@@ -74,7 +74,8 @@ const resumeAnalysisResponseSchema = z.object({
   keywords: z.array(z.string())
 });
 
-// Rate limiting function
+type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 200;
 
@@ -90,8 +91,6 @@ async function waitForRateLimit() {
   lastRequestTime = Date.now();
 }
 
-type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
-
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -106,46 +105,57 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     await waitForRateLimit();
 
+    const systemPrompt = `You are an expert resume analyzer. Return ONLY a JSON object with no additional text. The JSON must follow this exact format:
+{
+  "score": number (0-100),
+  "scoringCriteria": {
+    "relevanceAndTargeting": { "score": number, "maxScore": 20, "feedback": string },
+    "achievementsAndMetrics": { "score": number, "maxScore": 25, "feedback": string },
+    "structureAndOrganization": { "score": number, "maxScore": 15, "feedback": string },
+    "summary": { "score": number, "maxScore": 10, "feedback": string },
+    "skills": { "score": number, "maxScore": 10, "feedback": string },
+    "education": { "score": number, "maxScore": 5, "feedback": string },
+    "formattingAndATS": { "score": number, "maxScore": 10, "feedback": string },
+    "professionalTone": { "score": number, "maxScore": 5, "feedback": string }
+  },
+  "structuredContent": {
+    "professionalSummary": string,
+    "workExperience": array of objects with company, position, duration, and achievements,
+    "technicalSkills": array of strings,
+    "education": array of objects with institution, degree, and year
+  },
+  "feedback": array of strings,
+  "skills": array of strings,
+  "improvements": array of strings,
+  "keywords": array of strings
+}`;
+
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
-        {
-          role: "system",
-          content: `You are an expert resume analyzer. Analyze resumes based on these criteria:
-
-1. Relevance & Targeting (20%): How well the resume matches intended roles
-2. Achievements & Metrics (25%): Quantifiable results and impact
-3. Structure & Organization (15%): Logical flow and readability
-4. Summary (10%): Clear and impactful professional summary
-5. Skills (10%): Relevant technical and soft skills
-6. Education (5%): Academic qualifications and relevance
-7. Formatting/ATS (10%): ATS compatibility and clean formatting
-8. Professional Tone (5%): Appropriate language and presentation
-
-Return a JSON response with exact scores and feedback for each criterion.`
-        },
-        {
-          role: "user",
-          content: `Analyze this resume and provide detailed scores and feedback:
+        { role: "system", content: systemPrompt },
+        { 
+          role: "user", 
+          content: `Analyze this resume and return only a JSON object with the exact structure specified. Do not include any text outside the JSON:
 
 ${content}`
         }
       ],
-      temperature: 0.7,
-      response_format: { type: "json_object" }
+      temperature: 0.7
     });
 
-    console.log('OpenAI API response received:', {
-      status: 'success',
-      responseId: response.id,
-      model: response.model,
-      hasContent: !!response.choices[0]?.message?.content
-    });
-
-    const responseContent = response.choices[0]?.message?.content;
-    if (!responseContent) {
+    if (!response.choices[0]?.message?.content) {
       throw new Error('OpenAI returned an empty response');
     }
+
+    let responseContent = response.choices[0].message.content.trim();
+
+    responseContent = responseContent.replace(/```json\n?|\n?```/g, '').trim();
+
+    console.log('Attempting to parse response:', {
+      responseLength: responseContent.length,
+      firstChars: responseContent.substring(0, 50)
+    });
 
     try {
       const parsedResponse = JSON.parse(responseContent);
@@ -160,11 +170,11 @@ ${content}`
 
       return validatedResponse;
     } catch (parseError: any) {
-      console.error('Response parsing/validation error:', {
+      console.error('Response parsing error:', {
         error: parseError.message,
-        response: responseContent.substring(0, 200) + '...'
+        response: responseContent.substring(0, 200)
       });
-      throw new Error('Failed to parse OpenAI response: ' + parseError.message);
+      throw new Error('Failed to parse OpenAI response');
     }
 
   } catch (error: any) {
@@ -177,9 +187,9 @@ ${content}`
     if (error.status === 429) {
       throw new Error('Service is temporarily busy. Please try again in a few moments.');
     } else if (error.status === 401 || error.status === 403) {
-      throw new Error('Authentication failed. Please try again or contact support.');
+      throw new Error('Authentication failed. Please check your API key configuration.');
     } else {
-      throw new Error(`Failed to analyze resume: ${error.message}`);
+      throw new Error(`Resume analysis failed: ${error.message}`);
     }
   }
 }
