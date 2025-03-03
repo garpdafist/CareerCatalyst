@@ -1,43 +1,48 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Create a promise to track initialization
+let supabaseClient: ReturnType<typeof createClient> | null = null;
 let initializationPromise: Promise<ReturnType<typeof createClient>> | null = null;
 
-async function initializeSupabase() {
-  try {
-    const response = await fetch('/api/config');
-    if (!response.ok) {
-      throw new Error('Failed to fetch Supabase configuration');
-    }
-    const config = await response.json();
-
-    if (!config.supabaseUrl || !config.supabaseAnonKey) {
-      throw new Error('Invalid Supabase configuration received from server');
-    }
-
-    // Log configuration status (not the actual values)
-    console.log('Supabase Configuration Status:', {
-      hasUrl: !!config.supabaseUrl,
-      hasAnonKey: !!config.supabaseAnonKey
-    });
-
-    return createClient(config.supabaseUrl, config.supabaseAnonKey);
-  } catch (error) {
-    console.error('Failed to initialize Supabase:', error);
-    throw error;
+export async function initSupabase() {
+  if (initializationPromise) {
+    return initializationPromise;
   }
-}
 
-// Initialize on first import
-initializationPromise = initializeSupabase();
+  initializationPromise = (async () => {
+    try {
+      const response = await fetch('/api/config');
+      if (!response.ok) {
+        throw new Error('Failed to fetch Supabase configuration');
+      }
+      const config = await response.json();
 
-// Export a function that always returns the initialized client
-export async function getSupabase() {
-  if (!initializationPromise) {
-    initializationPromise = initializeSupabase();
-  }
+      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+        throw new Error('Invalid Supabase configuration received from server');
+      }
+
+      supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+        }
+      });
+
+      return supabaseClient;
+    } catch (error) {
+      console.error('Failed to initialize Supabase:', error);
+      initializationPromise = null; // Reset so we can try again
+      throw error;
+    }
+  })();
+
   return initializationPromise;
 }
 
-// For backward compatibility
-export const supabase = await getSupabase();
+export async function getSupabase() {
+  if (!supabaseClient) {
+    await initSupabase();
+  }
+  return supabaseClient!;
+}
+
+// Don't auto-initialize on import - let components handle initialization

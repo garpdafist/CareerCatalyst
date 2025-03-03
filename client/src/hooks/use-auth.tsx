@@ -1,11 +1,8 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-
-type User = {
-  id: string;
-  email: string;
-};
+import { getSupabase } from "@/lib/supabase";
 
 type AuthContextType = {
   user: User | null;
@@ -20,35 +17,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function initAuth() {
+      try {
+        const supabase = await getSupabase();
+
+        // Check for initial session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        }
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (mounted) {
+            setUser(session?.user ?? null);
+            setIsLoading(false);
+          }
+        });
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    initAuth();
+  }, []);
 
   const signIn = async (email: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const supabase = await getSupabase();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin,
         },
-        body: JSON.stringify({ email }),
       });
 
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const userData = await response.json();
-      setUser(userData);
+      if (error) throw error;
 
       toast({
-        title: "Welcome back!",
-        description: "Successfully signed in.",
+        title: "Check your email",
+        description: "We sent you a magic link to sign in.",
       });
-
-      setLocation('/');
     } catch (error: any) {
       toast({
-        title: "Login failed",
+        title: "Sign in failed",
         description: error.message,
         variant: "destructive",
       });
@@ -61,24 +88,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
+      const supabase = await getSupabase();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
 
-      if (!response.ok) {
-        throw new Error('Logout failed');
-      }
-
-      setUser(null);
       toast({
-        title: "Goodbye!",
+        title: "Signed out",
         description: "Successfully signed out.",
       });
 
       setLocation('/auth');
     } catch (error: any) {
       toast({
-        title: "Logout failed",
+        title: "Sign out failed",
         description: error.message,
         variant: "destructive",
       });

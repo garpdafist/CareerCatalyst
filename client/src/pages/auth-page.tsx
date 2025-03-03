@@ -4,18 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useLocation } from "wouter";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const { signIn, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await signIn(email);
-      setLocation("/");
     } catch (error) {
       // Error is handled in useAuth
     }
@@ -32,7 +29,7 @@ export default function AuthPage() {
           <CardHeader>
             <CardTitle>Welcome to CareerAI</CardTitle>
             <CardDescription>
-              Sign in with your email to continue
+              Enter your email to get started
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -53,11 +50,11 @@ export default function AuthPage() {
                 className="w-full bg-[#009963] hover:bg-[#009963]/90" 
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Continue with Email"}
+                {isLoading ? "Sending magic link..." : "Continue with Email"}
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              By continuing, you agree to our Terms of Service and Privacy Policy.
+              We'll send you a magic link to sign in instantly
             </p>
           </CardContent>
         </Card>

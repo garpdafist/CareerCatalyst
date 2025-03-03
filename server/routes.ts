@@ -2,9 +2,10 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import session from "express-session";
 import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 import multer from 'multer';
 import pdf from 'pdf-parse/lib/pdf-parse.js';
 import OpenAI from "openai";
@@ -42,20 +43,39 @@ const sessionMiddleware = session({
   }
 });
 
-// Modify the requireAuth middleware to bypass authentication
-const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
-  // For testing: Always set the test user in the session
-  req.session.userId = "test-user-123";
-  req.session.email = "test@example.com";
+// Create email transporter
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
 
-  // Log the session for debugging
-  console.log('Session data:', {
-    userId: req.session.userId,
-    email: req.session.email
-  });
+// Helper function to generate OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
-  next();
-};
+// Helper function to send verification email
+async function sendVerificationEmail(email: string, otp: string, magicLink: string) {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Verify your email - CareerAI",
+    html: `
+      <h1>Welcome to CareerAI</h1>
+      <p>Your verification code is: <strong>${otp}</strong></p>
+      <p>Or click the link below to sign in:</p>
+      <a href="${magicLink}" style="display: inline-block; padding: 10px 20px; background-color: #009963; color: white; text-decoration: none; border-radius: 5px;">Sign In</a>
+      <p>This link will expire in 15 minutes.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
 
 // Configure multer with enhanced file type validation
 const upload = multer({
@@ -96,6 +116,21 @@ const upload = multer({
     }
   }
 });
+
+// Modify the requireAuth middleware to bypass authentication
+const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+  // For testing: Always set the test user in the session
+  req.session.userId = "test-user-123";
+  req.session.email = "test@example.com";
+
+  // Log the session for debugging
+  console.log('Session data:', {
+    userId: req.session.userId,
+    email: req.session.email
+  });
+
+  next();
+};
 
 // Modify validation schema to handle both paths
 const resumeAnalysisSchema = z.object({
@@ -704,21 +739,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const { email } = result.data;
 
-    // Get or create user
-    let user = await storage.getUserByEmail(email);
-    if (!user) {
-      user = await storage.createUser(email);
+    try {
+      // Generate OTP and magic link token
+      const otp = generateOTP();
+      const magicToken = randomBytes(32).toString('hex');
+
+      // Store OTP and magic token with expiry
+      await storage.storeVerification(email, otp, magicToken);
+
+      // Generate magic link
+      const magicLink = `${process.env.APP_URL}/auth/verify?token=${magicToken}`;
+
+      // Send verification email
+      await sendVerificationEmail(email, otp, magicLink);
+
+      res.json({ message: "Verification email sent" });
+    } catch (error) {
+      console.error('Error sending verification:', error);
+      res.status(500).json({ message: "Failed to send verification" });
+    }
+  });
+
+  app.post("/api/auth/verify", async (req, res) => {
+    const schema = z.object({
+      email: z.string().email(),
+      otp: z.string().length(6),
+    });
+
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ message: "Invalid verification data" });
+      return;
     }
 
-    // In a real app, send magic link email here
-    // For demo, auto-verify the email
-    await storage.verifyEmail(email);
+    const { email, otp } = result.data;
 
-    // Set session
-    req.session.userId = user.id;
-    req.session.email = email;
+    try {
+      // Verify OTP
+      const isValid = await storage.verifyOTP(email, otp);
+      if (!isValid) {
+        res.status(401).json({ message: "Invalid or expired verification code" });
+        return;
+      }
 
-    res.json(user);
+      // Get or create user
+      let user = await storage.getUserByEmail(email);
+      if (!user) {
+        user = await storage.createUser(email);
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.email = email;
+
+      res.json(user);
+    } catch (error) {
+      console.error('Verification error:', error);
+      res.status(500).json({ message: "Verification failed" });
+    }
+  });
+
+  app.get("/api/auth/verify", async (req, res) => {
+    const token = req.query.token as string;
+    if (!token) {
+      res.status(400).json({ message: "Missing verification token" });
+      return;
+    }
+
+    try {
+      // Verify magic link token
+      const email = await storage.verifyMagicToken(token);
+      if (!email) {
+        res.status(401).json({ message: "Invalid or expired verification link" });
+        return;
+      }
+
+      // Get or create user
+      let user = await storage.getUserByEmail(email);
+      if (!user) {
+        user = await storage.createUser(email);
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.email = email;
+
+      // Redirect to home page
+      res.redirect('/');
+    } catch (error) {
+      console.error('Magic link verification error:', error);
+      res.status(500).json({ message: "Verification failed" });
+    }
   });
 
   app.post("/api/auth/logout", (req, res) => {

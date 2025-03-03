@@ -14,7 +14,7 @@ import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
+import { initSupabase } from "@/lib/supabase";
 
 function Router() {
   return (
@@ -36,7 +36,7 @@ function App() {
   const [location] = useLocation();
 
   useEffect(() => {
-    getSupabase()
+    initSupabase()
       .then(() => setIsInitialized(true))
       .catch((err) => setError(err.message));
   }, []);
