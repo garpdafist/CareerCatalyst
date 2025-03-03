@@ -1,172 +1,147 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { resumeContentSchema, scoringCriteriaSchema, type ResumeContent, type ScoringCriteria } from "@shared/schema";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const resumeAnalysisResponseSchema = z.object({
-  score: z.number().min(0).max(100),
-  feedback: z.array(z.string()),
-  skills: z.array(z.string()),
-  improvements: z.array(z.string()),
-  keywords: z.array(z.string()),
-  structuredContent: resumeContentSchema,
-  scoringCriteria: scoringCriteriaSchema
+// Initialize OpenAI client with API key from environment variables
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+// Define constant for the model to use
+const ANALYSIS_MODEL = "gpt-4o"; // Use the newest model that supports all parameter types
 
-// Rate limiting variables
+// Rate limiting function to prevent hitting API limits
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2 seconds in milliseconds
+const MIN_REQUEST_INTERVAL = 200; // ms between requests
 
 async function waitForRateLimit() {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
 
   if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const delay = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-    await new Promise(resolve => setTimeout(resolve, delay));
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    await new Promise(resolve => setTimeout(resolve, waitTime));
   }
 
   lastRequestTime = Date.now();
 }
 
-const ANALYSIS_MODEL = "gpt-3.5-turbo"; // Define the model to use here.  This should be configured elsewhere ideally
+// Define schema for the AI analysis response
+const resumeAnalysisResponseSchema = z.object({
+  structuredContent: z.record(z.any()).optional(),
+  scoringCriteria: z.record(z.any()).optional(),
+  score: z.number(),
+  feedback: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  improvements: z.array(z.string()).optional(),
+  keywords: z.array(z.string()).optional(),
+});
 
-export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
+// Main function to analyze resume content with AI
+export async function analyzeResumeWithAI(content: string) {
   try {
-    // Check API key
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key missing');
-      throw new Error('OpenAI API key is not configured');
+    if (!content || content.trim().length === 0) {
+      throw new Error("Resume content is empty");
     }
 
-    // Log analysis start
-    console.log('Starting resume analysis:', {
-      contentLength: content.length,
-      hasApiKey: !!process.env.OPENAI_API_KEY
-    });
+    // Log content length for debugging
+    console.log(`Analyzing resume content of length ${content.length}`);
 
     await waitForRateLimit();
 
-    const requestBody = {
+    // Prepare the system prompt and user message
+    const systemPrompt = `You are an expert resume analyst and career coach. Analyze the provided resume content and provide structured feedback.
+
+Your analysis should include:
+1. Structured content extracted from the resume
+2. Overall score out of 100
+3. Scoring criteria with subscores
+4. Key feedback points
+5. Skills identified
+6. Areas for improvement
+7. Important keywords for ATS optimization
+
+Format your response as a clean JSON object with these keys: structuredContent, scoringCriteria, score, feedback, skills, improvements, keywords.`;
+
+    const userPrompt = `Please analyze this resume:
+
+${content}
+
+Provide a comprehensive analysis with all the required sections. Return ONLY a clean JSON object with no markdown formatting or extra text outside the JSON.`;
+
+    // Create the request payload - log it for debugging
+    const requestPayload = {
       model: ANALYSIS_MODEL,
       messages: [
-        {
-          role: "system",
-          content: `You are an expert resume analyzer who provides constructive feedback to improve job application documents. Analyze the resume content and respond with a JSON object containing:
-{
-  "score": a number from 0-100 representing the overall quality,
-  "feedback": an array of strings with general feedback about the resume,
-  "skills": an array of strings identifying technical and soft skills present,
-  "improvements": an array of strings with specific improvement suggestions,
-  "keywords": an array of important industry keywords found,
-  "structuredContent": {
-    "summary": extracted professional summary,
-    "experience": array of work experiences,
-    "education": array of education entries,
-    "skills": array of skills mentioned,
-    "certifications": array of certifications if present,
-    "projects": array of objects
-  }
-}`
-        },
-        {
-          role: "user",
-          content: `Analyze this resume and provide detailed feedback with the following structure:
-
-${content}`
-        }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
       ],
       temperature: 0.7
     };
 
-    // Log final request payload for debugging
-    console.log('OpenAI request payload:', JSON.stringify(requestBody, null, 2));
-
-    // Check for any response_format in the request object
-    const requestStr = JSON.stringify(requestBody);
-    if (requestStr.includes('response_format')) {
-      console.error('CRITICAL: response_format found in request:', requestStr);
-    }
-    
-    // Log the actual raw request that will be sent to OpenAI
-    console.log('OpenAI SDK request configuration:', {
-      model: requestBody.model,
-      messageCount: requestBody.messages.length,
-      temperature: requestBody.temperature,
-      hasResponseFormat: 'response_format' in requestBody,
-      allKeys: Object.keys(requestBody)
+    console.log("OpenAI API request:", {
+      model: requestPayload.model,
+      messageCount: requestPayload.messages.length,
+      temperatur: requestPayload.temperature
     });
 
-    const response = await openai.chat.completions.create(requestBody);
+    // Make the API request
+    const response = await openai.chat.completions.create(requestPayload);
 
-    // Log API response
-    console.log('OpenAI API response received:', {
-      status: 'success',
-      responseId: response.id,
+    // Log API response for debugging
+    console.log("OpenAI API response received:", {
+      status: "success",
       model: response.model,
-      hasContent: !!response.choices[0]?.message?.content
+      choicesCount: response.choices.length,
+      hasContent: !!response.choices[0]?.message?.content,
+      contentLength: response.choices[0]?.message?.content?.length || 0
     });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('OpenAI returned an empty response');
+    // Extract the content from the response
+    const responseContent = response.choices[0]?.message?.content;
+    if (!responseContent) {
+      throw new Error("Empty response from OpenAI API");
     }
 
-    // Parse the response content
+    // Parse and sanitize the JSON response - handle potential formatting issues
+    let jsonData;
     try {
-      // Clean the response to handle potential markdown code blocks
-      let jsonContent = content.trim();
-
-      // Remove any markdown code block indicators if present
-      if (jsonContent.startsWith("```json")) {
-        jsonContent = jsonContent.substring(7);
-      } else if (jsonContent.startsWith("```")) {
-        jsonContent = jsonContent.substring(3);
+      // Strip any markdown code block markers if present
+      let cleanedContent = responseContent.trim();
+      if (cleanedContent.startsWith("```json")) {
+        cleanedContent = cleanedContent.substring(7);
+      } else if (cleanedContent.startsWith("```")) {
+        cleanedContent = cleanedContent.substring(3);
       }
 
-      if (jsonContent.endsWith("```")) {
-        jsonContent = jsonContent.substring(0, jsonContent.length - 3);
+      if (cleanedContent.endsWith("```")) {
+        cleanedContent = cleanedContent.substring(0, cleanedContent.length - 3);
       }
 
-      jsonContent = jsonContent.trim();
-
-      const parsedData = JSON.parse(jsonContent);
-
-      // Validate response structure
-      const validatedResponse = resumeAnalysisResponseSchema.parse(parsedData);
-
-      console.log('Analysis completed successfully:', {
-        score: validatedResponse.score,
-        skillsCount: validatedResponse.skills.length,
-        hasStructuredContent: !!validatedResponse.structuredContent,
-        hasScoringCriteria: !!validatedResponse.scoringCriteria
-      });
-
-      return validatedResponse;
-    } catch (parseError: any) {
-      console.error('Response parsing/validation error:', {
-        error: parseError.message,
-        response: content.substring(0, 200) + '...'
-      });
-      throw new Error('Failed to parse OpenAI response: ' + parseError.message);
+      jsonData = JSON.parse(cleanedContent.trim());
+      console.log("Successfully parsed OpenAI response as JSON");
+    } catch (error) {
+      console.error("Failed to parse JSON from OpenAI response:", error);
+      console.error("Response content:", responseContent.substring(0, 200) + "...");
+      throw new Error("Unable to parse analysis results from OpenAI");
     }
 
+    // Validate the parsed data against our schema
+    try {
+      const validatedData = resumeAnalysisResponseSchema.parse(jsonData);
+      console.log("Successfully validated OpenAI response against schema");
+      return validatedData;
+    } catch (validationError) {
+      console.error("Schema validation error:", validationError);
+      throw new Error("Analysis results did not match expected format");
+    }
   } catch (error: any) {
-    console.error('OpenAI API Error:', {
+    // Enhance error handling and logging
+    console.error("OpenAI API Error:", {
       message: error.message,
       status: error.status,
       type: error.constructor.name
     });
 
-    if (error.status === 429) {
-      throw new Error('Service is temporarily busy. Please try again in a few moments.');
-    } else if (error.status === 401 || error.status === 403) {
-      throw new Error('Authentication failed. Please try again or contact support.');
-    } else {
-      throw new Error(`Failed to analyze resume: ${error.message}`);
-    }
+    throw new Error(`Failed to analyze resume: ${error.message}`);
   }
 }
