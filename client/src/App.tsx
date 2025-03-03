@@ -1,11 +1,11 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/navbar";
 import { AuthProvider } from "@/hooks/use-auth";
 import Home from "@/pages/home";
-import Auth from "@/pages/auth";
+import AuthPage from "@/pages/auth-page";
 import ResumeAnalyzer from "@/pages/resume-analyzer";
 import ResumeEditor from "@/components/resume/resume-editor";
 import CoverLetterGenerator from "@/pages/cover-letter-generator";
@@ -19,8 +19,8 @@ import { getSupabase } from "@/lib/supabase";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/auth" component={Auth} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/resume-analyzer" component={ResumeAnalyzer} />
       <ProtectedRoute path="/resume-editor" component={ResumeEditor} />
       <ProtectedRoute path="/cover-letter" component={CoverLetterGenerator} />
@@ -33,6 +33,7 @@ function Router() {
 function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [location] = useLocation();
 
   useEffect(() => {
     getSupabase()
@@ -62,7 +63,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Navbar />
+        {location !== '/auth' && <Navbar />}
         <main>
           <Router />
         </main>

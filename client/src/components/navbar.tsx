@@ -5,7 +5,16 @@ import { motion } from "framer-motion";
 import { FileText, User, PenTool, BriefcaseIcon, LogOut } from "lucide-react";
 
 export function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
+
+  const handleSignOut = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Signout error:', error);
+    }
+  };
 
   const navItems = [
     { href: "/resume-analyzer", label: "Resume Analyzer", icon: FileText },
@@ -48,11 +57,12 @@ export function Navbar() {
             {user ? (
               <Button 
                 variant="ghost" 
-                onClick={() => signOut()}
+                onClick={handleSignOut}
+                disabled={isLoading}
                 className="text-sm flex items-center gap-2 text-[#1C170D] hover:text-[#1C170D]/80 hover:bg-[#F5F0E5]"
               >
                 <LogOut className="h-4 w-4" />
-                Sign Out
+                {isLoading ? "Signing out..." : "Sign Out"}
               </Button>
             ) : (
               <Link href="/auth">
