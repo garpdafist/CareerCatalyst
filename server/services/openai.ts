@@ -85,6 +85,21 @@ ${content}`
     // Log final request payload for debugging
     console.log('OpenAI request payload:', JSON.stringify(requestBody, null, 2));
 
+    // Check for any response_format in the request object
+    const requestStr = JSON.stringify(requestBody);
+    if (requestStr.includes('response_format')) {
+      console.error('CRITICAL: response_format found in request:', requestStr);
+    }
+    
+    // Log the actual raw request that will be sent to OpenAI
+    console.log('OpenAI SDK request configuration:', {
+      model: requestBody.model,
+      messageCount: requestBody.messages.length,
+      temperature: requestBody.temperature,
+      hasResponseFormat: 'response_format' in requestBody,
+      allKeys: Object.keys(requestBody)
+    });
+
     const response = await openai.chat.completions.create(requestBody);
 
     // Log API response
