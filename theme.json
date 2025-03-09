@@ -5,6 +5,7 @@
     "dark": "slate"
   },
   "primary": "emerald",
+  "variant": "default",
   "appearance": "light",
   "radius": 0.5
 }
