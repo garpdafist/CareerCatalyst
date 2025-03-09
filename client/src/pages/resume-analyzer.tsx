@@ -339,14 +339,26 @@ export default function ResumeAnalyzer() {
                         </h3>
                         <ul className="space-y-2 text-sm text-muted-foreground">
                           {analyzeMutation.data?.generalFeedback ? (
-                            <li className="flex items-start gap-2">
-                              <span className="text-primary mt-1">•</span>
-                              {analyzeMutation.data.generalFeedback}
-                            </li>
+                            typeof analyzeMutation.data.generalFeedback === 'string' ? (
+                              // If it's a single string, display it as a single bullet point
+                              <li className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                <span className="flex-1">{analyzeMutation.data.generalFeedback}</span>
+                              </li>
+                            ) : (
+                              // If it's an array, map through each item
+                              Array.isArray(analyzeMutation.data.generalFeedback) && 
+                              analyzeMutation.data.generalFeedback.map((feedback, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <span className="text-primary mt-1">•</span>
+                                  <span className="flex-1">{feedback}</span>
+                                </li>
+                              ))
+                            )
                           ) : (
                             <li className="flex items-start gap-2">
                               <span className="text-primary mt-1">•</span>
-                              Analysis completed. We recommend reviewing your resume for any areas of improvement.
+                              <span className="flex-1">Analysis completed. We recommend reviewing your resume for any areas of improvement.</span>
                             </li>
                           )}
                         </ul>
