@@ -28,7 +28,7 @@ export async function setupVite(app: Express, server: Server) {
     hmr: { 
       server,
       timeout: 5000,
-      protocol: 'ws',
+      protocol: 'wss', // Use secure WebSockets
       clientPort: 3000,
       path: '/@hmr'
     },
