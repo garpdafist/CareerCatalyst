@@ -122,7 +122,7 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a comprehensiv
   "generalFeedback": "overall actionable feedback"
 }
 
-Focus on providing actionable, specific feedback. Keep responses concise but informative.`;
+Return ONLY the JSON object, no additional text. Do not add any disclaimers or explanations outside the JSON structure.`;
 
 // Main analysis function
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
@@ -145,11 +145,10 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
         },
         {
           role: "user",
-          content: `Analyze this resume and provide specific, actionable feedback following the exact JSON structure:\n\n${content}`
+          content: `Analyze this resume and provide specific, actionable feedback:\n\n${content}`
         }
       ],
-      temperature: 0.1,
-      response_format: { type: "json_object" }
+      temperature: 0,  // Changed from 0.1 to 0 for more consistent outputs
     });
 
     if (!response.choices[0]?.message?.content) {
@@ -158,7 +157,13 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     let parsedResponse: any;
     try {
-      parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+      // Remove any potential non-JSON text before parsing
+      const content = response.choices[0].message.content.trim();
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}') + 1;
+      const jsonContent = content.slice(jsonStart, jsonEnd);
+
+      parsedResponse = JSON.parse(jsonContent);
 
       console.log('Parsed response structure:', {
         hasScore: typeof parsedResponse.score === 'number',
