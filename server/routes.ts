@@ -762,9 +762,27 @@ const handleAnalysis = async (req: Request, res: Response) => {
       console.log('Analysis completed successfully:', {
         analysisId: analysis.id,
         score: analysis.score,
-        hasStructuredContent: !!analysis.structuredContent,
-        hasScoringCriteria: !!analysis.scoringCriteria
+        skillsCount: analysis.identifiedSkills?.length,
+        hasStructuredContent: true,
+        structuredContentSections: Object.keys(analysis.resumeSections || {}),
+        hasScoringCriteria: true,
+        scoringCriteriaSections: Object.keys(analysis.scores || {}),
+        feedbackCount: analysis.suggestedImprovements?.length,
+        skillsCount: analysis.identifiedSkills?.length,
+        keywordsCount: analysis.importantKeywords?.length
       });
+
+      console.log('AI Analysis Results:', {
+        score: analysis.score,
+        hasStructuredContent: true,
+        structuredContentSections: Object.keys(analysis.resumeSections || {}),
+        hasScoringCriteria: true,
+        scoringCriteriaSections: Object.keys(analysis.scores || {}),
+        feedbackCount: analysis.suggestedImprovements?.length,
+        skillsCount: analysis.identifiedSkills?.length,
+        keywordsCount: analysis.importantKeywords?.length
+      });
+
       return res.json(analysis);
     } catch (analysisError: any) {
       console.error('Analysis failed:', {
