@@ -25,7 +25,13 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    hmr: { 
+      server,
+      timeout: 5000,
+      protocol: 'ws',
+      clientPort: 3000,
+      path: '/@hmr'
+    },
     allowedHosts: true,
   };
 
