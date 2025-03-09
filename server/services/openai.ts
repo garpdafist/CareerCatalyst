@@ -1,78 +1,67 @@
-import OpenAI from "openai";
-import { z } from "zod";
 
-// Response validation schema
+import { z } from "zod";
+import OpenAI from "openai";
+import { setTimeout } from "timers/promises";
+
+// Rate limiting helper
+let lastRequestTime = 0;
+const REQUEST_DELAY_MS = 500; // 500ms delay between requests
+
+async function waitForRateLimit() {
+  const now = Date.now();
+  const timeElapsed = now - lastRequestTime;
+  
+  if (timeElapsed < REQUEST_DELAY_MS) {
+    await setTimeout(REQUEST_DELAY_MS - timeElapsed);
+  }
+  
+  lastRequestTime = Date.now();
+}
+
+// Initialize OpenAI client
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set in the environment variables");
+  }
+  
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+}
+
+// Define validation schema for OpenAI response
+const scoreEntrySchema = z.object({
+  score: z.number().min(1).max(10),
+  maxScore: z.number().int(),
+  feedback: z.string(),
+  keywords: z.array(z.string()).optional(),
+  highlights: z.array(z.string()).optional(),
+});
+
 const resumeAnalysisResponseSchema = z.object({
-  score: z.number().min(0).max(100),
+  score: z.number().min(10).max(100),
   scores: z.object({
-    keywordsRelevance: z.object({
-      score: z.number(),
-      maxScore: z.number(),
-      feedback: z.string(),
-      keywords: z.array(z.string())
-    }),
-    achievementsMetrics: z.object({
-      score: z.number(),
-      maxScore: z.number(),
-      feedback: z.string(),
-      highlights: z.array(z.string())
-    }),
-    structureReadability: z.object({
-      score: z.number(),
-      maxScore: z.number(),
-      feedback: z.string()
-    }),
-    summaryClarity: z.object({
-      score: z.number(),
-      maxScore: z.number(),
-      feedback: z.string()
-    }),
-    overallPolish: z.object({
-      score: z.number(),
-      maxScore: z.number(),
-      feedback: z.string()
-    })
+    keywordsRelevance: scoreEntrySchema,
+    achievementsMetrics: scoreEntrySchema,
+    structureReadability: scoreEntrySchema,
+    summaryClarity: scoreEntrySchema,
+    overallPolish: scoreEntrySchema,
   }),
   resumeSections: z.object({
     professionalSummary: z.string(),
     workExperience: z.string(),
     technicalSkills: z.string(),
     education: z.string(),
-    keyAchievements: z.string()
+    keyAchievements: z.string(),
   }),
   identifiedSkills: z.array(z.string()),
   importantKeywords: z.array(z.string()),
   suggestedImprovements: z.array(z.string()),
-  generalFeedback: z.string()
+  generalFeedback: z.string(),
 });
 
-type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
-
-// Rate limiting
-const MIN_REQUEST_INTERVAL = 200;
-let lastRequestTime = 0;
-
-async function waitForRateLimit() {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
-  }
-  lastRequestTime = Date.now();
-}
-
-// Lazy initialization of OpenAI client
-let openaiClient: OpenAI | null = null;
-
-function getOpenAIClient(): OpenAI {
-  if (!openaiClient) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured');
-    }
-    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  }
-  return openaiClient;
-}
+// Define response type
+export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
 const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the provided resume and return a structured evaluation.
 
