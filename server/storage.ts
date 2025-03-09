@@ -19,6 +19,21 @@ export interface IStorage {
   getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined>;
   getUserAnalyses(userId: string): Promise<ResumeAnalysis[]>;
 
+  // New method for saving analysis
+  saveResumeAnalysis(data: {
+    userId: string;
+    content: string;
+    score: number;
+    analysis: {
+      scores: any;
+      resumeSections: any;
+      identifiedSkills: string[];
+      importantKeywords: string[];
+      suggestedImprovements: string[];
+      generalFeedback: string;
+    };
+  }): Promise<ResumeAnalysis>;
+
   // Session store for authentication
   sessionStore: Store;
 }
@@ -34,28 +49,13 @@ export class DatabaseStorage implements IStorage {
       },
       createTableIfMissing: true,
     });
-
-    // Create test user during initialization
-    this.ensureTestUser().catch(console.error);
   }
 
-  private async ensureTestUser() {
-    try {
-      const testUser = await this.getUserByEmail("test@example.com");
-      if (!testUser) {
-        console.log("Creating test user...");
-        await this.createUser("test@example.com", "test-user-123");
-      }
-    } catch (error) {
-      console.error("Failed to create test user:", error);
-    }
-  }
-
-  async createUser(email: string, id?: string): Promise<User> {
+  async createUser(email: string): Promise<User> {
     const [user] = await db
       .insert(users)
       .values({
-        id: id || randomBytes(16).toString("hex"),
+        id: randomBytes(16).toString("hex"),
         email,
         emailVerified: new Date(),
         lastLoginAt: new Date(),
@@ -85,80 +85,56 @@ export class DatabaseStorage implements IStorage {
   }
 
   async analyzeResume(content: string, userId: string): Promise<ResumeAnalysis> {
-    try {
-      // Validate content
-      if (!content || content.trim().length === 0) {
-        throw new Error("Resume content is empty or invalid");
+    // Get the AI analysis
+    const aiAnalysis = await analyzeResumeWithAI(content);
+
+    // Save the analysis
+    return this.saveResumeAnalysis({
+      userId,
+      content,
+      score: aiAnalysis.score,
+      analysis: {
+        scores: aiAnalysis.scores,
+        resumeSections: aiAnalysis.resumeSections,
+        identifiedSkills: aiAnalysis.identifiedSkills,
+        importantKeywords: aiAnalysis.importantKeywords,
+        suggestedImprovements: aiAnalysis.suggestedImprovements,
+        generalFeedback: aiAnalysis.generalFeedback
       }
+    });
+  }
 
-      // Log content length before analysis
-      console.log('Analyzing resume content:', {
-        contentLength: content.length,
-        firstChars: content.substring(0, 100) + '...'
-      });
+  async saveResumeAnalysis(data: {
+    userId: string;
+    content: string;
+    score: number;
+    analysis: {
+      scores: any;
+      resumeSections: any;
+      identifiedSkills: string[];
+      importantKeywords: string[];
+      suggestedImprovements: string[];
+      generalFeedback: string;
+    };
+  }): Promise<ResumeAnalysis> {
+    const [analysis] = await db
+      .insert(resumeAnalyses)
+      .values({
+        userId: data.userId,
+        content: data.content,
+        score: data.score,
+        scores: data.analysis.scores,
+        resumeSections: data.analysis.resumeSections,
+        identifiedSkills: data.analysis.identifiedSkills,
+        importantKeywords: data.analysis.importantKeywords,
+        suggestedImprovements: data.analysis.suggestedImprovements,
+        generalFeedback: data.analysis.generalFeedback,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
 
-      try {
-        const aiAnalysis = await analyzeResumeWithAI(content);
-
-        // Log AI analysis results before storage
-        console.log('AI Analysis Results:', {
-          score: aiAnalysis.score,
-          hasStructuredContent: !!aiAnalysis.structuredContent,
-          structuredContentSections: Object.keys(aiAnalysis.structuredContent || {}),
-          hasScoringCriteria: !!aiAnalysis.scoringCriteria,
-          scoringCriteriaSections: Object.keys(aiAnalysis.scoringCriteria || {}),
-          feedbackCount: aiAnalysis.feedback?.length,
-          skillsCount: aiAnalysis.skills?.length,
-          keywordsCount: aiAnalysis.keywords?.length
-        });
-
-        const [analysis] = await db
-          .insert(resumeAnalyses)
-          .values({
-            userId,
-            content: content.substring(0, 10000), // Limit content length for storage
-            structuredContent: aiAnalysis.structuredContent,
-            scoringCriteria: aiAnalysis.scoringCriteria,
-            score: aiAnalysis.score,
-            feedback: aiAnalysis.feedback,
-            skills: aiAnalysis.skills,
-            improvements: aiAnalysis.improvements,
-            keywords: aiAnalysis.keywords,
-          })
-          .returning();
-
-        console.log('Successfully stored analysis:', {
-          id: analysis.id,
-          userId: analysis.userId,
-          score: analysis.score,
-          hasStructuredContent: !!analysis.structuredContent,
-          hasScoringCriteria: !!analysis.scoringCriteria
-        });
-
-        return analysis;
-
-      } catch (aiError: any) {
-        // Handle OpenAI-specific errors
-        console.error('AI Analysis error:', {
-          message: aiError.message,
-          type: aiError.constructor.name,
-          status: aiError.status
-        });
-
-        throw new Error(
-          `Unable to analyze resume: ${aiError.message}. Please try again later or contact support if the issue persists.`
-        );
-      }
-
-    } catch (error: any) {
-      console.error('Analysis error:', {
-        message: error.message,
-        type: error.constructor.name,
-        stack: error.stack
-      });
-
-      throw new Error(`Resume analysis failed: ${error.message}`);
-    }
+    return analysis;
   }
 
   async getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined> {
