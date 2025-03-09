@@ -4,5 +4,6 @@
     "light": "zinc",
     "dark": "slate"
   },
+  "primary": "emerald",
   "variant": "default"
 }
