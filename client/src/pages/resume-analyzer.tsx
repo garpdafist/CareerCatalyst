@@ -288,7 +288,7 @@ export default function ResumeAnalyzer() {
                             <p className="text-sm text-muted-foreground">No skills identified</p>
                           )}
                         </div>
-                      </divv>
+                      </div>
 
                       <div>
                         <h3 className="font-medium flex items-center gap-2 mb-3">
