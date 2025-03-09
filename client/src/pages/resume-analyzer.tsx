@@ -281,10 +281,15 @@ export default function ResumeAnalyzer() {
                           Important Keywords
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {(analyzeMutation.data?.keywords || analyzeMutation.data?.importantKeywords)?.map((keyword, index) => (
-                            <Badge key={index} variant="outline" className="border-border/40">
-                              {keyword}
-                            </Badge>
+                          {analyzeMutation.data?.importantKeywords?.length ? (
+                            analyzeMutation.data.importantKeywords.map((keyword, index) => (
+                              <Badge key={index} variant="outline" className="border-border/40">
+                                {keyword}
+                              </Badge>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No keywords identified</p>
+                          )}
                           ))}
                         </div>
                       </div>
