@@ -239,7 +239,16 @@ export default function ResumeAnalyzer() {
 
           {analyzeMutation.data && (
             <>
-            {console.log("Analysis data:", analyzeMutation.data)}
+            {console.log("Analysis data:", JSON.stringify({
+              score: analyzeMutation.data.score,
+              hasIdentifiedSkills: !!analyzeMutation.data.identifiedSkills,
+              skillsCount: analyzeMutation.data.identifiedSkills?.length || 0,
+              hasImportantKeywords: !!analyzeMutation.data.importantKeywords,
+              keywordsCount: analyzeMutation.data.importantKeywords?.length || 0,
+              hasSuggestedImprovements: !!analyzeMutation.data.suggestedImprovements,
+              improvementsCount: analyzeMutation.data.suggestedImprovements?.length || 0,
+              dataKeys: Object.keys(analyzeMutation.data)
+            }, null, 2))}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -269,13 +278,17 @@ export default function ResumeAnalyzer() {
                           Identified Skills
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {analyzeMutation.data?.skills?.map((skill, index) => (
-                            <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-0">
-                              {skill}
-                            </Badge>
-                          ))}
+                          {analyzeMutation.data?.identifiedSkills?.length > 0 ? (
+                            analyzeMutation.data.identifiedSkills.map((skill, index) => (
+                              <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-0">
+                                {skill}
+                              </Badge>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No skills identified</p>
+                          )}
                         </div>
-                      </div>
+                      </divv>
 
                       <div>
                         <h3 className="font-medium flex items-center gap-2 mb-3">
@@ -303,12 +316,19 @@ export default function ResumeAnalyzer() {
                           Suggested Improvements
                         </h3>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                          {analyzeMutation.data?.improvements?.map((improvement, index) => (
-                            <li key={index} className="flex items-start gap-2">
+                          {analyzeMutation.data?.suggestedImprovements?.length > 0 ? (
+                            analyzeMutation.data.suggestedImprovements.map((improvement, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                {improvement}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="flex items-start gap-2">
                               <span className="text-primary mt-1">•</span>
-                              {improvement}
+                              No specific improvements suggested
                             </li>
-                          ))}
+                          )}
                         </ul>
                       </div>
 
