@@ -281,7 +281,7 @@ export default function ResumeAnalyzer() {
                           Important Keywords
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {analyzeMutation.data?.keywords?.map((keyword, index) => (
+                          {(analyzeMutation.data?.keywords || analyzeMutation.data?.importantKeywords)?.map((keyword, index) => (
                             <Badge key={index} variant="outline" className="border-border/40">
                               {keyword}
                             </Badge>
