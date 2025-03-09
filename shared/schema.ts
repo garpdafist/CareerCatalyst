@@ -13,21 +13,21 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Define scoring criteria schema
+// Add scoring criteria schema
 export const scoringCriteriaSchema = z.object({
-  keywordUsage: z.object({
+  keywordsRelevance: z.object({
     score: z.number(),
     maxScore: z.number(),
     feedback: z.string(),
     keywords: z.array(z.string())
   }),
-  metricsAndAchievements: z.object({
+  achievementsMetrics: z.object({
     score: z.number(),
     maxScore: z.number(),
     feedback: z.string(),
     highlights: z.array(z.string())
   }),
-  structureAndReadability: z.object({
+  structureReadability: z.object({
     score: z.number(),
     maxScore: z.number(),
     feedback: z.string()

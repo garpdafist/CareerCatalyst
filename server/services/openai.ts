@@ -91,21 +91,7 @@ async function waitForRateLimit() {
   lastRequestTime = Date.now();
 }
 
-export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key missing');
-      throw new Error('OpenAI API key is not configured');
-    }
-
-    console.log('Starting resume analysis:', {
-      contentLength: content.length,
-      hasApiKey: !!process.env.OPENAI_API_KEY
-    });
-
-    await waitForRateLimit();
-
-    const systemPrompt = `You are an expert resume analyzer. Return ONLY a JSON object with no additional text. The JSON must follow this exact format:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Return ONLY a JSON object with no additional text. The JSON must follow this exact format:
 {
   "score": number (0-100),
   "scoringCriteria": {
@@ -130,10 +116,24 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
   "keywords": array of strings
 }`;
 
+export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key missing');
+      throw new Error('OpenAI API key is not configured');
+    }
+
+    console.log('Starting resume analysis:', {
+      contentLength: content.length,
+      hasApiKey: !!process.env.OPENAI_API_KEY
+    });
+
+    await waitForRateLimit();
+
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o", 
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: SYSTEM_PROMPT },
         { 
           role: "user", 
           content: `Analyze this resume and return only a JSON object with the exact structure specified. Do not include any text outside the JSON:
@@ -141,7 +141,8 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 ${content}`
         }
       ],
-      temperature: 0.7
+      temperature: 0.1, 
+      response_format: { type: "json_object" },
     });
 
     if (!response.choices[0]?.message?.content) {
@@ -149,8 +150,6 @@ ${content}`
     }
 
     let responseContent = response.choices[0].message.content.trim();
-
-    responseContent = responseContent.replace(/```json\n?|\n?```/g, '').trim();
 
     console.log('Attempting to parse response:', {
       responseLength: responseContent.length,
