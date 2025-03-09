@@ -6,5 +6,6 @@
   },
   "primary": "emerald",
   "variant": "default",
-  "appearance": "light"
+  "appearance": "light",
+  "radius": 0.5
 }
