@@ -22,15 +22,17 @@ const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 
 
 // Add helper function for score-based color
 const getScoreColor = (score: number): string => {
-  if (score <= 50) return 'bg-red-500';
-  if (score <= 70) return 'bg-yellow-500';
-  return 'bg-green-500';
+  if (score <= 50) return 'bg-red-500 hover:bg-red-600';
+  if (score <= 70) return 'bg-yellow-500 hover:bg-yellow-600';
+  return 'bg-green-500 hover:bg-green-600';
 };
 
-// Add helper for feedback item color
-const getFeedbackColor = (improvement: string): string => {
+// Update the getFeedbackColor helper function for more subtle styling
+const getFeedbackColor = (improvement: string): { text: string; bg: string; border: string } => {
   const isPositive = /increase|improve|enhance|success|achieve/i.test(improvement);
-  return isPositive ? 'text-green-700' : 'text-amber-700';
+  return isPositive 
+    ? { text: 'text-green-700', bg: 'bg-green-50/50', border: 'border-green-100' }
+    : { text: 'text-amber-700', bg: 'bg-amber-50/50', border: 'border-amber-100' };
 };
 
 export default function ResumeAnalyzer() {
@@ -241,7 +243,7 @@ export default function ResumeAnalyzer() {
                           <Badge 
                             key={index} 
                             variant="secondary" 
-                            className="bg-green-50 text-green-700 border-green-200"
+                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
                           >
                             {skill}
                           </Badge>
@@ -253,24 +255,25 @@ export default function ResumeAnalyzer() {
                     <div>
                       <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
                       <ul className="space-y-2">
-                        {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => (
-                          <li 
-                            key={index} 
-                            className={`flex items-start gap-2 ${getFeedbackColor(improvement)}`}
-                          >
-                            <ChevronRight className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                              getFeedbackColor(improvement)
-                            }`} />
-                            <span>{improvement}</span>
-                          </li>
-                        ))}
+                        {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => {
+                          const colors = getFeedbackColor(improvement);
+                          return (
+                            <li 
+                              key={index} 
+                              className={`flex items-start gap-2 rounded-lg p-2 ${colors.bg} ${colors.text} border ${colors.border}`}
+                            >
+                              <ChevronRight className={`h-5 w-5 mt-0.5 flex-shrink-0 ${colors.text}`} />
+                              <span>{improvement}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
                     {/* General Feedback */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">General Feedback</h3>
-                      <p className="text-gray-600">
+                      <p className="text-gray-600 bg-gray-50 rounded-lg p-4 border border-gray-100">
                         {analyzeMutation.data.generalFeedback}
                       </p>
                     </div>
