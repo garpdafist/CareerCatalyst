@@ -60,14 +60,15 @@ app.use((req, res, next) => {
       await setupVite(app, server);
     }
 
-    // Use port 3000 in production (for Cloud Run), or 5000 in development
-    const PORT = process.env.NODE_ENV === "production" ? 3000 : 5000;
+    // Use PORT from environment variable in production, or fallback to 5000 in development
+    const PORT = process.env.NODE_ENV === "production" ? (process.env.PORT || 3000) : 5000;
     
+    log(`Starting server on port ${PORT} (process.env.PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV})`);
     server.listen({
       port: PORT,
       host: "0.0.0.0"
     }, () => {
-      log(`Server running at http://0.0.0.0:${PORT}`);
+      log(`🚀 Server running at http://0.0.0.0:${PORT}`);
       // Print additional debug info about the server
       log(`Server info: Node ${process.version}, Express routes: ${
         Object.keys(app._router.stack
