@@ -8,11 +8,66 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, FileText, ListChecks, Tags, Upload } from "lucide-react";
+import { Brain, FileText, ListChecks, Tags, Upload, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
+
+// Helper to ensure arrays have a maximum length
+const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 10): string[] => {
+  if (!arr) return [];
+  return arr.slice(0, maxLength);
+};
+
+// Add sample data for testing UI
+const sampleAnalysis: ResumeAnalysis = {
+  score: 85,
+  scores: {
+    keywordsRelevance: {
+      score: 8,
+      maxScore: 10,
+      feedback: "Good use of industry-specific keywords",
+      keywords: ["project management", "agile", "stakeholder management"]
+    },
+    achievementsMetrics: {
+      score: 9,
+      maxScore: 10,
+      feedback: "Strong quantifiable achievements",
+      highlights: ["Increased revenue by 25%", "Led team of 10"]
+    },
+    structureReadability: {
+      score: 8,
+      maxScore: 10,
+      feedback: "Clear and well-organized structure"
+    },
+    summaryClarity: {
+      score: 9,
+      maxScore: 10,
+      feedback: "Compelling professional summary"
+    },
+    overallPolish: {
+      score: 8,
+      maxScore: 10,
+      feedback: "Professional tone and presentation"
+    }
+  },
+  resumeSections: {
+    professionalSummary: "Experienced project manager with proven track record...",
+    workExperience: "Senior Project Manager | ABC Corp\n- Led cross-functional teams...",
+    technicalSkills: "Project Management: Jira, Confluence\nTechnical: Agile, Scrum",
+    education: "MBA, Business Administration | XYZ University",
+    keyAchievements: "- Successfully delivered $2M project under budget\n- Improved team efficiency by 30%"
+  },
+  identifiedSkills: ["Project Management", "Agile", "Scrum", "Leadership", "Stakeholder Management"],
+  importantKeywords: ["ROI", "KPI", "Agile", "Digital Transformation", "Change Management"],
+  suggestedImprovements: [
+    "Add more specific metrics to achievements",
+    "Include relevant certifications",
+    "Highlight technical tools used in projects"
+  ],
+  generalFeedback: "Strong resume with clear achievements. Consider adding more technical details and certifications to strengthen your profile."
+};
 
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
@@ -41,8 +96,7 @@ export default function ResumeAnalyzer() {
         const res = await apiRequest("POST", "/api/resume-analyze", data, { headers });
         clearInterval(progressInterval);
         setAnalysisProgress(100);
-        const jsonData = await res.json() as Promise<ResumeAnalysis>;
-        console.log('Analysis result:', jsonData); 
+        const jsonData = await res.json() as ResumeAnalysis;
         return jsonData;
       } catch (error) {
         clearInterval(progressInterval);
@@ -53,7 +107,7 @@ export default function ResumeAnalyzer() {
       setAnalysisProgress(0);
       toast({
         title: "Analysis Failed",
-        description: "There was an error analyzing your resume. Please try again.",
+        description: error.message,
         variant: "destructive",
         action: (
           <Button 
@@ -68,56 +122,38 @@ export default function ResumeAnalyzer() {
           </Button>
         ),
       });
-    },
-    onSuccess: (data: ResumeAnalysis) => { 
-      console.log('Success handler data:', data);
-      toast({
-        title: "Resume analyzed successfully",
-        description: "Your resume has been analyzed and scored.",
-      });
     }
   });
 
   const handleFileUpload = (file: File) => {
-    if (!file) {
-      console.error("No file selected");
-      return;
-    }
-
-    console.log("File selected:", {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      lastModified: new Date(file.lastModified).toISOString()
-    });
-
+    if (!file) return;
     setFile(file);
     setContent("");
   };
 
   const handleSubmit = () => {
-    if (file) {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      console.log("Submitting FormData:", {
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        isFormData: formData instanceof FormData,
-        formDataEntries: Array.from(formData.entries()).map(([key]) => key)
-      });
-
-      analyzeMutation.mutate(formData);
-    } else if (content.trim()) {
-      analyzeMutation.mutate({ content });
-    } else {
+    if (!content.trim() && !file) {
       toast({
         title: "Error",
         description: "Please provide a resume file or text content",
         variant: "destructive"
       });
+      return;
     }
+
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      analyzeMutation.mutate(formData);
+    } else {
+      analyzeMutation.mutate({ content });
+    }
+  };
+
+  // Test UI with sample data
+  const testUI = () => {
+    setAnalysisProgress(100);
+    analyzeMutation.data = sampleAnalysis;
   };
 
   return (
@@ -160,7 +196,7 @@ export default function ResumeAnalyzer() {
             </Card>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={e => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
             <Card className="border-border/20">
               <CardContent className="pt-6">
                 <Tabs defaultValue="paste" className="w-full">
@@ -220,8 +256,7 @@ export default function ResumeAnalyzer() {
             </Card>
 
             <Button
-              type="button" 
-              onClick={handleSubmit}
+              type="submit"
               size="lg"
               disabled={analyzeMutation.isPending}
               className="w-full"
@@ -238,17 +273,6 @@ export default function ResumeAnalyzer() {
           </form>
 
           {analyzeMutation.data && (
-            <>
-            {console.log("Analysis data:", JSON.stringify({
-              score: analyzeMutation.data.score,
-              hasIdentifiedSkills: !!analyzeMutation.data.identifiedSkills,
-              skillsCount: analyzeMutation.data.identifiedSkills?.length || 0,
-              hasImportantKeywords: !!analyzeMutation.data.importantKeywords,
-              keywordsCount: analyzeMutation.data.importantKeywords?.length || 0,
-              hasSuggestedImprovements: !!analyzeMutation.data.suggestedImprovements,
-              improvementsCount: analyzeMutation.data.suggestedImprovements?.length || 0,
-              dataKeys: Object.keys(analyzeMutation.data)
-            }, null, 2))}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -262,15 +286,41 @@ export default function ResumeAnalyzer() {
                       <Brain className="h-6 w-6 text-primary" />
                       <h2 className="text-xl font-semibold text-foreground">Analysis Results</h2>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-muted-foreground">Resume Score</div>
-                      <div className="text-2xl font-bold text-primary">{analyzeMutation.data.score}/100</div>
+                    <div className="text-right flex items-center gap-2">
+                      <div className="text-2xl font-bold text-primary flex items-center">
+                        {analyzeMutation.data.score}/100
+                        <Star className="h-4 w-4 ml-1 fill-current" />
+                      </div>
                     </div>
                   </div>
 
                   <Progress value={analyzeMutation.data.score || 0} className="h-2" />
 
+                  {/* Detailed Scores */}
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {analyzeMutation.data.scores && Object.entries(analyzeMutation.data.scores).map(([key, score]) => (
+                      <div key={key} className="bg-muted/50 rounded-lg p-4">
+                        <h3 className="font-medium mb-2 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-muted-foreground">
+                            {score.score}/{score.maxScore}
+                          </span>
+                        </div>
+                        <Progress
+                          value={(score.score / score.maxScore) * 100}
+                          className="h-1"
+                        />
+                        <p className="text-sm mt-2 text-muted-foreground">
+                          {score.feedback}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="grid gap-6 md:grid-cols-2">
+                    {/* Skills and Keywords */}
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-medium flex items-center gap-2 mb-3">
@@ -278,15 +328,11 @@ export default function ResumeAnalyzer() {
                           Identified Skills
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {analyzeMutation.data?.identifiedSkills?.length > 0 ? (
-                            analyzeMutation.data.identifiedSkills.map((skill, index) => (
-                              <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-0">
-                                {skill}
-                              </Badge>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No skills identified</p>
-                          )}
+                          {limitArrayLength(analyzeMutation.data.identifiedSkills).map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-0">
+                              {skill}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
 
@@ -296,19 +342,16 @@ export default function ResumeAnalyzer() {
                           Important Keywords
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {analyzeMutation.data?.importantKeywords?.length ? (
-                            analyzeMutation.data.importantKeywords.map((keyword, index) => (
-                              <Badge key={index} variant="outline" className="border-border/40">
-                                {keyword}
-                              </Badge>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No keywords identified</p>
-                          )}
+                          {limitArrayLength(analyzeMutation.data.importantKeywords).map((keyword, index) => (
+                            <Badge key={index} variant="outline" className="border-border/40">
+                              {keyword}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
                     </div>
 
+                    {/* Improvements and Feedback */}
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-medium flex items-center gap-2 mb-3">
@@ -316,19 +359,12 @@ export default function ResumeAnalyzer() {
                           Suggested Improvements
                         </h3>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                          {analyzeMutation.data?.suggestedImprovements?.length > 0 ? (
-                            analyzeMutation.data.suggestedImprovements.map((improvement, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                {improvement}
-                              </li>
-                            ))
-                          ) : (
-                            <li className="flex items-start gap-2">
+                          {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => (
+                            <li key={index} className="flex items-start gap-2">
                               <span className="text-primary mt-1">•</span>
-                              No specific improvements suggested
+                              {improvement}
                             </li>
-                          )}
+                          ))}
                         </ul>
                       </div>
 
@@ -337,31 +373,9 @@ export default function ResumeAnalyzer() {
                           <Brain className="h-5 w-5 text-primary" />
                           General Feedback
                         </h3>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          {analyzeMutation.data?.generalFeedback ? (
-                            typeof analyzeMutation.data.generalFeedback === 'string' ? (
-                              // If it's a single string, display it as a single bullet point
-                              <li className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                <span className="flex-1">{analyzeMutation.data.generalFeedback}</span>
-                              </li>
-                            ) : (
-                              // If it's an array, map through each item
-                              Array.isArray(analyzeMutation.data.generalFeedback) && 
-                              analyzeMutation.data.generalFeedback.map((feedback, index) => (
-                                <li key={index} className="flex items-start gap-2">
-                                  <span className="text-primary mt-1">•</span>
-                                  <span className="flex-1">{feedback}</span>
-                                </li>
-                              ))
-                            )
-                          ) : (
-                            <li className="flex items-start gap-2">
-                              <span className="text-primary mt-1">•</span>
-                              <span className="flex-1">Analysis completed. We recommend reviewing your resume for any areas of improvement.</span>
-                            </li>
-                          )}
-                        </ul>
+                        <div className="text-sm text-muted-foreground">
+                          {analyzeMutation.data.generalFeedback}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -381,9 +395,15 @@ export default function ResumeAnalyzer() {
                 </CardContent>
               </Card>
             </motion.div>
-            </>
           )}
         </motion.div>
+
+        {/* Add test button during development */}
+        {process.env.NODE_ENV === 'development' && (
+          <Button onClick={testUI} className="mb-4">
+            Test UI with Sample Data
+          </Button>
+        )}
       </div>
     </div>
   );

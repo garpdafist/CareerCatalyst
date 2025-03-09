@@ -85,23 +85,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async analyzeResume(content: string, userId: string): Promise<ResumeAnalysis> {
-    // Get the AI analysis
-    const aiAnalysis = await analyzeResumeWithAI(content);
-
-    // Save the analysis
-    return this.saveResumeAnalysis({
+    console.log('Starting resume analysis for user:', {
       userId,
-      content,
-      score: aiAnalysis.score,
-      analysis: {
-        scores: aiAnalysis.scores,
-        resumeSections: aiAnalysis.resumeSections,
-        identifiedSkills: aiAnalysis.identifiedSkills,
-        importantKeywords: aiAnalysis.importantKeywords,
-        suggestedImprovements: aiAnalysis.suggestedImprovements,
-        generalFeedback: aiAnalysis.generalFeedback
-      }
+      contentLength: content.length,
+      timestamp: new Date().toISOString()
     });
+
+    try {
+      // Get the AI analysis
+      const aiAnalysis = await analyzeResumeWithAI(content);
+
+      console.log('Received AI analysis:', {
+        score: aiAnalysis.score,
+        hasScores: !!aiAnalysis.scores,
+        hasResumeSections: !!aiAnalysis.resumeSections,
+        skillsCount: aiAnalysis.identifiedSkills?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+
+      // Save the analysis
+      return this.saveResumeAnalysis({
+        userId,
+        content,
+        score: aiAnalysis.score,
+        analysis: {
+          scores: aiAnalysis.scores,
+          resumeSections: aiAnalysis.resumeSections,
+          identifiedSkills: aiAnalysis.identifiedSkills,
+          importantKeywords: aiAnalysis.importantKeywords,
+          suggestedImprovements: aiAnalysis.suggestedImprovements,
+          generalFeedback: aiAnalysis.generalFeedback
+        }
+      });
+    } catch (error: any) {
+      console.error('Error during resume analysis:', {
+        error: error.message,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
   }
 
   async saveResumeAnalysis(data: {
@@ -117,24 +140,48 @@ export class DatabaseStorage implements IStorage {
       generalFeedback: string;
     };
   }): Promise<ResumeAnalysis> {
-    const [analysis] = await db
-      .insert(resumeAnalyses)
-      .values({
-        userId: data.userId,
-        content: data.content,
-        score: data.score,
-        scores: data.analysis.scores,
-        resumeSections: data.analysis.resumeSections,
-        identifiedSkills: data.analysis.identifiedSkills,
-        importantKeywords: data.analysis.importantKeywords,
-        suggestedImprovements: data.analysis.suggestedImprovements,
-        generalFeedback: data.analysis.generalFeedback,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
+    console.log('Saving resume analysis:', {
+      userId: data.userId,
+      score: data.score,
+      hasScores: !!data.analysis.scores,
+      hasResumeSections: !!data.analysis.resumeSections,
+      timestamp: new Date().toISOString()
+    });
 
-    return analysis;
+    try {
+      const [analysis] = await db
+        .insert(resumeAnalyses)
+        .values({
+          userId: data.userId,
+          content: data.content,
+          score: data.score,
+          scores: data.analysis.scores,
+          resumeSections: data.analysis.resumeSections,
+          identifiedSkills: data.analysis.identifiedSkills,
+          importantKeywords: data.analysis.importantKeywords,
+          suggestedImprovements: data.analysis.suggestedImprovements,
+          generalFeedback: data.analysis.generalFeedback,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+
+      console.log('Successfully saved analysis:', {
+        id: analysis.id,
+        userId: analysis.userId,
+        score: analysis.score,
+        timestamp: new Date().toISOString()
+      });
+
+      return analysis;
+    } catch (error: any) {
+      console.error('Error saving resume analysis:', {
+        error: error.message,
+        userId: data.userId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
   }
 
   async getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined> {
