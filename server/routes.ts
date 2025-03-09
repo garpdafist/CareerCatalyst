@@ -13,6 +13,47 @@ import * as pdfjs from 'pdfjs-dist';
 import { PDFDocument } from 'pdf-lib';
 import { PDFExtract } from 'pdf.js-extract';
 
+// Add this after other imports
+const SCORING_WEIGHTS = {
+  keywordsRelevance: 0.30,  // 30%
+  achievementsMetrics: 0.25, // 25%
+  structureReadability: 0.20, // 20%
+  summaryClarity: 0.15,     // 15%
+  overallPolish: 0.10       // 10%
+};
+
+const resumeAnalysisPrompt = `You are an expert resume analyzer. Analyze the provided resume and return a structured evaluation.
+
+Follow these scoring criteria:
+1. Keywords/Relevance (30%): Industry-relevant terms, skills, and qualifications
+2. Achievements/Metrics (25%): Quantifiable results and specific accomplishments
+3. Structure/Readability (20%): Clear organization, formatting, and flow
+4. Summary/Clarity (15%): Clear professional narrative and value proposition
+5. Overall Polish (10%): Grammar, spelling, and professional tone
+
+Return ONLY a JSON object with this exact structure:
+{
+  "score": <number between 10-100>,
+  "scores": {
+    "keywordsRelevance": <number between 1-10>,
+    "achievementsMetrics": <number between 1-10>,
+    "structureReadability": <number between 1-10>,
+    "summaryClarity": <number between 1-10>,
+    "overallPolish": <number between 1-10>
+  },
+  "identifiedSkills": ["skill1", "skill2", ...],
+  "importantKeywords": ["keyword1", "keyword2", ...],
+  "suggestedImprovements": ["specific suggestion 1", "specific suggestion 2", ...],
+  "generalFeedback": "Overall analysis and recommendations",
+  "resumeSections": {
+    "professionalSummary": "Extracted or suggested summary",
+    "workExperience": "Analyzed work history",
+    "technicalSkills": "Technical skills analysis",
+    "education": "Education details",
+    "keyAchievements": "Notable achievements"
+  }
+}`;
+
 // Initialize PDF extraction tools
 const pdfExtract = new PDFExtract();
 
@@ -599,6 +640,47 @@ IMPORTANT: Your response must ONLY be a JSON object with no other text before or
   } catch (error) {
     console.error('LinkedIn content analysis error:', error);
     throw new Error('Failed to analyze LinkedIn content');
+  }
+}
+
+// Modify the existing analyzeResume function in storage.ts
+async function analyzeResume(content: string, userId: string) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+      messages: [
+        { role: "system", content: resumeAnalysisPrompt },
+        { role: "user", content }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1 // Low temperature for consistent results
+    });
+
+    const analysis = JSON.parse(response.choices[0].message.content);
+
+    // Calculate weighted score
+    const weightedScore = Object.entries(SCORING_WEIGHTS).reduce((total, [key, weight]) => {
+      const scoreKey = key as keyof typeof analysis.scores;
+      return total + (analysis.scores[scoreKey] * weight * 10);
+    }, 0);
+
+    analysis.score = Math.round(weightedScore);
+
+    // Store the analysis result
+    const savedAnalysis = await storage.saveResumeAnalysis({
+      userId,
+      score: analysis.score,
+      content: content,
+      analysis: analysis
+    });
+
+    return {
+      id: savedAnalysis.id,
+      ...analysis
+    };
+  } catch (error) {
+    console.error('Resume analysis error:', error);
+    throw new Error('Failed to analyze resume');
   }
 }
 

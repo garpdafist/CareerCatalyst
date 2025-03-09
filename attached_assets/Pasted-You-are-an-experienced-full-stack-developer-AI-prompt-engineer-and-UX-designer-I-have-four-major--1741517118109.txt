@@ -1,0 +1,50 @@
+You are an experienced full-stack developer, AI prompt engineer, and UX designer. I have four major tasks for my resume analyzer/editor project, plus two extra considerations. Please read carefully:
+
+--------------------------------------------------------------------------------
+MAIN TASKS:
+--------------------------------------------------------------------------------
+1. Finalize Scoring & Data Flow
+   - (1a) Define a final scoring system (10–100 scale) with these weightings:
+       Keywords/Relevance: 30%
+       Achievements/Metrics: 25%
+       Structure/Readability: 20%
+       Summary/Clarity: 15%
+       Overall polish (grammar, length): 10%
+     Summation = 0–100.
+   - (1b) Implement a stable JSON structure from the LLM:
+       {
+         "score": <number>,
+         "identifiedSkills": [...],
+         "importantKeywords": [...],
+         "suggestedImprovements": [...],
+         "generalFeedback": "...",
+         "resumeSections": {
+           "professionalSummary": "...",
+           "workExperience": "...",
+           "technicalSkills": "...",
+           "education": "...",
+           "keyAchievements": "..."
+         }
+       }
+     Use temperature=0 or a low value so results are consistent. If any field is missing, the LLM returns an empty array/string.
+   - (1c) Confirm how we store this data in the DB (keyed by user ID) and display it in the UI.
+   - (1d) Ensure LLM returns consistent results (show an example JSON in the prompt, no omitted fields).
+
+2. Enhance the Editing UX
+   - (2a) Improve the UI of “Identified Skills,” “Important Keywords,” “Suggested Improvements,” “General Feedback” for a polished layout (cards or a neat grid).
+   - (2b) For the ~10–15s waiting screen, show an animated progress bar/trail (like “Analyzing → Processing → Generating → Complete”).
+   - (2c) After parsing, provide a more guided flow to edit each resume section (professional summary, etc.) with AI suggestions inline.
+   - (2d) Introduce one-click suggestions for bullet points if the LLM provides improved text.
+   - (2e) Any additional small UX ideas (e.g., confetti upon finalizing, subtle animations, etc.).
+
+3. Implement Template Downloads
+   - (3a) Currently, a random text file is downloaded. We need a dynamic output with multiple possible resume templates.
+   - (3b) Provide at least “Download as PDF” or “Download as DOCX” for the edited resume. Possibly use pdfkit or docx libraries.
+   - (3c) Let the user preview each template design before choosing one to generate.
+
+4. Sign-In Requirement vs. Public Results
+   - Right now, it shows “Sign in to view results,” yet results can be seen without signing in.
+   - We need a consistent approach:
+     Option A: Show partial info to public, require sign-in for full detail.
+     Option B: Fully lock the analysis behind sign-in.
+     Option C: Let them see the analysis once, but sign in to save or edit.
