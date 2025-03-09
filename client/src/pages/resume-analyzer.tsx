@@ -42,7 +42,7 @@ export default function ResumeAnalyzer() {
         clearInterval(progressInterval);
         setAnalysisProgress(100);
         const jsonData = await res.json() as Promise<ResumeAnalysis>;
-        console.log('Analysis result:', jsonData); //Added debug logging
+        console.log('Analysis result:', jsonData); 
         return jsonData;
       } catch (error) {
         clearInterval(progressInterval);
@@ -69,7 +69,7 @@ export default function ResumeAnalyzer() {
         ),
       });
     },
-    onSuccess: (data: ResumeAnalysis) => { //Added success handler with data logging
+    onSuccess: (data: ResumeAnalysis) => { 
       console.log('Success handler data:', data);
       toast({
         title: "Resume analyzed successfully",
@@ -338,17 +338,15 @@ export default function ResumeAnalyzer() {
                           General Feedback
                         </h3>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                          {analyzeMutation.data.suggestedImprovements && analyzeMutation.data.suggestedImprovements.length > 0 ? (
-                            analyzeMutation.data.suggestedImprovements.map((feedback, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                {feedback}
-                              </li>
-                            ))
+                          {analyzeMutation.data?.generalFeedback ? (
+                            <li className="flex items-start gap-2">
+                              <span className="text-primary mt-1">•</span>
+                              {analyzeMutation.data.generalFeedback}
+                            </li>
                           ) : (
                             <li className="flex items-start gap-2">
                               <span className="text-primary mt-1">•</span>
-                              {analyzeMutation.data.generalFeedback || "Analysis completed. We recommend reviewing your resume for any areas of improvement."}
+                              Analysis completed. We recommend reviewing your resume for any areas of improvement.
                             </li>
                           )}
                         </ul>
