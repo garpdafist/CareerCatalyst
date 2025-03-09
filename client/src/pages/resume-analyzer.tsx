@@ -238,6 +238,8 @@ export default function ResumeAnalyzer() {
           </form>
 
           {analyzeMutation.data && (
+            <>
+            {console.log("Analysis data:", analyzeMutation.data)}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -290,7 +292,6 @@ export default function ResumeAnalyzer() {
                           ) : (
                             <p className="text-sm text-muted-foreground">No keywords identified</p>
                           )}
-                          ))}
                         </div>
                       </div>
                     </div>
@@ -350,6 +351,7 @@ export default function ResumeAnalyzer() {
                 </CardContent>
               </Card>
             </motion.div>
+            </>
           )}
         </motion.div>
       </div>
