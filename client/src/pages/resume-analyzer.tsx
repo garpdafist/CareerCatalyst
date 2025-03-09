@@ -95,18 +95,18 @@ export default function ResumeAnalyzer() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-16">
+    <div className="min-h-screen bg-background px-4 py-8 md:py-16">
       <div className="mx-auto max-w-4xl">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 md:mb-12">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold tracking-tight mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 md:mb-4">
               Resume Analyzer
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-base md:text-lg text-muted-foreground">
               Get instant AI-powered feedback on your resume
             </p>
           </motion.div>
@@ -116,7 +116,7 @@ export default function ResumeAnalyzer() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="space-y-6"
+          className="space-y-4 md:space-y-6"
         >
           {analyzeMutation.isPending && (
             <Card>
@@ -209,16 +209,17 @@ export default function ResumeAnalyzer() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
+              className="mt-6 md:mt-8"
             >
               <Card>
                 <CardContent className="pt-6">
                   {/* Analysis Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-semibold flex items-center gap-2">
-                      <Brain className="h-6 w-6 text-green-600" />
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <h2 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
+                      <Brain className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
                       Analysis Results
                     </h2>
-                    <span className={`text-3xl font-bold ${
+                    <span className={`text-2xl md:text-3xl font-bold ${
                       analyzeMutation.data.score > 70 ? 'text-green-600' :
                       analyzeMutation.data.score > 50 ? 'text-yellow-600' :
                       'text-red-600'
@@ -227,14 +228,7 @@ export default function ResumeAnalyzer() {
                     </span>
                   </div>
 
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-500 ${getScoreColor(analyzeMutation.data.score)}`}
-                      style={{ width: `${analyzeMutation.data.score}%` }}
-                    />
-                  </div>
-
-                  <div className="mt-8 space-y-8">
+                  <div className="mt-6 md:mt-8 space-y-6 md:space-y-8">
                     {/* Key Skills */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">Key Skills</h3>
@@ -254,16 +248,16 @@ export default function ResumeAnalyzer() {
                     {/* Suggested Improvements */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
-                      <ul className="space-y-2">
+                      <ul className="space-y-2 md:space-y-3">
                         {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => {
                           const colors = getFeedbackColor(improvement);
                           return (
                             <li 
                               key={index} 
-                              className={`flex items-start gap-2 rounded-lg p-2 ${colors.bg} ${colors.text} border ${colors.border}`}
+                              className={`flex items-start gap-2 rounded-lg p-2 md:p-3 ${colors.bg} ${colors.text} border ${colors.border}`}
                             >
                               <ChevronRight className={`h-5 w-5 mt-0.5 flex-shrink-0 ${colors.text}`} />
-                              <span>{improvement}</span>
+                              <span className="text-sm md:text-base">{improvement}</span>
                             </li>
                           );
                         })}
@@ -273,7 +267,7 @@ export default function ResumeAnalyzer() {
                     {/* General Feedback */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">General Feedback</h3>
-                      <p className="text-gray-600 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                      <p className="text-sm md:text-base text-gray-600 bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-100">
                         {analyzeMutation.data.generalFeedback}
                       </p>
                     </div>
