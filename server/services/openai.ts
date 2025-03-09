@@ -74,6 +74,53 @@ function getOpenAIClient(): OpenAI {
   return openaiClient;
 }
 
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the provided resume and return a structured evaluation.
+
+Your response MUST be a JSON object with EXACTLY this structure:
+{
+  "score": number (between 0-100),
+  "scores": {
+    "keywordsRelevance": {
+      "score": number (1-10),
+      "maxScore": 10,
+      "feedback": string,
+      "keywords": string[]
+    },
+    "achievementsMetrics": {
+      "score": number (1-10),
+      "maxScore": 10,
+      "feedback": string,
+      "highlights": string[]
+    },
+    "structureReadability": {
+      "score": number (1-10),
+      "maxScore": 10,
+      "feedback": string
+    },
+    "summaryClarity": {
+      "score": number (1-10),
+      "maxScore": 10,
+      "feedback": string
+    },
+    "overallPolish": {
+      "score": number (1-10),
+      "maxScore": 10,
+      "feedback": string
+    }
+  },
+  "resumeSections": {
+    "professionalSummary": string,
+    "workExperience": string,
+    "technicalSkills": string,
+    "education": string,
+    "keyAchievements": string
+  },
+  "identifiedSkills": string[],
+  "importantKeywords": string[],
+  "suggestedImprovements": string[],
+  "generalFeedback": string
+}`;
+
 // Main analysis function
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
   try {
@@ -91,11 +138,11 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
       messages: [
         {
           role: "system",
-          content: `You are an expert resume analyzer. Analyze the provided resume and return a structured evaluation with specific scores and feedback. Return ONLY a JSON object with no additional text or markdown formatting.`
+          content: SYSTEM_PROMPT
         },
         {
           role: "user",
-          content: `Analyze this resume and provide detailed, actionable feedback:\n\n${content}`
+          content: `Analyze this resume content and provide a detailed evaluation following the exact JSON structure specified. Include specific, actionable feedback:\n\n${content}`
         }
       ],
       temperature: 0.1,
@@ -108,10 +155,20 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     console.log('Received OpenAI response', {
       timestamp: new Date().toISOString(),
-      responseLength: response.choices[0].message.content.length
+      responseLength: response.choices[0].message.content.length,
+      previewResponse: response.choices[0].message.content.substring(0, 100) + '...'
     });
 
     const parsedResponse = JSON.parse(response.choices[0].message.content);
+
+    // Log the parsed response for debugging
+    console.log('Parsed OpenAI response:', {
+      hasScore: typeof parsedResponse.score === 'number',
+      hasScores: !!parsedResponse.scores,
+      hasResumeSections: !!parsedResponse.resumeSections,
+      preview: JSON.stringify(parsedResponse).substring(0, 100) + '...'
+    });
+
     const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
 
     console.log('Analysis completed successfully:', {
@@ -127,7 +184,8 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
       message: error.message,
       name: error.name,
       stack: error.stack,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      validationError: error instanceof z.ZodError ? error.errors : undefined
     });
     throw new Error(`Failed to analyze resume: ${error.message}`);
   }
