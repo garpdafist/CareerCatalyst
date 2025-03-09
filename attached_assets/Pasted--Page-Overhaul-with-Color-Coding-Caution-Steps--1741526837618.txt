@@ -1,0 +1,49 @@
+# Page Overhaul with Color Coding & Caution Steps
+# ==============================================
+# Goal: Overhaul the results page, color-code the progress bar & bullet points, keep brand guidelines,
+# and ensure we avoid port conflicts or startup issues. Use a "caution" approach when applying CSS changes.
+
+steps:
+  - name: "Maintain Brand Guidelines & Color Scheme"
+    description: >
+      1. Use the existing brand palette from theme.json (primary, accent, radius, etc.).
+      2. If we need additional colors for "good" or "bad" items, pick them from the same palette or a
+         complementary scheme. E.g., a light green (#DFFFE0) for positives, a light red (#FFE0E0) for negatives.
+      3. Ensure we keep consistent font families, spacing, etc.
+
+  - name: "Color-Coded Progress Bar for Resume Score"
+    description: >
+      1. In the results page (where we show 0-100 score), let's color-code the bar:
+         - 0-50 => red or brand-compatible red shade
+         - 51-70 => yellow or brand-compatible yellow shade
+         - 71-100 => green or brand-compatible green shade
+      2. The bar can be a simple horizontal div with dynamic width = score%.
+      3. If the user is at 78, the bar is ~78% filled and in green.
+
+  - name: "Color-Coded Bullet Points"
+    description: >
+      1. For "Suggested Improvements" or "Important Points," highlight them in a subtle color-coded box or bullet:
+         - Good / Positive => a light green background or a small green icon
+         - Bad / Negative => a light red background or a small red warning icon
+      2. Keep it minimal so it doesn't overwhelm the user. Possibly use a small icon next to each bullet.
+
+  - name: "Implement & Test with Caution"
+    description: >
+      1. The last time we changed CSS, we had port conflicts. Let's do a two-step approach:
+         - Step A: Show me a diff of the CSS and theme changes. Wait for my "OK."
+         - Step B: Apply changes, then do a "dry run" or local test to confirm no leftover watchers or port references.
+      2. If we see a port conflict or theme plugin error, revert automatically or ask me for guidance.
+      3. Use 'pkill -f "node"' or 'pkill -f "tsx"' if leftover processes appear. Then run "npm run dev" or "npm start."
+      4. If everything starts with no errors, share logs or screenshots of the new UI to confirm.
+
+  - name: "Final UI Layout & Validation"
+    description: >
+      1. After changes, the results page should show:
+         - A color-coded progress bar at the top (score-based color).
+         - "Key Skills," "Suggested Improvements," "Important Keywords," "General Feedback," each possibly with color-coded bullets or icons.
+      2. Confirm the brand palette is respected, no bright random colors outside theme.
+      3. Provide a final link or screenshot so I can verify the design and test uploading a resume. If we want to add job listing logic later, keep placeholders or notes but don't break the layout.
+
+notes:
+  - "Use brand primary/accent for the bar if it fits, but differentiate low vs. high scores with subtle color changes."
+  - "Focus on minimal text, simple icons, and a professional look. No leftover watchers or references to port 5000 or 3000 forcibly."

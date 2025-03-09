@@ -20,6 +20,19 @@ const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 
   return arr.slice(0, maxLength);
 };
 
+// Add helper function for score-based color
+const getScoreColor = (score: number): string => {
+  if (score <= 50) return 'bg-red-500';
+  if (score <= 70) return 'bg-yellow-500';
+  return 'bg-green-500';
+};
+
+// Add helper for feedback item color
+const getFeedbackColor = (improvement: string): string => {
+  const isPositive = /increase|improve|enhance|success|achieve/i.test(improvement);
+  return isPositive ? 'text-green-700' : 'text-amber-700';
+};
+
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -203,12 +216,21 @@ export default function ResumeAnalyzer() {
                       <Brain className="h-6 w-6 text-green-600" />
                       Analysis Results
                     </h2>
-                    <span className="text-3xl font-bold text-green-600">
+                    <span className={`text-3xl font-bold ${
+                      analyzeMutation.data.score > 70 ? 'text-green-600' :
+                      analyzeMutation.data.score > 50 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
                       {analyzeMutation.data.score}/100
                     </span>
                   </div>
 
-                  <Progress value={analyzeMutation.data.score} className="h-2 bg-gray-100" />
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-500 ${getScoreColor(analyzeMutation.data.score)}`}
+                      style={{ width: `${analyzeMutation.data.score}%` }}
+                    />
+                  </div>
 
                   <div className="mt-8 space-y-8">
                     {/* Key Skills */}
@@ -216,7 +238,11 @@ export default function ResumeAnalyzer() {
                       <h3 className="text-lg font-medium mb-3">Key Skills</h3>
                       <div className="flex flex-wrap gap-2">
                         {limitArrayLength(analyzeMutation.data.identifiedSkills).map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="bg-green-50 text-green-700 border-green-200"
+                          >
                             {skill}
                           </Badge>
                         ))}
@@ -228,8 +254,13 @@ export default function ResumeAnalyzer() {
                       <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
                       <ul className="space-y-2">
                         {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => (
-                          <li key={index} className="flex items-start gap-2 text-gray-600">
-                            <ChevronRight className="h-5 w-5 mt-0.5 text-green-600 flex-shrink-0" />
+                          <li 
+                            key={index} 
+                            className={`flex items-start gap-2 ${getFeedbackColor(improvement)}`}
+                          >
+                            <ChevronRight className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+                              getFeedbackColor(improvement)
+                            }`} />
                             <span>{improvement}</span>
                           </li>
                         ))}
