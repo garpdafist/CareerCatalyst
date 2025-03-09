@@ -22,6 +22,14 @@ export default defineConfig({
         ]
       : []),
   ],
+  server: {
+    hmr: process.env.NODE_ENV === 'production' ? false : {
+      protocol: 'wss',
+      host: 'replit.com',
+      port: 443,
+      clientPort: 443,
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),

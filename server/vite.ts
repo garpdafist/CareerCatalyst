@@ -25,13 +25,17 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { 
-      server,
-      timeout: 5000,
-      protocol: 'wss', // Use secure WebSockets
-      clientPort: 3000,
-      path: '/@hmr'
-    },
+    hmr: process.env.NODE_ENV === 'production' 
+      ? false 
+      : { 
+          server,
+          timeout: 5000,
+          protocol: 'wss',
+          host: 'replit.com',
+          port: 443,
+          clientPort: 443,
+          path: '/@hmr'
+        },
     allowedHosts: true,
   };
 
