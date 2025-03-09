@@ -83,7 +83,7 @@ app.use((req, res, next) => {
         port: currentPort,
         host: "0.0.0.0"
       }, () => {
-      log(`🚀 Server running at http://0.0.0.0:${PORT}`);
+      log(`🚀 Server running at http://0.0.0.0:${currentPort}`);
       // Print additional debug info about the server
       log(`Server info: Node ${process.version}, Express routes: ${
         Object.keys(app._router.stack
@@ -92,7 +92,7 @@ app.use((req, res, next) => {
         )
       }`);
       // Set environment variable with the actual port for client reference
-      process.env.ACTUAL_PORT = PORT.toString();
+      process.env.ACTUAL_PORT = currentPort.toString();
     }).on('error', (error) => {
       if (error.code === 'EADDRINUSE' && process.env.NODE_ENV !== "production") {
         log(`Port ${currentPort} is already in use, trying next port...`);
