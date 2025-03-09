@@ -60,30 +60,18 @@ app.use((req, res, next) => {
       await setupVite(app, server);
     }
 
-    // Use PORT from environment variable in production, or fallback to 5000 in development
-    // Try multiple ports in case the default is already in use
-    const tryPorts = [5000, 5001, 5002, 5003];
-    let PORT = process.env.NODE_ENV === "production" ? (process.env.PORT || 3000) : tryPorts[0];
+    // Always use PORT from environment variable first, or fallback to 3000
+    const PORT = process.env.PORT || 3000;
     
     log(`Starting server on port ${PORT} (process.env.PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV})`);
     
-    // Function to try starting server on different ports
-    const startServer = (portIndex = 0) => {
-      if (portIndex >= tryPorts.length && process.env.NODE_ENV !== "production") {
-        log(`Fatal error: Could not find an available port`);
-        process.exit(1);
-        return;
-      }
-      
-      const currentPort = process.env.NODE_ENV === "production" 
-        ? (process.env.PORT || 3000) 
-        : tryPorts[portIndex];
-      
+    // Function to start server
+    const startServer = () => {      
       server.listen({
-        port: currentPort,
+        port: PORT,
         host: "0.0.0.0"
       }, () => {
-      log(`🚀 Server running at http://0.0.0.0:${currentPort}`);
+      log(`🚀 Server running at http://0.0.0.0:${PORT}`);
       // Print additional debug info about the server
       log(`Server info: Node ${process.version}, Express routes: ${
         Object.keys(app._router.stack
@@ -92,19 +80,14 @@ app.use((req, res, next) => {
         )
       }`);
       // Set environment variable with the actual port for client reference
-      process.env.ACTUAL_PORT = currentPort.toString();
+      process.env.ACTUAL_PORT = PORT.toString();
     }).on('error', (error) => {
-      if (error.code === 'EADDRINUSE' && process.env.NODE_ENV !== "production") {
-        log(`Port ${currentPort} is already in use, trying next port...`);
-        startServer(portIndex + 1);
-      } else {
-        log(`Fatal error during server startup: ${error}`);
-        process.exit(1);
-      }
+      log(`Fatal error during server startup: ${error}`);
+      process.exit(1);
     });
     };
     
-    // Start attempting to connect with the first port
+    // Start the server
     startServer();
   } catch (error) {
     log(`Fatal error during server startup: ${error}`);

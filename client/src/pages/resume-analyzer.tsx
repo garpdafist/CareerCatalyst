@@ -41,7 +41,9 @@ export default function ResumeAnalyzer() {
         const res = await apiRequest("POST", "/api/resume-analyze", data, { headers });
         clearInterval(progressInterval);
         setAnalysisProgress(100);
-        return res.json() as Promise<ResumeAnalysis>;
+        const jsonData = await res.json() as Promise<ResumeAnalysis>;
+        console.log('Analysis result:', jsonData); //Added debug logging
+        return jsonData;
       } catch (error) {
         clearInterval(progressInterval);
         throw error;
@@ -67,6 +69,13 @@ export default function ResumeAnalyzer() {
         ),
       });
     },
+    onSuccess: (data: ResumeAnalysis) => { //Added success handler with data logging
+      console.log('Success handler data:', data);
+      toast({
+        title: "Resume analyzed successfully",
+        description: "Your resume has been analyzed and scored.",
+      });
+    }
   });
 
   const handleFileUpload = (file: File) => {
@@ -303,12 +312,19 @@ export default function ResumeAnalyzer() {
                           General Feedback
                         </h3>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                          {analyzeMutation.data?.feedback?.map((feedback, index) => (
-                            <li key={index} className="flex items-start gap-2">
+                          {analyzeMutation.data.suggestedImprovements && analyzeMutation.data.suggestedImprovements.length > 0 ? (
+                            analyzeMutation.data.suggestedImprovements.map((feedback, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                {feedback}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="flex items-start gap-2">
                               <span className="text-primary mt-1">•</span>
-                              {feedback}
+                              {analyzeMutation.data.generalFeedback || "Analysis completed. We recommend reviewing your resume for any areas of improvement."}
                             </li>
-                          ))}
+                          )}
                         </ul>
                       </div>
                     </div>

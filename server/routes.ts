@@ -656,7 +656,80 @@ async function analyzeResume(content: string, userId: string) {
       temperature: 0.1 // Low temperature for consistent results
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content);
+    // Parse and log OpenAI response for debugging
+    console.log("OpenAI response content:", response.choices[0].message.content);
+    const rawAnalysis = JSON.parse(response.choices[0].message.content);
+    console.log("Parsed analysis object:", JSON.stringify(rawAnalysis, null, 2));
+
+    // Ensure we have all required fields with proper structure
+    const analysis = {
+      // Basic score (required)
+      score: rawAnalysis.score || 0,
+
+      // Detailed scores
+      scores: {
+        keywordsRelevance: rawAnalysis.scores?.keywordsRelevance || 0,
+        achievementsMetrics: rawAnalysis.scores?.achievementsMetrics || 0,
+        structureReadability: rawAnalysis.scores?.structureReadability || 0,
+        summaryClarity: rawAnalysis.scores?.summaryClarity || 0,
+        overallPolish: rawAnalysis.scores?.overallPolish || 0
+      },
+
+      // Map scores to scoring criteria structure
+      scoringCriteria: {
+        keywordsRelevance: { 
+          score: rawAnalysis.scores?.keywordsRelevance || 0, 
+          maxScore: 10, 
+          feedback: rawAnalysis.feedback?.keywordsRelevance || "Keywords analysis" 
+        },
+        achievementsMetrics: { 
+          score: rawAnalysis.scores?.achievementsMetrics || 0, 
+          maxScore: 10, 
+          feedback: rawAnalysis.feedback?.achievementsMetrics || "Achievements analysis" 
+        },
+        structureReadability: { 
+          score: rawAnalysis.scores?.structureReadability || 0, 
+          maxScore: 10, 
+          feedback: rawAnalysis.feedback?.structureReadability || "Structure analysis" 
+        },
+        summaryClarity: { 
+          score: rawAnalysis.scores?.summaryClarity || 0, 
+          maxScore: 10, 
+          feedback: rawAnalysis.feedback?.summaryClarity || "Summary clarity analysis" 
+        },
+        overallPolish: { 
+          score: rawAnalysis.scores?.overallPolish || 0, 
+          maxScore: 10, 
+          feedback: rawAnalysis.feedback?.overallPolish || "Polish analysis" 
+        }
+      },
+
+      // Resume sections
+      resumeSections: rawAnalysis.resumeSections || {
+        professionalSummary: "",
+        workExperience: "",
+        technicalSkills: "",
+        education: "",
+        keyAchievements: ""
+      },
+
+      // Skills and keywords
+      identifiedSkills: rawAnalysis.identifiedSkills || [],
+      importantKeywords: rawAnalysis.importantKeywords || [],
+
+      // Feedback
+      suggestedImprovements: rawAnalysis.suggestedImprovements || [],
+      generalFeedback: rawAnalysis.generalFeedback || "",
+      feedback: rawAnalysis.suggestedImprovements || [] // Add this for client compatibility
+    };
+
+    // Log the final analysis structure we're saving
+    console.log("Final structured analysis:", JSON.stringify({
+      score: analysis.score,
+      hasScores: !!analysis.scores,
+      hasSuggestions: analysis.suggestedImprovements.length > 0,
+      hasSkills: analysis.identifiedSkills.length > 0
+    }, null, 2));
 
     // Calculate weighted score
     const weightedScore = Object.entries(SCORING_WEIGHTS).reduce((total, [key, weight]) => {
@@ -808,7 +881,7 @@ const handleAnalysis = async (req: Request, res: Response) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Add session middleware
+  //  // Add session middleware
   app.use(sessionMiddleware);
 
   // Modify the /api/user route to return mock user for testing
