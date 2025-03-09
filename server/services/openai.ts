@@ -50,7 +50,7 @@ type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
 // Rate limiting helper
 let lastRequestTime = 0;
-const REQUEST_DELAY_MS = 500; // 500ms delay between requests
+const REQUEST_DELAY_MS = 500;
 
 async function waitForRateLimit() {
   const now = Date.now();
@@ -63,7 +63,7 @@ async function waitForRateLimit() {
   lastRequestTime = Date.now();
 }
 
-// Initialize OpenAI client
+// Lazy initialization of OpenAI client
 let openaiClient: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
@@ -76,53 +76,53 @@ function getOpenAIClient(): OpenAI {
   return openaiClient;
 }
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Return a JSON object with EXACTLY these fields and structure:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a comprehensive evaluation in JSON format with these exact fields:
 
 {
-  "score": number from 0-100 representing overall quality,
+  "score": number (0-100) based on overall quality,
   "scores": {
     "keywordsRelevance": {
-      "score": number from 1-10,
+      "score": 1-10,
       "maxScore": 10,
-      "feedback": "detailed feedback on keyword usage",
-      "keywords": ["array", "of", "relevant", "keywords"]
+      "feedback": "brief, actionable feedback",
+      "keywords": ["relevant", "industry", "keywords"]
     },
     "achievementsMetrics": {
-      "score": number from 1-10,
+      "score": 1-10,
       "maxScore": 10,
-      "feedback": "feedback on quantifiable achievements",
-      "highlights": ["array", "of", "key", "achievements"]
+      "feedback": "brief, actionable feedback",
+      "highlights": ["key quantifiable achievements"]
     },
     "structureReadability": {
-      "score": number from 1-10,
+      "score": 1-10,
       "maxScore": 10,
-      "feedback": "feedback on resume structure and formatting"
+      "feedback": "brief, actionable feedback"
     },
     "summaryClarity": {
-      "score": number from 1-10,
+      "score": 1-10,
       "maxScore": 10,
-      "feedback": "feedback on professional summary"
+      "feedback": "brief, actionable feedback"
     },
     "overallPolish": {
-      "score": number from 1-10,
+      "score": 1-10,
       "maxScore": 10,
-      "feedback": "feedback on overall presentation"
+      "feedback": "brief, actionable feedback"
     }
   },
   "resumeSections": {
-    "professionalSummary": "extracted and improved summary",
-    "workExperience": "formatted work experience",
-    "technicalSkills": "organized technical skills",
-    "education": "formatted education details",
-    "keyAchievements": "highlighted achievements"
+    "professionalSummary": "formatted summary text",
+    "workExperience": "formatted experience text",
+    "technicalSkills": "formatted skills text",
+    "education": "formatted education text",
+    "keyAchievements": "formatted achievements text"
   },
-  "identifiedSkills": ["array", "of", "skills"],
-  "importantKeywords": ["array", "of", "keywords"],
-  "suggestedImprovements": ["array", "of", "improvements"],
-  "generalFeedback": "overall feedback and recommendations"
+  "identifiedSkills": ["key", "skills", "found"],
+  "importantKeywords": ["important", "industry", "keywords"],
+  "suggestedImprovements": ["specific improvement suggestions"],
+  "generalFeedback": "overall actionable feedback"
 }
 
-Return ONLY this JSON structure. No markdown formatting or additional text.`;
+Focus on providing actionable, specific feedback. Keep responses concise but informative.`;
 
 // Main analysis function
 export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
@@ -137,7 +137,7 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
     const openai = getOpenAIClient();
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4", // Use gpt-4 instead of gpt-4o which was causing issues
+      model: "gpt-4",
       messages: [
         {
           role: "system",
@@ -145,7 +145,7 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
         },
         {
           role: "user",
-          content: `Analyze this resume and provide a detailed evaluation following the exact JSON structure specified. Be specific and actionable in your feedback:\n\n${content}`
+          content: `Analyze this resume and provide specific, actionable feedback following the exact JSON structure:\n\n${content}`
         }
       ],
       temperature: 0.1,
@@ -156,24 +156,15 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
       throw new Error('OpenAI returned an empty response');
     }
 
-    console.log('Received OpenAI response', {
-      timestamp: new Date().toISOString(),
-      responseLength: response.choices[0].message.content.length,
-      previewResponse: response.choices[0].message.content.substring(0, 100) + '...'
-    });
-
     let parsedResponse: any;
     try {
       parsedResponse = JSON.parse(response.choices[0].message.content.trim());
 
-      // Log the structure before validation
       console.log('Parsed response structure:', {
         hasScore: typeof parsedResponse.score === 'number',
-        hasScores: !!parsedResponse.scores,
-        scoresKeys: parsedResponse.scores ? Object.keys(parsedResponse.scores) : [],
-        hasResumeSections: !!parsedResponse.resumeSections,
-        resumeSectionsKeys: parsedResponse.resumeSections ? Object.keys(parsedResponse.resumeSections) : [],
+        score: parsedResponse.score,
         identifiedSkillsCount: parsedResponse.identifiedSkills?.length ?? 0,
+        improvementsCount: parsedResponse.suggestedImprovements?.length ?? 0,
         timestamp: new Date().toISOString()
       });
     } catch (parseError: any) {
@@ -188,7 +179,6 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     console.log('Analysis completed successfully:', {
       score: validatedResponse.score,
-      sectionsCount: Object.keys(validatedResponse.resumeSections).length,
       skillsCount: validatedResponse.identifiedSkills.length,
       timestamp: new Date().toISOString()
     });

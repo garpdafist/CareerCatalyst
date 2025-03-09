@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, FileText, ListChecks, Tags, Upload } from "lucide-react";
+import { Brain, FileText, Upload, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
@@ -29,10 +29,6 @@ export default function ResumeAnalyzer() {
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string } | FormData) => {
       setAnalysisProgress(0);
-
-      if (!data) {
-        throw new Error("Resume content is required");
-      }
 
       const progressInterval = setInterval(() => {
         setAnalysisProgress(prev => Math.min(prev + 5, 90));
@@ -92,7 +88,7 @@ export default function ResumeAnalyzer() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">
+            <h1 className="text-4xl font-bold tracking-tight mb-4">
               Resume Analyzer
             </h1>
             <p className="text-muted-foreground text-lg">
@@ -200,54 +196,53 @@ export default function ResumeAnalyzer() {
               transition={{ duration: 0.5 }}
             >
               <Card>
-                <CardContent className="space-y-6 pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Brain className="h-6 w-6 text-primary" />
-                      <h2 className="text-xl font-semibold">Analysis Results</h2>
-                    </div>
-                    <div className="text-2xl font-bold text-primary">
+                <CardContent className="pt-6">
+                  {/* Analysis Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold flex items-center gap-2">
+                      <Brain className="h-6 w-6 text-green-600" />
+                      Analysis Results
+                    </h2>
+                    <span className="text-3xl font-bold text-green-600">
                       {analyzeMutation.data.score}/100
-                    </div>
+                    </span>
                   </div>
 
-                  <Progress value={analyzeMutation.data.score} className="h-2" />
+                  <Progress value={analyzeMutation.data.score} className="h-2 bg-gray-100" />
 
-                  <div className="grid gap-6 md:grid-cols-2">
+                  <div className="mt-8 space-y-8">
+                    {/* Key Skills */}
                     <div>
-                      <h3 className="font-medium mb-3 flex items-center gap-2">
-                        <ListChecks className="h-5 w-5 text-primary" />
-                        Key Skills
-                      </h3>
+                      <h3 className="text-lg font-medium mb-3">Key Skills</h3>
                       <div className="flex flex-wrap gap-2">
                         {limitArrayLength(analyzeMutation.data.identifiedSkills).map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary">
+                          <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                             {skill}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
+                    {/* Suggested Improvements */}
                     <div>
-                      <h3 className="font-medium mb-3 flex items-center gap-2">
-                        <Tags className="h-5 w-5 text-primary" />
-                        Suggested Improvements
-                      </h3>
-                      <ul className="space-y-2 text-sm text-muted-foreground">
+                      <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
+                      <ul className="space-y-2">
                         {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            {improvement}
+                          <li key={index} className="flex items-start gap-2 text-gray-600">
+                            <ChevronRight className="h-5 w-5 mt-0.5 text-green-600 flex-shrink-0" />
+                            <span>{improvement}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                  </div>
 
-                  <div className="pt-4 border-t">
-                    <p className="text-sm text-muted-foreground">
-                      {analyzeMutation.data.generalFeedback}
-                    </p>
+                    {/* General Feedback */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">General Feedback</h3>
+                      <p className="text-gray-600">
+                        {analyzeMutation.data.generalFeedback}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
