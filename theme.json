@@ -3,7 +3,7 @@
     "light": "zinc",
     "dark": "slate"
   },
-  "primary": "hsl(160, 84%, 39%)",
+  "primary": "emerald",
   "variant": "professional",
   "appearance": "light",
   "radius": 0.5
