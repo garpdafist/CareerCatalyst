@@ -64,21 +64,23 @@ app.use((req, res, next) => {
     const attemptPortBinding = (startPort: number) => {
       const tryPort = (port: number): Promise<number> => {
         return new Promise((resolve, reject) => {
-          const testServer = require('http').createServer();
-          testServer.once('error', (err: any) => {
-            if (err.code === 'EADDRINUSE') {
-              log(`Port ${port} is in use, trying next port...`);
-              resolve(tryPort(port + 1)); // Try next port
-            } else {
-              reject(err);
-            }
-          });
-          testServer.once('listening', () => {
-            testServer.close(() => {
-              resolve(port);
+          import('http').then(http => {
+            const testServer = http.createServer();
+            testServer.once('error', (err: any) => {
+              if (err.code === 'EADDRINUSE') {
+                log(`Port ${port} is in use, trying next port...`);
+                resolve(tryPort(port + 1)); // Try next port
+              } else {
+                reject(err);
+              }
             });
-          });
-          testServer.listen(port, '0.0.0.0');
+            testServer.once('listening', () => {
+              testServer.close(() => {
+                resolve(port);
+              });
+            });
+            testServer.listen(port, '0.0.0.0');
+          }).catch(reject);
         });
       };
       
