@@ -7,26 +7,26 @@ export const designSystem = {
   colors: {
     // Primary Colors
     primary: {
-      main: 'hsl(200, 95%, 45%)', // Vibrant teal-blue for CTAs and primary actions
-      light: 'hsl(200, 95%, 55%)', // Lighter variant for hover states
-      dark: 'hsl(200, 95%, 35%)', // Darker variant for active states
+      main: '#10B981', // Emerald-500 from Tailwind
+      light: '#34D399', // Emerald-400 for hover states
+      dark: '#059669', // Emerald-600 for active states
     },
     // Background Colors
     background: {
-      main: 'hsl(240, 10%, 3.9%)', // Near black for main background
-      card: 'hsl(240, 10%, 5.9%)', // Slightly lighter for cards
-      hover: 'hsl(240, 10%, 7.9%)', // For hover states
+      main: 'hsl(240, 10%, 3.9%)',
+      card: 'hsl(240, 10%, 5.9%)',
+      hover: 'hsl(240, 10%, 7.9%)',
     },
     // Text Colors
     text: {
-      primary: 'hsl(0, 0%, 98%)', // Near white for primary text
-      secondary: 'hsl(240, 5%, 64.9%)', // Muted gray for secondary text
-      disabled: 'hsl(240, 5%, 44.9%)', // Darker gray for disabled states
+      primary: 'hsl(0, 0%, 98%)',
+      secondary: 'hsl(240, 5%, 64.9%)',
+      disabled: 'hsl(240, 5%, 44.9%)',
     },
     // Border Colors
     border: {
       default: 'hsl(240, 3.7%, 15.9%)',
-      hover: 'hsla(200, 95%, 45%, 0.2)',
+      hover: 'hsla(160, 84%, 39%, 0.2)',
     }
   },
 

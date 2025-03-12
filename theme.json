@@ -3,7 +3,7 @@
     "light": "zinc",
     "dark": "slate"
   },
-  "primary": "emerald",
+  "primary": "#10B981",
   "variant": "professional",
   "appearance": "light",
   "radius": 0.5
