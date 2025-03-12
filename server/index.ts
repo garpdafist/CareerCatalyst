@@ -60,35 +60,58 @@ app.use((req, res, next) => {
       await setupVite(app, server);
     }
 
-    // Always use PORT from environment variable first, or fallback to 3000
-    const PORT = process.env.PORT || 3000;
-    
-    log(`Starting server on port ${PORT} (process.env.PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV})`);
-    
-    // Function to start server
-    const startServer = () => {      
-      server.listen({
-        port: PORT,
-        host: "0.0.0.0"
-      }, () => {
-      log(`🚀 Server running at http://0.0.0.0:${PORT}`);
-      // Print additional debug info about the server
-      log(`Server info: Node ${process.version}, Express routes: ${
-        Object.keys(app._router.stack
-          .filter((r: any) => r.route)
-          .map((r: any) => `${Object.keys(r.route.methods)[0].toUpperCase()} ${r.route.path}`)
-        )
-      }`);
-      // Set environment variable with the actual port for client reference
-      process.env.ACTUAL_PORT = PORT.toString();
-    }).on('error', (error) => {
-      log(`Fatal error during server startup: ${error}`);
-      process.exit(1);
-    });
+    // Use a dynamic port assignment strategy
+    const attemptPortBinding = (startPort: number) => {
+      const tryPort = (port: number): Promise<number> => {
+        return new Promise((resolve, reject) => {
+          const testServer = require('http').createServer();
+          testServer.once('error', (err: any) => {
+            if (err.code === 'EADDRINUSE') {
+              log(`Port ${port} is in use, trying next port...`);
+              resolve(tryPort(port + 1)); // Try next port
+            } else {
+              reject(err);
+            }
+          });
+          testServer.once('listening', () => {
+            testServer.close(() => {
+              resolve(port);
+            });
+          });
+          testServer.listen(port, '0.0.0.0');
+        });
+      };
+      
+      return tryPort(startPort);
     };
     
-    // Start the server
-    startServer();
+    // Find an available port starting with environment PORT or 3000
+    const startPort = parseInt(process.env.PORT || '3000', 10);
+    
+    attemptPortBinding(startPort)
+      .then(PORT => {
+        log(`Starting server on port ${PORT} (process.env.PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV})`);
+        
+        server.listen({
+          port: PORT,
+          host: "0.0.0.0"
+        }, () => {
+          log(`🚀 Server running at http://0.0.0.0:${PORT}`);
+          // Print additional debug info about the server
+          log(`Server info: Node ${process.version}, Express routes: ${
+            Object.keys(app._router.stack
+              .filter((r: any) => r.route)
+              .map((r: any) => `${Object.keys(r.route.methods)[0].toUpperCase()} ${r.route.path}`)
+            )
+          }`);
+          // Set environment variable with the actual port for client reference
+          process.env.ACTUAL_PORT = PORT.toString();
+        });
+      })
+      .catch(error => {
+        log(`Fatal error during port selection: ${error}`);
+        process.exit(1);
+      });
   } catch (error) {
     log(`Fatal error during server startup: ${error}`);
     process.exit(1);

@@ -25,17 +25,7 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: process.env.NODE_ENV === 'production' 
-      ? false 
-      : { 
-          server,
-          timeout: 5000,
-          protocol: 'wss',
-          host: 'replit.com',
-          port: 443,
-          clientPort: 443,
-          path: '/@hmr'
-        },
+    hmr: false, // Completely disable HMR to prevent reconnection loops
     allowedHosts: true,
   };
 

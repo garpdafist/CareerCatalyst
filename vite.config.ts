@@ -23,12 +23,7 @@ export default defineConfig({
       : []),
   ],
   server: {
-    hmr: process.env.NODE_ENV === 'production' ? false : {
-      protocol: 'wss',
-      host: 'replit.com',
-      port: 443,
-      clientPort: 443,
-    },
+    hmr: false, // Completely disable HMR
   },
   resolve: {
     alias: {

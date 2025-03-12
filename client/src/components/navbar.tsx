@@ -33,9 +33,9 @@ export function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/">
-              <a className="flex items-center text-xl font-bold text-[#1C170D] hover:text-[#1C170D]/80 transition-colors">
+              <span className="flex items-center text-xl font-bold text-[#1C170D] hover:text-[#1C170D]/80 transition-colors">
                 CareerAI
-              </a>
+              </span>
             </Link>
           </div>
           <div className="flex items-center space-x-1">
@@ -44,11 +44,9 @@ export function Navbar() {
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <Link key={item.href} href={item.href}>
-                      <a className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-[#1C170D] transition-colors hover:text-[#1C170D]/80 hover:bg-[#F5F0E5]">
-                        <Icon className="h-4 w-4 mr-2" />
-                        {item.label}
-                      </a>
+                    <Link key={item.href} href={item.href} className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-[#1C170D] transition-colors hover:text-[#1C170D]/80 hover:bg-[#F5F0E5]">
+                      <Icon className="h-4 w-4 mr-2" />
+                      {item.label}
                     </Link>
                   );
                 })}
