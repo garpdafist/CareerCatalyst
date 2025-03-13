@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
+import {Checkbox} from "@/components/ui/checkbox";
 
 // Helper to ensure arrays have a maximum length
 const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 5): string[] => {
@@ -30,7 +31,7 @@ const getScoreColor = (score: number): string => {
 // Update the getFeedbackColor helper function for more subtle styling
 const getFeedbackColor = (improvement: string): { text: string; bg: string; border: string } => {
   const isPositive = /increase|improve|enhance|success|achieve/i.test(improvement);
-  return isPositive 
+  return isPositive
     ? { text: 'text-green-700', bg: 'bg-green-50/50', border: 'border-green-100' }
     : { text: 'text-amber-700', bg: 'bg-amber-50/50', border: 'border-amber-100' };
 };
@@ -38,11 +39,13 @@ const getFeedbackColor = (improvement: string): { text: string; bg: string; bord
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [isApplyingForJob, setIsApplyingForJob] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
-    mutationFn: async (data: { content: string } | FormData) => {
+    mutationFn: async (data: { content: string; jobDescription?: string } | FormData) => {
       setAnalysisProgress(0);
 
       const progressInterval = setInterval(() => {
@@ -50,6 +53,13 @@ export default function ResumeAnalyzer() {
       }, 500);
 
       try {
+        // If we have job description, append it to the FormData or include in the request body
+        if (data instanceof FormData && isApplyingForJob && jobDescription) {
+          data.append('jobDescription', jobDescription);
+        } else if (!data instanceof FormData && isApplyingForJob && jobDescription) {
+          data = { ...data, jobDescription };
+        }
+
         const res = await apiRequest("POST", "/api/resume-analyze", data);
         clearInterval(progressInterval);
         setAnalysisProgress(100);
@@ -121,13 +131,13 @@ export default function ResumeAnalyzer() {
           {analyzeMutation.isPending && (
             <Card>
               <CardContent className="pt-6">
-                <AnimatedProgressPath 
+                <AnimatedProgressPath
                   progress={analysisProgress}
                   status={
                     analysisProgress < 30 ? "Analyzing resume content..." :
-                    analysisProgress < 60 ? "Processing skills and experience..." :
-                    analysisProgress < 90 ? "Generating recommendations..." :
-                    "Finalizing analysis..."
+                      analysisProgress < 60 ? "Processing skills and experience..." :
+                        analysisProgress < 90 ? "Generating recommendations..." :
+                          "Finalizing analysis..."
                   }
                 />
               </CardContent>
@@ -150,13 +160,41 @@ export default function ResumeAnalyzer() {
                   </TabsList>
 
                   <TabsContent value="paste">
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       <Textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         className="h-64"
                         placeholder="Paste your resume here..."
                       />
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="applyingForJob"
+                          checked={isApplyingForJob}
+                          onCheckedChange={(checked) => setIsApplyingForJob(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="applyingForJob"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Applying for a specific job? Paste the job description to tailor your analysis
+                        </label>
+                      </div>
+                      {isApplyingForJob && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Textarea
+                            value={jobDescription}
+                            onChange={(e) => setJobDescription(e.target.value)}
+                            className="mt-4"
+                            placeholder="Paste the job description here..."
+                          />
+                        </motion.div>
+                      )}
                     </div>
                   </TabsContent>
 
@@ -184,6 +222,33 @@ export default function ResumeAnalyzer() {
                           File loaded: {file.name}
                         </p>
                       )}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="applyingForJobUpload" // Added unique ID
+                          checked={isApplyingForJob}
+                          onCheckedChange={(checked) => setIsApplyingForJob(checked as boolean)}
+                        />
+                        <label
+                          htmlFor="applyingForJobUpload" // Updated htmlFor
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Applying for a specific job? Paste the job description to tailor your analysis
+                        </label>
+                      </div>
+                      {isApplyingForJob && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Textarea
+                            value={jobDescription}
+                            onChange={(e) => setJobDescription(e.target.value)}
+                            placeholder="Paste the job description here..."
+                          />
+                        </motion.div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -205,7 +270,7 @@ export default function ResumeAnalyzer() {
           </form>
 
           {analyzeMutation.data && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -221,8 +286,8 @@ export default function ResumeAnalyzer() {
                     </h2>
                     <span className={`text-2xl md:text-3xl font-bold ${
                       analyzeMutation.data.score > 70 ? 'text-green-600' :
-                      analyzeMutation.data.score > 50 ? 'text-yellow-600' :
-                      'text-red-600'
+                        analyzeMutation.data.score > 50 ? 'text-yellow-600' :
+                          'text-red-600'
                     }`}>
                       {analyzeMutation.data.score}/100
                     </span>
@@ -234,9 +299,9 @@ export default function ResumeAnalyzer() {
                       <h3 className="text-lg font-medium mb-3">Key Skills</h3>
                       <div className="flex flex-wrap gap-2">
                         {limitArrayLength(analyzeMutation.data.identifiedSkills).map((skill, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="secondary" 
+                          <Badge
+                            key={index}
+                            variant="secondary"
                             className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
                           >
                             {skill}
@@ -252,8 +317,8 @@ export default function ResumeAnalyzer() {
                         {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => {
                           const colors = getFeedbackColor(improvement);
                           return (
-                            <li 
-                              key={index} 
+                            <li
+                              key={index}
                               className={`flex items-start gap-2 rounded-lg p-2 md:p-3 ${colors.bg} ${colors.text} border ${colors.border}`}
                             >
                               <ChevronRight className={`h-5 w-5 mt-0.5 flex-shrink-0 ${colors.text}`} />

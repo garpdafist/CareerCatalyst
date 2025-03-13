@@ -34,7 +34,6 @@ type ProfileData = {
   about: string;
   currentJob: JobExperience;
   previousJob: JobExperience;
-  jobDescription?: string; // Added optional job description
 };
 
 type JobExperience = {
@@ -52,8 +51,7 @@ const tooltips = {
   companyName: "Include the official company name, avoiding abbreviations unless widely recognized",
   startDate: "Format: MM/YYYY",
   endDate: "Use 'Present' for current role",
-  achievements: "Use action verbs and include metrics/numbers. Example: 'Increased sales by 25% through digital marketing initiatives'",
-  jobDescription: "Optional: Add a target job description to tailor your profile specifically to your desired role"
+  achievements: "Use action verbs and include metrics/numbers. Example: 'Increased sales by 25% through digital marketing initiatives'"
 };
 
 const bestPractices = {
@@ -100,8 +98,7 @@ const LinkedInOptimizer = () => {
       startDate: "",
       endDate: "",
       achievements: ""
-    },
-    jobDescription: "" // Initialize optional job description
+    }
   });
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
@@ -129,8 +126,7 @@ const LinkedInOptimizer = () => {
             { id: "headline", content: profileData.headline },
             { id: "about", content: profileData.about },
             { id: "currentJob", content: JSON.stringify(profileData.currentJob) },
-            { id: "previousJob", content: JSON.stringify(profileData.previousJob) },
-            { id: "jobDescription", content: profileData.jobDescription } // Include job description in analysis
+            { id: "previousJob", content: JSON.stringify(profileData.previousJob) }
           ]
         }),
       });
@@ -287,36 +283,6 @@ const LinkedInOptimizer = () => {
         transition={{ delay: 0.2 }}
         className="space-y-6"
       >
-        {/* Optional Job Description Input */}
-        <Card className="border-2 hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LinkIcon className="h-5 w-5 text-primary" />
-              Target Job Description (Optional)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="relative">
-                      <Textarea
-                        value={profileData.jobDescription}
-                        onChange={(e) => setProfileData({ ...profileData, jobDescription: e.target.value })}
-                        placeholder="Paste a job description here to receive tailored optimization suggestions for your target role..."
-                        className="min-h-[100px]"
-                      />
-                      <HelpCircle className="absolute right-2 top-2 h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>{tooltips.jobDescription}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="flex justify-end">
           <Button
             onClick={handleAnalyzeContent}
