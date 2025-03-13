@@ -176,7 +176,7 @@ export default function ResumeAnalyzer() {
             </Card>
           )}
 
-          <form onSubmit={e => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
             <Card>
               <CardContent className="pt-6">
                 <Tabs defaultValue="paste" className="w-full">
