@@ -16,8 +16,8 @@ import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-// Component styles
-const iosSwitch = "w-11 h-6 bg-muted rounded-full relative peer-checked:bg-primary transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:w-5 after:h-5 after:rounded-full after:transition-all after:duration-200 peer-checked:after:translate-x-5 after:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-background";
+// Enhanced iOS-style switch with smooth transitions
+const iosSwitch = "w-11 h-6 bg-muted rounded-full relative peer-checked:bg-[#34C759] transition-all duration-300 ease-in-out after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-5 after:h-5 after:rounded-full after:shadow-md after:transition-all after:duration-300 after:ease-in-out peer-checked:after:translate-x-5 peer-checked:after:shadow-lg hover:cursor-pointer";
 
 // Helper to ensure arrays have a maximum length
 const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 5): string[] => {
@@ -171,7 +171,7 @@ export default function ResumeAnalyzer() {
                         className="h-64"
                         placeholder="Paste your resume here..."
                       />
-                      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/30">
                         <div className="flex items-center space-x-3">
                           <Switch
                             id="job-description-toggle"
@@ -190,16 +190,19 @@ export default function ResumeAnalyzer() {
                       <AnimatePresence>
                         {isApplyingForJob && (
                           <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, y: -10, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: "auto" }}
+                            exit={{ opacity: 0, y: -10, height: 0 }}
+                            transition={{ 
+                              duration: 0.2,
+                              ease: "easeInOut"
+                            }}
                           >
                             <Textarea
                               value={jobDescription}
                               onChange={(e) => setJobDescription(e.target.value)}
-                              placeholder="Paste the job description here to get tailored suggestions..."
-                              className="min-h-[100px]"
+                              placeholder="Paste job listing here..."
+                              className="min-h-[100px] resize-none"
                             />
                           </motion.div>
                         )}
@@ -231,7 +234,7 @@ export default function ResumeAnalyzer() {
                           File loaded: {file.name}
                         </p>
                       )}
-                      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/30">
                         <div className="flex items-center space-x-3">
                           <Switch
                             id="job-description-toggle-upload"
@@ -250,16 +253,19 @@ export default function ResumeAnalyzer() {
                       <AnimatePresence>
                         {isApplyingForJob && (
                           <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, y: -10, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: "auto" }}
+                            exit={{ opacity: 0, y: -10, height: 0 }}
+                            transition={{ 
+                              duration: 0.2,
+                              ease: "easeInOut"
+                            }}
                           >
                             <Textarea
                               value={jobDescription}
                               onChange={(e) => setJobDescription(e.target.value)}
-                              placeholder="Paste the job description here to get tailored suggestions..."
-                              className="min-h-[100px]"
+                              placeholder="Paste job listing here..."
+                              className="min-h-[100px] resize-none"
                             />
                           </motion.div>
                         )}
