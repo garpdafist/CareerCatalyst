@@ -11,9 +11,10 @@ import type { ResumeAnalysis } from "@shared/schema";
 import { Brain, FileText, Upload, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
-import {Checkbox} from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 // Helper to ensure arrays have a maximum length
 const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 5): string[] => {
@@ -167,35 +168,38 @@ export default function ResumeAnalyzer() {
                         className="h-64"
                         placeholder="Paste your resume here..."
                       />
-                      <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
-                        <Checkbox
-                          id="applyingForJob"
-                          checked={isApplyingForJob}
-                          onCheckedChange={(checked) => setIsApplyingForJob(checked as boolean)}
-                          className="h-5 w-5 border-2"
-                        />
-                        <label
-                          htmlFor="applyingForJob"
-                          className="text-sm font-medium text-foreground cursor-pointer"
-                        >
-                          Tailor analysis to a job description?
-                        </label>
-                      </div>
-                      {isApplyingForJob && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Textarea
-                            value={jobDescription}
-                            onChange={(e) => setJobDescription(e.target.value)}
-                            className="mt-4"
-                            placeholder="Paste the job description here to get tailored suggestions..."
+                      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center space-x-3">
+                          <Switch
+                            id="job-description-toggle"
+                            checked={isApplyingForJob}
+                            onCheckedChange={setIsApplyingForJob}
                           />
-                        </motion.div>
-                      )}
+                          <Label
+                            htmlFor="job-description-toggle"
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Tailor to a Job Description
+                          </Label>
+                        </div>
+                      </div>
+                      <AnimatePresence>
+                        {isApplyingForJob && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Textarea
+                              value={jobDescription}
+                              onChange={(e) => setJobDescription(e.target.value)}
+                              placeholder="Paste the job description here to get tailored suggestions..."
+                              className="min-h-[100px]"
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </TabsContent>
 
@@ -223,34 +227,38 @@ export default function ResumeAnalyzer() {
                           File loaded: {file.name}
                         </p>
                       )}
-                      <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
-                        <Checkbox
-                          id="applyingForJobUpload"
-                          checked={isApplyingForJob}
-                          onCheckedChange={(checked) => setIsApplyingForJob(checked as boolean)}
-                          className="h-5 w-5 border-2"
-                        />
-                        <label
-                          htmlFor="applyingForJobUpload"
-                          className="text-sm font-medium text-foreground cursor-pointer"
-                        >
-                          Tailor analysis to a job description?
-                        </label>
-                      </div>
-                      {isApplyingForJob && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Textarea
-                            value={jobDescription}
-                            onChange={(e) => setJobDescription(e.target.value)}
-                            placeholder="Paste the job description here to get tailored suggestions..."
+                      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center space-x-3">
+                          <Switch
+                            id="job-description-toggle-upload"
+                            checked={isApplyingForJob}
+                            onCheckedChange={setIsApplyingForJob}
                           />
-                        </motion.div>
-                      )}
+                          <Label
+                            htmlFor="job-description-toggle-upload"
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Tailor to a Job Description
+                          </Label>
+                        </div>
+                      </div>
+                      <AnimatePresence>
+                        {isApplyingForJob && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Textarea
+                              value={jobDescription}
+                              onChange={(e) => setJobDescription(e.target.value)}
+                              placeholder="Paste the job description here to get tailored suggestions..."
+                              className="min-h-[100px]"
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </TabsContent>
                 </Tabs>
