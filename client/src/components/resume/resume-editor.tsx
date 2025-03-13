@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import type { ResumeAnalysis } from "@shared/schema";
 import { motion } from "framer-motion";
 import { PageLayout, PageHeader, PageTitle, PageDescription } from "@/components/layout";
+import { Link } from "wouter";
+import { FileText, ArrowRight } from "lucide-react";
+
 
 // Define resume section structure
 type ResumeSection = {
@@ -93,6 +96,7 @@ export default function ResumeEditor() {
   const [sections, setSections] = useState(initialSections);
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
   const [completionScore, setCompletionScore] = useState(0);
+  const [showNextSteps, setShowNextSteps] = useState(false);
 
   // Load and process analysis data
   useEffect(() => {
@@ -195,7 +199,7 @@ export default function ResumeEditor() {
   };
 
   const toggleSection = (index: number) => {
-    setSections(prev => prev.map((section, i) => 
+    setSections(prev => prev.map((section, i) =>
       i === index ? { ...section, isCollapsed: !section.isCollapsed } : section
     ));
   };
@@ -222,6 +226,38 @@ export default function ResumeEditor() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+    setShowNextSteps(true);
+  };
+
+  const renderNextSteps = () => {
+    if (!showNextSteps) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mt-8 space-y-4"
+      >
+        <div className="bg-primary/5 rounded-lg p-6 border border-primary/20">
+          <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
+          <div className="space-y-3">
+            <Link href="/cover-letter">
+              <Button variant="outline" className="w-full justify-between">
+                Create a matching Cover Letter
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/linkedin-optimizer">
+              <Button variant="outline" className="w-full justify-between">
+                Optimize your LinkedIn Profile
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
@@ -392,12 +428,13 @@ export default function ResumeEditor() {
         >
           <Button
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 bg-[#009963] hover:bg-[#009963]/90 text-white rounded-full"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-full"
           >
             <Download className="h-4 w-4" />
             Download Resume
           </Button>
         </motion.div>
+        {renderNextSteps()}
       </motion.div>
     </PageLayout>
   );

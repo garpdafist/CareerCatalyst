@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertCircle,
   Trophy,
@@ -16,7 +17,8 @@ import {
   HelpCircle,
   Briefcase,
   FileText,
-  User
+  User,
+  Link as LinkIcon
 } from "lucide-react";
 import {
   Tooltip,
@@ -25,12 +27,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
+import { PageLayout, PageHeader, PageTitle, PageDescription } from "@/components/layout";
 
 type ProfileData = {
   headline: string;
   about: string;
   currentJob: JobExperience;
   previousJob: JobExperience;
+  jobDescription?: string; // Added optional job description
 };
 
 type JobExperience = {
@@ -48,7 +52,8 @@ const tooltips = {
   companyName: "Include the official company name, avoiding abbreviations unless widely recognized",
   startDate: "Format: MM/YYYY",
   endDate: "Use 'Present' for current role",
-  achievements: "Use action verbs and include metrics/numbers. Example: 'Increased sales by 25% through digital marketing initiatives'"
+  achievements: "Use action verbs and include metrics/numbers. Example: 'Increased sales by 25% through digital marketing initiatives'",
+  jobDescription: "Optional: Add a target job description to tailor your profile specifically to your desired role"
 };
 
 const bestPractices = {
@@ -95,7 +100,8 @@ const LinkedInOptimizer = () => {
       startDate: "",
       endDate: "",
       achievements: ""
-    }
+    },
+    jobDescription: "" // Initialize optional job description
   });
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
@@ -123,7 +129,8 @@ const LinkedInOptimizer = () => {
             { id: "headline", content: profileData.headline },
             { id: "about", content: profileData.about },
             { id: "currentJob", content: JSON.stringify(profileData.currentJob) },
-            { id: "previousJob", content: JSON.stringify(profileData.previousJob) }
+            { id: "previousJob", content: JSON.stringify(profileData.previousJob) },
+            { id: "jobDescription", content: profileData.jobDescription } // Include job description in analysis
           ]
         }),
       });
@@ -266,330 +273,355 @@ const LinkedInOptimizer = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center space-y-4"
-      >
-        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          LinkedIn Profile Optimizer
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Enhance your professional presence with AI-powered optimization. Our tool analyzes your profile and provides actionable suggestions.
-        </p>
-      </motion.div>
+    <PageLayout>
+      <PageHeader>
+        <PageTitle>LinkedIn Profile Optimizer</PageTitle>
+        <PageDescription>
+          Transform your professional presence with AI-powered optimization. Get tailored suggestions to make your profile stand out.
+        </PageDescription>
+      </PageHeader>
 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex justify-end"
-      >
-        <Button
-          onClick={handleAnalyzeContent}
-          disabled={isAnalyzing}
-          className="min-w-[160px] relative overflow-hidden group"
-          size="lg"
-        >
-          {isAnalyzing ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-              Analyze Profile
-            </>
-          )}
-        </Button>
-      </motion.div>
-
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="w-full grid grid-cols-4 gap-4">
-          <TabsTrigger value="headline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <FileText className="mr-2 h-4 w-4" />
-            Headline
-          </TabsTrigger>
-          <TabsTrigger value="about" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <User className="mr-2 h-4 w-4" />
-            About
-          </TabsTrigger>
-          <TabsTrigger value="current" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Briefcase className="mr-2 h-4 w-4" />
-            Current Role
-          </TabsTrigger>
-          <TabsTrigger value="previous" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Briefcase className="mr-2 h-4 w-4" />
-            Previous Role
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="headline">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Professional Headline
-                  </span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {profileData.headline.length}/220 characters
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 space-y-4">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="relative">
-                            <Input
-                              value={profileData.headline}
-                              onChange={(e) => setProfileData({ ...profileData, headline: e.target.value })}
-                              placeholder="Marketing Director | Digital Growth Strategy | Performance Marketing | B2B SaaS Expert"
-                              maxLength={220}
-                              className="pr-8"
-                            />
-                            <HelpCircle className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{tooltips.headline}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors">
-                      <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
-                        <Sparkles className="h-4 w-4" />
-                        Best Practices
-                      </h4>
-                      <ul className="space-y-3">
-                        {bestPractices.headline.map((practice, i) => (
-                          <motion.li
-                            key={i}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="flex items-start gap-2 text-sm"
-                          >
-                            <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            <span className="text-muted-foreground">{practice}</span>
-                          </motion.li>
-                        ))}
-                      </ul>
+        {/* Optional Job Description Input */}
+        <Card className="border-2 hover:border-primary/50 transition-colors">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5 text-primary" />
+              Target Job Description (Optional)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <Textarea
+                        value={profileData.jobDescription}
+                        onChange={(e) => setProfileData({ ...profileData, jobDescription: e.target.value })}
+                        placeholder="Paste a job description here to receive tailored optimization suggestions for your target role..."
+                        className="min-h-[100px]"
+                      />
+                      <HelpCircle className="absolute right-2 top-2 h-4 w-4 text-muted-foreground" />
                     </div>
-                    {suggestions.headlineSuggestions?.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors"
-                      >
-                        <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
-                          <Sparkles className="h-4 w-4" />
-                          AI Suggestions
-                        </h4>
-                        <ul className="space-y-3">
-                          {suggestions.headlineSuggestions.map((suggestion, i) => (
-                            <motion.li
-                              key={i}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.1 }}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                              <span className="text-muted-foreground">{suggestion}</span>
-                            </motion.li>
-                          ))}
-                        </ul>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltips.jobDescription}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="about">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
+        <div className="flex justify-end">
+          <Button
+            onClick={handleAnalyzeContent}
+            disabled={isAnalyzing}
+            className="min-w-[160px] relative overflow-hidden group"
+            size="lg"
           >
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    About Section
-                  </span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {profileData.about.length}/2600 characters
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 space-y-4">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="relative">
-                            <RichTextEditor
-                              value={profileData.about}
-                              onChange={(value) => setProfileData({ ...profileData, about: value })}
-                              placeholder="Driving digital transformation through data-driven marketing strategies. As a Marketing Director with 8+ years of experience, I've helped B2B SaaS companies achieve measurable results..."
-                              className="min-h-[200px] pr-8"
-                            />
-                            <HelpCircle className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{tooltips.about}</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors">
-                      <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
-                        <Sparkles className="h-4 w-4" />
-                        Best Practices
-                      </h4>
-                      <ul className="space-y-3">
-                        {bestPractices.about.map((practice, i) => (
-                          <motion.li
-                            key={i}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="flex items-start gap-2 text-sm"
-                          >
-                            <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            <span className="text-muted-foreground">{practice}</span>
-                          </motion.li>
-                        ))}
-                      </ul>
-                    </div>
-                    {suggestions.aboutSuggestions?.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors"
-                      >
-                        <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
-                          <Sparkles className="h-4 w-4" />
-                          AI Suggestions
-                        </h4>
-                        <ul className="space-y-3">
-                          {suggestions.aboutSuggestions.map((suggestion, i) => (
-                            <motion.li
-                              key={i}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.1 }}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                              <span className="text-muted-foreground">{suggestion}</span>
-                            </motion.li>
-                          ))}
-                        </ul>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-5 w-5 group-hover:animate-pulse" />
+                Analyze Profile
+              </>
+            )}
+          </Button>
+        </div>
 
-        <TabsContent value="current">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                  Current Role
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <JobForm isCurrentJob={true} />
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="previous">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                  Previous Role
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <JobForm isCurrentJob={false} />
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-      </Tabs>
-
-      {suggestions.experienceSuggestions?.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
         >
-          <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Experience Optimization Suggestions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {suggestions.experienceSuggestions.map((suggestion, index) => (
-                  <motion.li
-                    key={index}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-start gap-2 text-sm"
-                  >
-                    <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-1" />
-                    <span className="text-muted-foreground">{suggestion}</span>
-                  </motion.li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-    </div>
+          <TabsList className="w-full grid grid-cols-4 gap-4">
+            <TabsTrigger value="headline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <FileText className="mr-2 h-4 w-4" />
+              Headline
+            </TabsTrigger>
+            <TabsTrigger value="about" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <User className="mr-2 h-4 w-4" />
+              About
+            </TabsTrigger>
+            <TabsTrigger value="current" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Briefcase className="mr-2 h-4 w-4" />
+              Current Role
+            </TabsTrigger>
+            <TabsTrigger value="previous" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Briefcase className="mr-2 h-4 w-4" />
+              Previous Role
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="headline">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      Professional Headline
+                    </span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {profileData.headline.length}/220 characters
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 space-y-4">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="relative">
+                              <Input
+                                value={profileData.headline}
+                                onChange={(e) => setProfileData({ ...profileData, headline: e.target.value })}
+                                placeholder="Marketing Director | Digital Growth Strategy | Performance Marketing | B2B SaaS Expert"
+                                maxLength={220}
+                                className="pr-8"
+                              />
+                              <HelpCircle className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>{tooltips.headline}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors">
+                        <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                          <Sparkles className="h-4 w-4" />
+                          Best Practices
+                        </h4>
+                        <ul className="space-y-3">
+                          {bestPractices.headline.map((practice, i) => (
+                            <motion.li
+                              key={i}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                              <span className="text-muted-foreground">{practice}</span>
+                            </motion.li>
+                          ))}
+                        </ul>
+                      </div>
+                      {suggestions.headlineSuggestions?.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors"
+                        >
+                          <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                            <Sparkles className="h-4 w-4" />
+                            AI Suggestions
+                          </h4>
+                          <ul className="space-y-3">
+                            {suggestions.headlineSuggestions.map((suggestion, i) => (
+                              <motion.li
+                                key={i}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="flex items-start gap-2 text-sm"
+                              >
+                                <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                <span className="text-muted-foreground">{suggestion}</span>
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="about">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <User className="h-5 w-5 text-primary" />
+                      About Section
+                    </span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {profileData.about.length}/2600 characters
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 space-y-4">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="relative">
+                              <RichTextEditor
+                                value={profileData.about}
+                                onChange={(value) => setProfileData({ ...profileData, about: value })}
+                                placeholder="Driving digital transformation through data-driven marketing strategies. As a Marketing Director with 8+ years of experience, I've helped B2B SaaS companies achieve measurable results..."
+                                className="min-h-[200px] pr-8"
+                              />
+                              <HelpCircle className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>{tooltips.about}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors">
+                        <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                          <Sparkles className="h-4 w-4" />
+                          Best Practices
+                        </h4>
+                        <ul className="space-y-3">
+                          {bestPractices.about.map((practice, i) => (
+                            <motion.li
+                              key={i}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                              <span className="text-muted-foreground">{practice}</span>
+                            </motion.li>
+                          ))}
+                        </ul>
+                      </div>
+                      {suggestions.aboutSuggestions?.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-primary/5 rounded-lg p-4 border border-primary/10 hover:border-primary/20 transition-colors"
+                        >
+                          <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                            <Sparkles className="h-4 w-4" />
+                            AI Suggestions
+                          </h4>
+                          <ul className="space-y-3">
+                            {suggestions.aboutSuggestions.map((suggestion, i) => (
+                              <motion.li
+                                key={i}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="flex items-start gap-2 text-sm"
+                              >
+                                <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                <span className="text-muted-foreground">{suggestion}</span>
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="current">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-primary" />
+                    Current Role
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <JobForm isCurrentJob={true} />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="previous">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-primary" />
+                    Previous Role
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <JobForm isCurrentJob={false} />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
+
+        {suggestions.experienceSuggestions?.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Experience Optimization Suggestions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {suggestions.experienceSuggestions.map((suggestion, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-start gap-2 text-sm"
+                    >
+                      <ArrowRight className="h-4 w-4 text-primary shrink-0 mt-1" />
+                      <span className="text-muted-foreground">{suggestion}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </motion.div>
+    </PageLayout>
   );
 };
 

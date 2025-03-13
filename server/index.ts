@@ -83,17 +83,17 @@ app.use((req, res, next) => {
           }).catch(reject);
         });
       };
-      
+
       return tryPort(startPort);
     };
-    
-    // Find an available port starting with environment PORT or 3000
-    const startPort = parseInt(process.env.PORT || '3000', 10);
-    
+
+    // Find an available port starting with environment PORT or 5000
+    const startPort = parseInt(process.env.PORT || '5000', 10);
+
     attemptPortBinding(startPort)
       .then(PORT => {
         log(`Starting server on port ${PORT} (process.env.PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV})`);
-        
+
         server.listen({
           port: PORT,
           host: "0.0.0.0"

@@ -1,0 +1,27 @@
+You are an experienced full-stack developer and UX designer. We have the following tools already built:
+- A Cover Letter Generator (which we like, with a 5-step process: Target Role, Company Details, Key Achievements, Personal Brand, Output Format).
+- A LinkedIn Profile Optimizer (which we want to make more user-friendly and produce better output).
+- A Resume Analyzer and Editor.
+
+We also want to ask the user (optionally) for a job description when they upload their resume, so the system can tailor the resume or cover letter to that specific role.
+
+Here are the goals:
+1. **Link the Tools Seamlessly**:
+   - From the Resume Analyzer/Editor, let users jump to the Cover Letter Generator if they want a letter for the same role.
+   - From the Editor or Cover Letter tool, offer a link to the LinkedIn Profile Optimizer if they want to optimize their headline/summary based on the same data.
+
+2. **Improve LinkedIn Optimizer**:
+   - Make it more user-friendly. Possibly mirror the 5-step flow (like the Cover Letter tool), or a simpler step approach: Headline → About → Current Role → etc.
+   - Ensure the final output is better structured, with clear suggestions the user can copy and paste into LinkedIn (since we can’t use the LinkedIn API).
+
+3. **Optional Job Description Input**:
+   - When users upload a resume, ask if they have a job description. If yes, let them paste it so the Resume Analyzer or Cover Letter can be tailored to that role. 
+   - If they skip it, the analysis remains general.
+
+4. **Implementation & Testing**:
+   - Add UI elements (buttons/links) to connect these tools. 
+   - For the LinkedIn Optimizer, refine the layout or add a short wizard-like flow. 
+   - Show me code snippets or a diff of how the job description input is integrated (like an optional text area or separate field).
+   - Confirm each tool can still function independently if the user chooses to skip the job listing or skip the cover letter.
+
+Let’s make sure the user can seamlessly move from Resume → Editor → Cover Letter → LinkedIn if they want, with an optional job description to tailor everything. Please implement these changes carefully and share the final UI or code diffs so I can review.
