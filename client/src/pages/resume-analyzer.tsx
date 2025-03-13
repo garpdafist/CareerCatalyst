@@ -16,8 +16,30 @@ import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-// Enhanced iOS-style switch with smooth transitions
+// Enhanced iOS-style switch with smoother transitions
 const iosSwitch = "w-11 h-6 bg-muted rounded-full relative peer-checked:bg-[#34C759] transition-all duration-300 ease-in-out after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-5 after:h-5 after:rounded-full after:shadow-md after:transition-all after:duration-300 after:ease-in-out peer-checked:after:translate-x-5 peer-checked:after:shadow-lg hover:cursor-pointer";
+
+// Animation variants for the textarea
+const textAreaVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: -20, 
+    height: 0,
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    height: "auto",
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  }
+};
 
 // Helper to ensure arrays have a maximum length
 const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 5): string[] => {
@@ -187,22 +209,19 @@ export default function ResumeAnalyzer() {
                           </Label>
                         </div>
                       </div>
-                      <AnimatePresence>
+                      <AnimatePresence mode="wait">
                         {isApplyingForJob && (
                           <motion.div
-                            initial={{ opacity: 0, y: -10, height: 0 }}
-                            animate={{ opacity: 1, y: 0, height: "auto" }}
-                            exit={{ opacity: 0, y: -10, height: 0 }}
-                            transition={{ 
-                              duration: 0.2,
-                              ease: "easeInOut"
-                            }}
+                            variants={textAreaVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
                           >
                             <Textarea
                               value={jobDescription}
                               onChange={(e) => setJobDescription(e.target.value)}
-                              placeholder="Paste job listing here..."
-                              className="min-h-[100px] resize-none"
+                              placeholder="Paste the job description here to get tailored suggestions..."
+                              className="min-h-[100px] resize-none mt-4 transition-all duration-300"
                             />
                           </motion.div>
                         )}
@@ -250,22 +269,19 @@ export default function ResumeAnalyzer() {
                           </Label>
                         </div>
                       </div>
-                      <AnimatePresence>
+                      <AnimatePresence mode="wait">
                         {isApplyingForJob && (
                           <motion.div
-                            initial={{ opacity: 0, y: -10, height: 0 }}
-                            animate={{ opacity: 1, y: 0, height: "auto" }}
-                            exit={{ opacity: 0, y: -10, height: 0 }}
-                            transition={{ 
-                              duration: 0.2,
-                              ease: "easeInOut"
-                            }}
+                            variants={textAreaVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
                           >
                             <Textarea
                               value={jobDescription}
                               onChange={(e) => setJobDescription(e.target.value)}
-                              placeholder="Paste job listing here..."
-                              className="min-h-[100px] resize-none"
+                              placeholder="Paste the job description here to get tailored suggestions..."
+                              className="min-h-[100px] resize-none mt-4 transition-all duration-300"
                             />
                           </motion.div>
                         )}
