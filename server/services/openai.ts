@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { parseJobDescription, analyzeResumeWithJobDescription } from "./job-description";
+import type { JobDescription } from "@shared/schema";
 
 // Response validation schema
 const resumeAnalysisResponseSchema = z.object({
@@ -125,30 +127,59 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a comprehensiv
 Return ONLY the JSON object, no additional text. Do not add any disclaimers or explanations outside the JSON structure.`;
 
 // Main analysis function
-export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
+export async function analyzeResumeWithAI(
+  content: string,
+  jobDescription?: string
+): Promise<ResumeAnalysisResponse> {
   try {
     console.log('Starting resume analysis...', {
       contentLength: content.length,
+      hasJobDescription: !!jobDescription,
       timestamp: new Date().toISOString()
     });
 
     await waitForRateLimit();
 
+    // Parse job description if provided
+    let parsedJobDescription: JobDescription | undefined;
+    if (jobDescription) {
+      try {
+        parsedJobDescription = await parseJobDescription(jobDescription);
+        console.log('Job description parsed:', {
+          roleTitle: parsedJobDescription.roleTitle,
+          skillsCount: parsedJobDescription.skills?.length || 0
+        });
+      } catch (error) {
+        console.error('Job description parsing failed:', error);
+        // Continue with resume analysis even if job parsing fails
+      }
+    }
+
     const openai = getOpenAIClient();
 
+    // Enhance system prompt with job context if available
+    const enhancedPrompt = parsedJobDescription ? 
+      `${SYSTEM_PROMPT}\n\nAnalyze this resume in context of the following job requirements:
+      Role: ${parsedJobDescription.roleTitle}
+      Required Experience: ${parsedJobDescription.yearsOfExperience}
+      Required Skills: ${parsedJobDescription.skills?.join(', ')}
+      Key Requirements: ${parsedJobDescription.requirements?.join(', ')}` :
+      SYSTEM_PROMPT;
+
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: SYSTEM_PROMPT
+          content: enhancedPrompt
         },
         {
           role: "user",
-          content: `Analyze this resume and provide specific, actionable feedback:\n\n${content}`
+          content: `Analyze this resume${parsedJobDescription ? ' for the specified job role' : ''}:\n\n${content}`
         }
       ],
-      temperature: 0,  // Changed from 0.1 to 0 for more consistent outputs
+      temperature: 0,
+      response_format: { type: "json_object" }
     });
 
     if (!response.choices[0]?.message?.content) {
@@ -157,13 +188,8 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
 
     let parsedResponse: any;
     try {
-      // Remove any potential non-JSON text before parsing
       const content = response.choices[0].message.content.trim();
-      const jsonStart = content.indexOf('{');
-      const jsonEnd = content.lastIndexOf('}') + 1;
-      const jsonContent = content.slice(jsonStart, jsonEnd);
-
-      parsedResponse = JSON.parse(jsonContent);
+      parsedResponse = JSON.parse(content);
 
       console.log('Parsed response structure:', {
         hasScore: typeof parsedResponse.score === 'number',
@@ -180,11 +206,23 @@ export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalys
       throw new Error('Failed to parse OpenAI response as JSON');
     }
 
+    // Get additional job-specific analysis if job description was provided
+    if (parsedJobDescription) {
+      try {
+        const jobAnalysis = await analyzeResumeWithJobDescription(content, parsedJobDescription);
+        parsedResponse.jobSpecificFeedback = jobAnalysis;
+      } catch (error) {
+        console.error('Job-specific analysis failed:', error);
+        // Continue without job-specific feedback
+      }
+    }
+
     const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
 
     console.log('Analysis completed successfully:', {
       score: validatedResponse.score,
       skillsCount: validatedResponse.identifiedSkills.length,
+      hasJobAnalysis: !!parsedJobDescription,
       timestamp: new Date().toISOString()
     });
 

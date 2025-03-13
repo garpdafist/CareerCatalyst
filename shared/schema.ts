@@ -3,7 +3,19 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Scoring criteria schema with proper weighting
+// Job description schema with structured fields
+export const jobDescriptionSchema = z.object({
+  roleTitle: z.string().optional(),
+  yearsOfExperience: z.string().optional(),
+  industry: z.string().optional(),
+  companyName: z.string().optional(),
+  primaryKeywords: z.array(z.string()).optional(),
+  summary: z.string().optional(),
+  requirements: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+});
+
+// Keep existing scoring criteria schema
 export const scoringCriteriaSchema = z.object({
   keywordsRelevance: z.object({
     score: z.number(),
@@ -48,6 +60,7 @@ export const resumeAnalyses = pgTable("resume_analyses", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
+  jobDescription: jsonb("job_description").default(null), // Add job description field
   score: integer("score").notNull(),
   scores: jsonb("scores").notNull(),
   resumeSections: jsonb("resume_sections").notNull(),
@@ -64,6 +77,7 @@ export type ResumeAnalysis = typeof resumeAnalyses.$inferSelect;
 export type InsertResumeAnalysis = typeof resumeAnalyses.$inferInsert;
 export type ScoringCriteria = z.infer<typeof scoringCriteriaSchema>;
 export type ResumeSections = z.infer<typeof resumeSectionsSchema>;
+export type JobDescription = z.infer<typeof jobDescriptionSchema>;
 
 // Keep existing user schema and relations
 export const users = pgTable("users", {
@@ -89,26 +103,11 @@ export const resumeAnalysisRelations = relations(resumeAnalyses, ({ one }) => ({
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// Schema for email-based authentication
+// Keep existing schemas
 export const userAuthSchema = createInsertSchema(users).pick({
   email: true,
 });
 
-// Schema for resume analysis -  This is now redundant as the insert type is derived from the table definition
-// export const insertResumeAnalysisSchema = createInsertSchema(resumeAnalyses).pick({
-//   userId: true,
-//   content: true,
-//   structuredContent: true,
-//   score: true,
-//   scoringCriteria: true,
-//   feedback: true,
-//   skills: true,
-//   improvements: true,
-//   keywords: true,
-// });
-
-
-// Define structured resume content schema  - This is not directly used in the updated schema, but might be useful elsewhere.
 export const resumeContentSchema = z.object({
   professionalSummary: z.string(),
   workExperience: z.array(z.object({
@@ -130,11 +129,3 @@ export const resumeContentSchema = z.object({
     technologies: z.array(z.string())
   })).optional()
 });
-
-// Types for our application - These are now mostly redundant, but kept for backward compatibility.
-// export type User = typeof users.$inferSelect;
-// export type InsertUser = z.infer<typeof userAuthSchema>;
-// export type ResumeAnalysis = typeof resumeAnalyses.$inferSelect;
-// export type InsertResumeAnalysis = z.infer<typeof insertResumeAnalysisSchema>;
-// export type ScoringCriteria = z.infer<typeof scoringCriteriaSchema>;
-// export type ResumeContent = z.infer<typeof resumeContentSchema>;
