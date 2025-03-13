@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Label } from "@/components/ui/label";
+import { ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
@@ -386,6 +388,26 @@ export default function ResumeAnalyzer() {
                         {analyzeMutation.data.generalFeedback}
                       </p>
                     </div>
+
+                    {/* Add CTA Section */}
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <Link href="/resume-editor" className="block">
+                        <div className="group bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl p-6 transition-all duration-300 border border-green-100 hover:border-green-200 cursor-pointer">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-xl font-semibold text-green-700 mb-2">
+                                Ready to Improve Your Resume?
+                              </h3>
+                              <p className="text-green-600">
+                                Use our AI-powered resume editor to implement these suggestions and create a stronger resume
+                              </p>
+                            </div>
+                            <ArrowRight className="w-6 h-6 text-green-600 transform group-hover:translate-x-1 transition-transform duration-300" />
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+
                   </div>
                 </CardContent>
               </Card>
