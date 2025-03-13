@@ -12,6 +12,12 @@ import { Brain, FileText, Upload, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Animation configurations
+const textAreaVariants = {
+  hidden: { opacity: 0, height: 0, marginTop: 0 },
+  visible: { opacity: 1, height: "auto", marginTop: 16, transition: { duration: 0.3 } }
+};
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -199,7 +205,7 @@ export default function ResumeAnalyzer() {
                             id="job-description-toggle"
                             checked={isApplyingForJob}
                             onCheckedChange={setIsApplyingForJob}
-                            className={iosSwitch}
+                            className="relative inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-input transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:bg-primary"
                           />
                           <Label
                             htmlFor="job-description-toggle"
@@ -259,7 +265,7 @@ export default function ResumeAnalyzer() {
                             id="job-description-toggle-upload"
                             checked={isApplyingForJob}
                             onCheckedChange={setIsApplyingForJob}
-                            className={iosSwitch}
+                            className="relative inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-input transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:bg-primary"
                           />
                           <Label
                             htmlFor="job-description-toggle-upload"
