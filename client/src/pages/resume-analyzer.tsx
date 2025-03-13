@@ -13,10 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-// Enhanced iOS-style switch with proper styling
+// Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
   peer h-[24px] w-[44px] shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent 
   bg-gray-300 transition-colors duration-200 ease-in-out
@@ -30,26 +29,26 @@ const iosSwitch = `
   checked:after:translate-x-[22px] hover:cursor-pointer
 `;
 
-// Animation variants for the textarea with spring effect
+// Animation variants for the textarea
 const textAreaVariants = {
- hidden: { 
-   opacity: 0, 
-   y: -10, 
-   height: 0,
-   transition: {
-     duration: 0.3,
-     ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
-   }
- },
- visible: { 
-   opacity: 1, 
-   y: 0, 
-   height: "auto",
-   transition: {
-     duration: 0.3,
-     ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
-   }
- }
+  hidden: { 
+    opacity: 0, 
+    y: -10, 
+    height: 0,
+    transition: {
+      duration: 0.3,
+      ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
+    }
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    height: "auto",
+    transition: {
+      duration: 0.3,
+      ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
+    }
+  }
 };
 
 // Helper to ensure arrays have a maximum length
@@ -206,10 +205,11 @@ export default function ResumeAnalyzer() {
                       />
                       <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/30">
                         <div className="flex items-center space-x-3">
-                          <Switch
+                          <input
+                            type="checkbox"
                             id="job-description-toggle"
                             checked={isApplyingForJob}
-                            onCheckedChange={setIsApplyingForJob}
+                            onChange={(e) => setIsApplyingForJob(e.target.checked)}
                             className={iosSwitch}
                           />
                           <Label
@@ -266,10 +266,11 @@ export default function ResumeAnalyzer() {
                       )}
                       <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/30">
                         <div className="flex items-center space-x-3">
-                          <Switch
+                          <input
+                            type="checkbox"
                             id="job-description-toggle-upload"
                             checked={isApplyingForJob}
-                            onCheckedChange={setIsApplyingForJob}
+                            onChange={(e) => setIsApplyingForJob(e.target.checked)}
                             className={iosSwitch}
                           />
                           <Label
