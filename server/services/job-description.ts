@@ -35,26 +35,42 @@ Return ONLY a JSON object with the following structure:
   "skills": ["Skill 1", "Skill 2"]
 }`;
 
-const ANALYSIS_SYSTEM_PROMPT = `You are an expert resume and job matching analyzer. Compare the provided resume against the job description and provide detailed, tailored feedback.
+const ANALYSIS_SYSTEM_PROMPT = `You are an expert resume and job matching analyzer. Provide a detailed, comprehensive comparison of the resume against the job requirements.
 
-Consider:
-1. Skills match and gaps
-2. Experience level alignment
-3. Industry relevance
-4. Key requirements fulfillment
-5. Specific keywords and phrases from the job description
-6. Cultural fit indicators
-7. Technical competencies alignment
+Your analysis must include (minimum 500 words total):
 
-Provide actionable feedback focusing on:
-1. Exact matches between resume skills and job requirements
-2. Specific skills or experiences that should be emphasized
-3. Missing keywords that should be added
-4. How to reframe existing experience to better match the role
-5. Industry-specific terminology that should be incorporated
-6. Concrete suggestions for better alignment with the company's needs
+1. Skills and Requirements Match:
+   - Exact skills matches found
+   - Critical missing skills
+   - Relevant transferable skills
+   - Technical competency alignment
 
-Return feedback in a clear, actionable format with specific examples from both the resume and job description.`;
+2. Experience Alignment:
+   - Years of experience match
+   - Industry relevance
+   - Role responsibility overlap
+   - Leadership/management requirements
+
+3. Keywords and Terminology:
+   - Key job posting phrases found in resume
+   - Missing important keywords
+   - Industry-specific terminology alignment
+   - Technical vocabulary matches
+
+4. Specific Recommendations:
+   - Skills to add or emphasize
+   - Experience to highlight
+   - Achievements to showcase
+   - Format and structure suggestions
+
+5. Action Items:
+   - Prioritized list of changes
+   - Specific examples from both resume and job posting
+   - Concrete steps for improvement
+   - Timeline suggestions
+
+Each section should provide specific examples from both the resume and job description.
+Focus on actionable insights that will improve the candidate's match for this specific role.`;
 
 export async function parseJobDescription(text: string): Promise<JobDescription> {
   try {

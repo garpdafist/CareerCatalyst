@@ -87,43 +87,50 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a comprehensiv
     "keywordsRelevance": {
       "score": 1-10,
       "maxScore": 10,
-      "feedback": "brief, actionable feedback",
-      "keywords": ["relevant", "industry", "keywords"]
+      "feedback": "detailed, actionable feedback (minimum 50 words)",
+      "keywords": ["at least 8-10 relevant keywords"]
     },
     "achievementsMetrics": {
       "score": 1-10,
       "maxScore": 10,
-      "feedback": "brief, actionable feedback",
-      "highlights": ["key quantifiable achievements"]
+      "feedback": "detailed, actionable feedback (minimum 50 words)",
+      "highlights": ["at least 5-7 key achievements"]
     },
     "structureReadability": {
       "score": 1-10,
       "maxScore": 10,
-      "feedback": "brief, actionable feedback"
+      "feedback": "detailed, actionable feedback (minimum 50 words)"
     },
     "summaryClarity": {
       "score": 1-10,
       "maxScore": 10,
-      "feedback": "brief, actionable feedback"
+      "feedback": "detailed, actionable feedback (minimum 50 words)"
     },
     "overallPolish": {
       "score": 1-10,
       "maxScore": 10,
-      "feedback": "brief, actionable feedback"
+      "feedback": "detailed, actionable feedback (minimum 50 words)"
     }
   },
   "resumeSections": {
-    "professionalSummary": "formatted summary text",
-    "workExperience": "formatted experience text",
-    "technicalSkills": "formatted skills text",
-    "education": "formatted education text",
-    "keyAchievements": "formatted achievements text"
+    "professionalSummary": "comprehensive summary (minimum 100 words)",
+    "workExperience": "detailed experience analysis (minimum 150 words)",
+    "technicalSkills": "comprehensive skills analysis (minimum 100 words)",
+    "education": "education details and analysis (minimum 50 words)",
+    "keyAchievements": "detailed achievements analysis (minimum 100 words)"
   },
-  "identifiedSkills": ["key", "skills", "found"],
-  "importantKeywords": ["important", "industry", "keywords"],
-  "suggestedImprovements": ["specific improvement suggestions"],
-  "generalFeedback": "overall actionable feedback"
+  "identifiedSkills": ["minimum 10-12 key skills"],
+  "importantKeywords": ["minimum 8-10 important keywords"],
+  "suggestedImprovements": ["minimum 5-7 detailed, actionable improvements"],
+  "generalFeedback": "comprehensive feedback (minimum 200 words)"
 }
+
+For each feedback section, ensure:
+1. Detailed, actionable suggestions
+2. Specific examples where possible
+3. Industry-standard best practices
+4. Quantifiable metrics when applicable
+5. Clear, professional language
 
 Return ONLY the JSON object, no additional text. Do not add any disclaimers or explanations outside the JSON structure.`;
 
