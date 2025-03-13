@@ -2,7 +2,7 @@ import { PageLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { FileText, PenTool, Target, Compass, Upload, Robot, Download, Briefcase } from "lucide-react";
+import { FileText, PenTool, Target, Compass, Upload, Download, Briefcase, Sparkles } from "lucide-react";
 import { OnboardingTour } from "@/components/onboarding-tour";
 
 const features = [
@@ -44,7 +44,7 @@ const steps = [
     description: "Upload your existing resume in PDF or Word format"
   },
   {
-    icon: Robot,
+    icon: Sparkles,
     title: "Get AI Feedback",
     description: "Receive detailed analysis and suggestions"
   },
