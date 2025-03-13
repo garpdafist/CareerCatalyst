@@ -12,39 +12,33 @@ import { Brain, FileText, Upload, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Animation configurations
-const textAreaVariants = {
-  hidden: { opacity: 0, height: 0, marginTop: 0 },
-  visible: { opacity: 1, height: "auto", marginTop: 16, transition: { duration: 0.3 } }
-};
 import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-// Enhanced iOS-style switch with smoother transitions
-const iosSwitch = "w-11 h-6 bg-muted rounded-full relative peer-checked:bg-[#34C759] transition-all duration-300 ease-in-out after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-5 after:h-5 after:rounded-full after:shadow-md after:transition-all after:duration-300 after:ease-in-out peer-checked:after:translate-x-5 peer-checked:after:shadow-lg hover:cursor-pointer";
+// Enhanced iOS-style switch with refined styling and perfect spring animation
+const iosSwitch = "w-14 h-7 bg-[#e9e9ea] rounded-full relative peer-checked:bg-[#34C759] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-6 after:h-6 after:rounded-full after:shadow-[0_2px_2px_rgba(0,0,0,0.15)] after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:after:translate-x-7 hover:cursor-pointer peer-checked:after:shadow-[0_2px_3px_rgba(0,0,0,0.2)]";
 
-// Animation variants for the textarea
+// Animation variants for the textarea with spring effect
 const textAreaVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: -20, 
-    height: 0,
-    transition: {
-      duration: 0.3,
-      ease: "easeInOut"
-    }
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    height: "auto",
-    transition: {
-      duration: 0.3,
-      ease: "easeInOut"
-    }
-  }
+ hidden: { 
+   opacity: 0, 
+   y: -10, 
+   height: 0,
+   transition: {
+     duration: 0.3,
+     ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
+   }
+ },
+ visible: { 
+   opacity: 1, 
+   y: 0, 
+   height: "auto",
+   transition: {
+     duration: 0.3,
+     ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
+   }
+ }
 };
 
 // Helper to ensure arrays have a maximum length
@@ -199,13 +193,13 @@ export default function ResumeAnalyzer() {
                         className="h-64"
                         placeholder="Paste your resume here..."
                       />
-                      <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/30">
+                      <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/30">
                         <div className="flex items-center space-x-3">
                           <Switch
                             id="job-description-toggle"
                             checked={isApplyingForJob}
                             onCheckedChange={setIsApplyingForJob}
-                            className="relative inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-input transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:bg-primary"
+                            className={iosSwitch}
                           />
                           <Label
                             htmlFor="job-description-toggle"
@@ -259,13 +253,13 @@ export default function ResumeAnalyzer() {
                           File loaded: {file.name}
                         </p>
                       )}
-                      <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/30">
+                      <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/30">
                         <div className="flex items-center space-x-3">
                           <Switch
                             id="job-description-toggle-upload"
                             checked={isApplyingForJob}
                             onCheckedChange={setIsApplyingForJob}
-                            className="relative inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-input transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:bg-primary"
+                            className={iosSwitch}
                           />
                           <Label
                             htmlFor="job-description-toggle-upload"
