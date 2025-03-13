@@ -16,8 +16,19 @@ import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-// Enhanced iOS-style switch with refined styling and perfect spring animation
-const iosSwitch = "w-14 h-7 bg-[#e9e9ea] rounded-full relative peer-checked:bg-[#34C759] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-6 after:h-6 after:rounded-full after:shadow-[0_2px_2px_rgba(0,0,0,0.15)] after:transition-transform after:duration-300 after:ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:after:translate-x-7 hover:cursor-pointer peer-checked:after:shadow-[0_2px_3px_rgba(0,0,0,0.2)]";
+// Enhanced iOS-style switch with proper styling
+const iosSwitch = `
+  peer h-[24px] w-[44px] shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent 
+  bg-gray-300 transition-colors duration-200 ease-in-out
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
+  checked:bg-green-500 relative
+  after:absolute after:left-[-2px] after:top-[-2px]
+  after:h-[24px] after:w-[24px] after:rounded-full 
+  after:border-2 after:border-transparent
+  after:bg-white after:shadow-md
+  after:transition-all after:duration-200 after:ease-in-out
+  checked:after:translate-x-[22px] hover:cursor-pointer
+`;
 
 // Animation variants for the textarea with spring effect
 const textAreaVariants = {
