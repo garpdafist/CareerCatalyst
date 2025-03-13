@@ -46,7 +46,7 @@ const resumeAnalysisResponseSchema = z.object({
   importantKeywords: z.array(z.string()),
   suggestedImprovements: z.array(z.string()),
   generalFeedback: z.string(),
-  jobSpecificFeedback: z.string().optional() // Added field for job-specific analysis
+  jobSpecificFeedback: z.string().optional()
 });
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
@@ -79,60 +79,58 @@ function getOpenAIClient(): OpenAI {
   return openaiClient;
 }
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a comprehensive evaluation in JSON format with these exact fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. You MUST provide a comprehensive evaluation in JSON format with EXACTLY these fields (no omissions allowed):
 
 {
-  "score": number (0-100) based on overall quality,
+  "score": (required number 0-100),
   "scores": {
     "keywordsRelevance": {
-      "score": 1-10,
+      "score": (required number 1-10),
       "maxScore": 10,
-      "feedback": "detailed, actionable feedback (minimum 50 words)",
-      "keywords": ["at least 8-10 relevant keywords"]
+      "feedback": (required string, min 50 words),
+      "keywords": (required array of strings, min 8 items)
     },
     "achievementsMetrics": {
-      "score": 1-10,
+      "score": (required number 1-10),
       "maxScore": 10,
-      "feedback": "detailed, actionable feedback (minimum 50 words)",
-      "highlights": ["at least 5-7 key achievements"]
+      "feedback": (required string, min 50 words),
+      "highlights": (required array of strings, min 5 items)
     },
     "structureReadability": {
-      "score": 1-10,
+      "score": (required number 1-10),
       "maxScore": 10,
-      "feedback": "detailed, actionable feedback (minimum 50 words)"
+      "feedback": (required string, min 50 words)
     },
     "summaryClarity": {
-      "score": 1-10,
+      "score": (required number 1-10),
       "maxScore": 10,
-      "feedback": "detailed, actionable feedback (minimum 50 words)"
+      "feedback": (required string, min 50 words)
     },
     "overallPolish": {
-      "score": 1-10,
+      "score": (required number 1-10),
       "maxScore": 10,
-      "feedback": "detailed, actionable feedback (minimum 50 words)"
+      "feedback": (required string, min 50 words)
     }
   },
   "resumeSections": {
-    "professionalSummary": "comprehensive summary (minimum 100 words)",
-    "workExperience": "detailed experience analysis (minimum 150 words)",
-    "technicalSkills": "comprehensive skills analysis (minimum 100 words)",
-    "education": "education details and analysis (minimum 50 words)",
-    "keyAchievements": "detailed achievements analysis (minimum 100 words)"
+    "professionalSummary": (required string, min 100 words),
+    "workExperience": (required string, min 150 words),
+    "technicalSkills": (required string, min 100 words),
+    "education": (required string, min 50 words),
+    "keyAchievements": (required string, min 100 words)
   },
-  "identifiedSkills": ["minimum 10-12 key skills"],
-  "importantKeywords": ["minimum 8-10 important keywords"],
-  "suggestedImprovements": ["minimum 5-7 detailed, actionable improvements"],
-  "generalFeedback": "comprehensive feedback (minimum 200 words)"
+  "identifiedSkills": (required array of strings, min 10 items),
+  "importantKeywords": (required array of strings, min 8 items),
+  "suggestedImprovements": (required array of strings, min 5 items),
+  "generalFeedback": (required string, min 200 words)
 }
 
-For each feedback section, ensure:
-1. Detailed, actionable suggestions
-2. Specific examples where possible
-3. Industry-standard best practices
-4. Quantifiable metrics when applicable
-5. Clear, professional language
-
-Return ONLY the JSON object, no additional text. Do not add any disclaimers or explanations outside the JSON structure.`;
+IMPORTANT:
+1. ALL fields marked as required MUST be present
+2. Return ONLY the JSON object, no additional text
+3. If you cannot extract certain information, use empty strings or arrays, but NEVER omit fields
+4. Never add fields that are not in this schema
+5. Ensure all minimum length/item requirements are met`;
 
 // Main analysis function
 export async function analyzeResumeWithAI(
@@ -159,13 +157,11 @@ export async function analyzeResumeWithAI(
         });
       } catch (error) {
         console.error('Job description parsing failed:', error);
-        // Continue with resume analysis even if job parsing fails
       }
     }
 
     const openai = getOpenAIClient();
 
-    // Enhance system prompt with job context if available
     const enhancedPrompt = parsedJobDescription ? 
       `${SYSTEM_PROMPT}\n\nAnalyze this resume in context of the following job requirements:
       Role: ${parsedJobDescription.roleTitle}
@@ -175,7 +171,7 @@ export async function analyzeResumeWithAI(
       SYSTEM_PROMPT;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", 
       messages: [
         {
           role: "system",
@@ -199,6 +195,36 @@ export async function analyzeResumeWithAI(
       const content = response.choices[0].message.content.trim();
       parsedResponse = JSON.parse(content);
 
+      // Add fallback values for required fields if missing
+      if (!parsedResponse.scores) parsedResponse.scores = {};
+      if (!parsedResponse.scores.summaryClarity) {
+        parsedResponse.scores.summaryClarity = {
+          score: 1,
+          maxScore: 10,
+          feedback: "No summary clarity analysis available."
+        };
+      }
+      if (!parsedResponse.scores.overallPolish) {
+        parsedResponse.scores.overallPolish = {
+          score: 1,
+          maxScore: 10,
+          feedback: "No overall polish analysis available."
+        };
+      }
+      if (!parsedResponse.resumeSections) {
+        parsedResponse.resumeSections = {
+          professionalSummary: "",
+          workExperience: "",
+          technicalSkills: "",
+          education: "",
+          keyAchievements: ""
+        };
+      }
+      parsedResponse.identifiedSkills = parsedResponse.identifiedSkills || [];
+      parsedResponse.importantKeywords = parsedResponse.importantKeywords || [];
+      parsedResponse.suggestedImprovements = parsedResponse.suggestedImprovements || [];
+      parsedResponse.generalFeedback = parsedResponse.generalFeedback || "No general feedback available.";
+
       console.log('Parsed response structure:', {
         hasScore: typeof parsedResponse.score === 'number',
         score: parsedResponse.score,
@@ -221,7 +247,7 @@ export async function analyzeResumeWithAI(
         parsedResponse.jobSpecificFeedback = jobAnalysis;
       } catch (error) {
         console.error('Job-specific analysis failed:', error);
-        // Continue without job-specific feedback
+        parsedResponse.jobSpecificFeedback = "Unable to generate job-specific feedback.";
       }
     }
 
