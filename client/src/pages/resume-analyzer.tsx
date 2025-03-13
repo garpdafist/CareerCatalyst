@@ -167,17 +167,18 @@ export default function ResumeAnalyzer() {
                         className="h-64"
                         placeholder="Paste your resume here..."
                       />
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
                         <Checkbox
                           id="applyingForJob"
                           checked={isApplyingForJob}
                           onCheckedChange={(checked) => setIsApplyingForJob(checked as boolean)}
+                          className="h-5 w-5 border-2"
                         />
                         <label
                           htmlFor="applyingForJob"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className="text-sm font-medium text-foreground cursor-pointer"
                         >
-                          Applying for a specific job? Paste the job description to tailor your analysis
+                          Tailor analysis to a job description?
                         </label>
                       </div>
                       {isApplyingForJob && (
@@ -191,7 +192,7 @@ export default function ResumeAnalyzer() {
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
                             className="mt-4"
-                            placeholder="Paste the job description here..."
+                            placeholder="Paste the job description here to get tailored suggestions..."
                           />
                         </motion.div>
                       )}
@@ -222,17 +223,18 @@ export default function ResumeAnalyzer() {
                           File loaded: {file.name}
                         </p>
                       )}
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
                         <Checkbox
-                          id="applyingForJobUpload" // Added unique ID
+                          id="applyingForJobUpload"
                           checked={isApplyingForJob}
                           onCheckedChange={(checked) => setIsApplyingForJob(checked as boolean)}
+                          className="h-5 w-5 border-2"
                         />
                         <label
-                          htmlFor="applyingForJobUpload" // Updated htmlFor
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          htmlFor="applyingForJobUpload"
+                          className="text-sm font-medium text-foreground cursor-pointer"
                         >
-                          Applying for a specific job? Paste the job description to tailor your analysis
+                          Tailor analysis to a job description?
                         </label>
                       </div>
                       {isApplyingForJob && (
@@ -245,7 +247,7 @@ export default function ResumeAnalyzer() {
                           <Textarea
                             value={jobDescription}
                             onChange={(e) => setJobDescription(e.target.value)}
-                            placeholder="Paste the job description here..."
+                            placeholder="Paste the job description here to get tailored suggestions..."
                           />
                         </motion.div>
                       )}
