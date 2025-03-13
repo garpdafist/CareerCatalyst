@@ -12,7 +12,7 @@ import {
 import { Steps } from "@/components/ui/steps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, FileText, MessageSquare, LinkedinIcon, Video, LightbulbIcon } from "lucide-react";
+import { AlertCircle, FileText, MessageSquare, LinkedinIcon, Video, LightbulbIcon, Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
