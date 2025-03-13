@@ -16,6 +16,9 @@ import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
+// Component styles
+const iosSwitch = "w-11 h-6 bg-muted rounded-full relative peer-checked:bg-primary transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:w-5 after:h-5 after:rounded-full after:transition-all after:duration-200 peer-checked:after:translate-x-5 after:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-background";
+
 // Helper to ensure arrays have a maximum length
 const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 5): string[] => {
   if (!arr) return [];
@@ -174,12 +177,13 @@ export default function ResumeAnalyzer() {
                             id="job-description-toggle"
                             checked={isApplyingForJob}
                             onCheckedChange={setIsApplyingForJob}
+                            className={iosSwitch}
                           />
                           <Label
                             htmlFor="job-description-toggle"
-                            className="text-sm font-medium cursor-pointer"
+                            className="text-sm font-medium cursor-pointer select-none"
                           >
-                            Tailor to a Job Description
+                            Add Job Description
                           </Label>
                         </div>
                       </div>
@@ -233,12 +237,13 @@ export default function ResumeAnalyzer() {
                             id="job-description-toggle-upload"
                             checked={isApplyingForJob}
                             onCheckedChange={setIsApplyingForJob}
+                            className={iosSwitch}
                           />
                           <Label
                             htmlFor="job-description-toggle-upload"
-                            className="text-sm font-medium cursor-pointer"
+                            className="text-sm font-medium cursor-pointer select-none"
                           >
-                            Tailor to a Job Description
+                            Add Job Description
                           </Label>
                         </div>
                       </div>
