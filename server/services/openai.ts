@@ -45,7 +45,8 @@ const resumeAnalysisResponseSchema = z.object({
   identifiedSkills: z.array(z.string()),
   importantKeywords: z.array(z.string()),
   suggestedImprovements: z.array(z.string()),
-  generalFeedback: z.string()
+  generalFeedback: z.string(),
+  jobSpecificFeedback: z.string().optional() // Added field for job-specific analysis
 });
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;

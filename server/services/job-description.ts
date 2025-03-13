@@ -35,19 +35,26 @@ Return ONLY a JSON object with the following structure:
   "skills": ["Skill 1", "Skill 2"]
 }`;
 
-const ANALYSIS_SYSTEM_PROMPT = `You are an expert resume and job matching analyzer. Compare the provided resume against the job description and provide tailored feedback.
+const ANALYSIS_SYSTEM_PROMPT = `You are an expert resume and job matching analyzer. Compare the provided resume against the job description and provide detailed, tailored feedback.
 
 Consider:
 1. Skills match and gaps
 2. Experience level alignment
 3. Industry relevance
 4. Key requirements fulfillment
+5. Specific keywords and phrases from the job description
+6. Cultural fit indicators
+7. Technical competencies alignment
 
-Return feedback focused on:
-1. How well the resume matches the job requirements
-2. Specific suggestions to better align with the role
-3. Skills to emphasize or add
-4. Experience presentation recommendations`;
+Provide actionable feedback focusing on:
+1. Exact matches between resume skills and job requirements
+2. Specific skills or experiences that should be emphasized
+3. Missing keywords that should be added
+4. How to reframe existing experience to better match the role
+5. Industry-specific terminology that should be incorporated
+6. Concrete suggestions for better alignment with the company's needs
+
+Return feedback in a clear, actionable format with specific examples from both the resume and job description.`;
 
 export async function parseJobDescription(text: string): Promise<JobDescription> {
   try {
@@ -94,7 +101,12 @@ Required Skills: ${jobDescription.skills?.join(', ') || 'Not specified'}
 Key Requirements:
 ${jobDescription.requirements?.join('\n') || 'None specified'}
 
-Analyze how well this resume matches the job requirements and provide specific suggestions for improvement.`;
+Analyze how this resume aligns with the specific job requirements. Focus on:
+1. Skills alignment and gaps
+2. Experience level match
+3. Industry relevance
+4. Keyword optimization
+5. Specific improvements needed for this role`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024

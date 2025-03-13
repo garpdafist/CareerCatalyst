@@ -381,6 +381,18 @@ export default function ResumeAnalyzer() {
                       </ul>
                     </div>
 
+                    {/* Job-Specific Recommendations Section */}
+                    {analyzeMutation.data.jobSpecificFeedback && (
+                      <div className="mt-6">
+                        <h3 className="text-lg font-medium mb-3">Job-Specific Recommendations</h3>
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                          <p className="text-sm md:text-base text-blue-700 whitespace-pre-line">
+                            {analyzeMutation.data.jobSpecificFeedback}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* General Feedback */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">General Feedback</h3>
