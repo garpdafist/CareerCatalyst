@@ -17,19 +17,20 @@ import { Label } from "@/components/ui/label";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
-  peer h-[24px] w-[44px] shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent 
-  bg-gray-300 transition-colors duration-200 ease-in-out
+  peer h-[32px] w-[52px] shrink-0 cursor-pointer appearance-none rounded-full 
+  bg-[#e9e9ea] transition-colors duration-200 ease-in-out
   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-  checked:bg-green-500 relative
-  after:absolute after:left-[-2px] after:top-[-2px]
-  after:h-[24px] after:w-[24px] after:rounded-full 
-  after:border-2 after:border-transparent
-  after:bg-white after:shadow-md
-  after:transition-all after:duration-200 after:ease-in-out
-  checked:after:translate-x-[22px] hover:cursor-pointer
+  checked:bg-[#34C759] relative
+  after:absolute after:left-[2px] after:top-[2px]
+  after:h-[28px] after:w-[28px] after:rounded-full 
+  after:border-none after:bg-white
+  after:shadow-[0_2px_2px_rgba(0,0,0,0.2)]
+  after:transition-transform after:duration-200 after:ease-[cubic-bezier(0.34,1.56,0.64,1)]
+  checked:after:translate-x-[20px] hover:cursor-pointer
+  disabled:cursor-not-allowed disabled:opacity-50
 `;
 
-// Animation variants for the textarea
+// Animation variants for the textarea with spring effect
 const textAreaVariants = {
   hidden: { 
     opacity: 0, 
