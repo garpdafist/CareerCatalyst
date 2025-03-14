@@ -51,6 +51,99 @@ const resumeAnalysisResponseSchema = z.object({
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
+const SYSTEM_PROMPT = `You are an expert resume analyzer. You MUST provide a comprehensive evaluation in JSON format with EXACTLY these fields (no omissions allowed).
+
+EXAMPLE INPUT:
+"John Doe
+Marketing Manager with 5+ years experience
+Led digital marketing campaigns resulting in 45% increase in engagement
+Skills: SEO, Content Strategy, Google Analytics
+Education: MBA Marketing"
+
+EXAMPLE OUTPUT:
+{
+  "score": 75,
+  "scores": {
+    "keywordsRelevance": {
+      "score": 8,
+      "maxScore": 10,
+      "feedback": "Strong presence of marketing-specific keywords. Consider adding more technical marketing tools and platforms. Include specific marketing metrics and KPIs you've tracked.",
+      "keywords": ["marketing manager", "digital marketing", "SEO", "content strategy", "Google Analytics", "engagement", "campaigns", "MBA Marketing"]
+    },
+    "achievementsMetrics": {
+      "score": 7,
+      "maxScore": 10,
+      "feedback": "Good quantification of results (45% increase). Add more specific metrics across other achievements. Include budget managed, team size, and campaign reach.",
+      "highlights": ["45% increase in engagement", "5+ years experience", "Led digital marketing campaigns", "MBA in Marketing", "Digital marketing expertise"]
+    },
+    "structureReadability": {
+      "score": 7,
+      "maxScore": 10,
+      "feedback": "Clear structure with distinct sections. Consider using bullet points for better readability. Add more white space between sections."
+    },
+    "summaryClarity": {
+      "score": 8,
+      "maxScore": 10,
+      "feedback": "Strong, concise summary highlighting key experience. Consider adding industry focus and target role objectives."
+    },
+    "overallPolish": {
+      "score": 7,
+      "maxScore": 10,
+      "feedback": "Professional presentation but could benefit from more detailed achievement metrics and technical skill elaboration."
+    }
+  },
+  "resumeSections": {
+    "professionalSummary": "Experienced Marketing Manager with proven track record in digital marketing campaigns and measurable results. Strong analytical skills demonstrated through SEO optimization and Google Analytics expertise.",
+    "workExperience": "Marketing Manager position showcasing leadership in digital campaigns with quantifiable results (45% engagement increase). Demonstrates progressive responsibility and strategic thinking in marketing initiatives.",
+    "technicalSkills": "Core competencies in SEO, Content Strategy, and Google Analytics. Consider adding more specific marketing tools, social media platforms, and marketing automation software.",
+    "education": "MBA with Marketing focus indicates strong theoretical foundation and business acumen.",
+    "keyAchievements": "Notable success in digital campaign management with 45% engagement increase. Leadership in marketing initiatives. Advanced education in marketing field."
+  },
+  "identifiedSkills": [
+    "Digital Marketing",
+    "Campaign Management",
+    "SEO",
+    "Content Strategy",
+    "Google Analytics",
+    "Leadership",
+    "Strategic Planning",
+    "Performance Analysis",
+    "Marketing Analytics",
+    "Project Management"
+  ],
+  "importantKeywords": [
+    "Marketing Manager",
+    "Digital Marketing",
+    "SEO",
+    "Analytics",
+    "Campaign Management",
+    "Engagement",
+    "Strategy",
+    "Leadership"
+  ],
+  "suggestedImprovements": [
+    "Add specific marketing tools and platforms used",
+    "Include budget sizes managed in campaigns",
+    "Quantify results for all major achievements",
+    "Specify industry verticals worked in",
+    "Add details about team leadership",
+    "Include more technical marketing skills",
+    "Add social media marketing metrics"
+  ],
+  "generalFeedback": "Your resume demonstrates strong marketing expertise with good quantifiable results. To strengthen it further: 1) Add more specific marketing tools and platforms you're proficient in, 2) Include budget sizes and team sizes managed, 3) Quantify results for all major achievements, not just the engagement increase, 4) Specify industry verticals you've worked in, 5) Elaborate on leadership experience and team sizes managed. Consider creating separate sections for digital marketing skills and traditional marketing expertise."
+}
+
+For your analysis:
+1. ALWAYS populate each field with meaningful content based on the resume
+2. If you find specific skills, list them in identifiedSkills
+3. If you spot achievements, add them to suggestedImprovements
+4. Provide detailed feedback with specific examples from the resume
+5. Never return empty arrays or placeholder text
+6. Keep feedback actionable and specific to the content found
+7. Ensure all minimum length requirements are met
+
+Return ONLY the JSON object, no additional text.`;
+
 // Rate limiting helper
 let lastRequestTime = 0;
 const REQUEST_DELAY_MS = 500;
@@ -79,58 +172,6 @@ function getOpenAIClient(): OpenAI {
   return openaiClient;
 }
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. You MUST provide a comprehensive evaluation in JSON format with EXACTLY these fields (no omissions allowed):
-
-{
-  "score": (required number 0-100),
-  "scores": {
-    "keywordsRelevance": {
-      "score": (required number 1-10),
-      "maxScore": 10,
-      "feedback": (required string, min 50 words),
-      "keywords": (required array of strings, min 8 items)
-    },
-    "achievementsMetrics": {
-      "score": (required number 1-10),
-      "maxScore": 10,
-      "feedback": (required string, min 50 words),
-      "highlights": (required array of strings, min 5 items)
-    },
-    "structureReadability": {
-      "score": (required number 1-10),
-      "maxScore": 10,
-      "feedback": (required string, min 50 words)
-    },
-    "summaryClarity": {
-      "score": (required number 1-10),
-      "maxScore": 10,
-      "feedback": (required string, min 50 words)
-    },
-    "overallPolish": {
-      "score": (required number 1-10),
-      "maxScore": 10,
-      "feedback": (required string, min 50 words)
-    }
-  },
-  "resumeSections": {
-    "professionalSummary": (required string, min 100 words),
-    "workExperience": (required string, min 150 words),
-    "technicalSkills": (required string, min 100 words),
-    "education": (required string, min 50 words),
-    "keyAchievements": (required string, min 100 words)
-  },
-  "identifiedSkills": (required array of strings, min 10 items),
-  "importantKeywords": (required array of strings, min 8 items),
-  "suggestedImprovements": (required array of strings, min 5 items),
-  "generalFeedback": (required string, min 200 words)
-}
-
-IMPORTANT:
-1. ALL fields marked as required MUST be present
-2. Return ONLY the JSON object, no additional text
-3. If you cannot extract certain information, use empty strings or arrays, but NEVER omit fields
-4. Never add fields that are not in this schema
-5. Ensure all minimum length/item requirements are met`;
 
 // Main analysis function
 export async function analyzeResumeWithAI(
@@ -190,28 +231,45 @@ export async function analyzeResumeWithAI(
       throw new Error('OpenAI returned an empty response');
     }
 
+    // Log raw AI response for debugging
+    console.log('Raw AI Response:', {
+      content: response.choices[0].message.content,
+      timestamp: new Date().toISOString()
+    });
+
     let parsedResponse: any;
     try {
       const content = response.choices[0].message.content.trim();
       parsedResponse = JSON.parse(content);
 
-      // Add fallback values for required fields if missing
-      if (!parsedResponse.scores) parsedResponse.scores = {};
-      if (!parsedResponse.scores.summaryClarity) {
+      // Log parsed structure before applying any fallbacks
+      console.log('Initial parsed response structure:', {
+        hasScore: typeof parsedResponse.score === 'number',
+        score: parsedResponse.score,
+        identifiedSkillsCount: parsedResponse.identifiedSkills?.length ?? 0,
+        improvementsCount: parsedResponse.suggestedImprovements?.length ?? 0,
+        hasScores: !!parsedResponse.scores,
+        hasResumeSections: !!parsedResponse.resumeSections,
+        timestamp: new Date().toISOString()
+      });
+
+      // Only apply fallbacks if fields are undefined (not empty)
+      if (parsedResponse.scores === undefined) parsedResponse.scores = {};
+      if (parsedResponse.scores.summaryClarity === undefined) {
         parsedResponse.scores.summaryClarity = {
           score: 1,
           maxScore: 10,
           feedback: "No summary clarity analysis available."
         };
       }
-      if (!parsedResponse.scores.overallPolish) {
+      if (parsedResponse.scores.overallPolish === undefined) {
         parsedResponse.scores.overallPolish = {
           score: 1,
           maxScore: 10,
           feedback: "No overall polish analysis available."
         };
       }
-      if (!parsedResponse.resumeSections) {
+      if (parsedResponse.resumeSections === undefined) {
         parsedResponse.resumeSections = {
           professionalSummary: "",
           workExperience: "",
@@ -220,54 +278,49 @@ export async function analyzeResumeWithAI(
           keyAchievements: ""
         };
       }
-      parsedResponse.identifiedSkills = parsedResponse.identifiedSkills || [];
-      parsedResponse.importantKeywords = parsedResponse.importantKeywords || [];
-      parsedResponse.suggestedImprovements = parsedResponse.suggestedImprovements || [];
-      parsedResponse.generalFeedback = parsedResponse.generalFeedback || "No general feedback available.";
+      if (parsedResponse.identifiedSkills === undefined) parsedResponse.identifiedSkills = [];
+      if (parsedResponse.importantKeywords === undefined) parsedResponse.importantKeywords = [];
+      if (parsedResponse.suggestedImprovements === undefined) parsedResponse.suggestedImprovements = [];
+      if (parsedResponse.generalFeedback === undefined) parsedResponse.generalFeedback = "No general feedback available.";
 
-      console.log('Parsed response structure:', {
-        hasScore: typeof parsedResponse.score === 'number',
+      // Get additional job-specific analysis if job description was provided
+      if (parsedJobDescription) {
+        try {
+          const jobAnalysis = await analyzeResumeWithJobDescription(content, parsedJobDescription);
+          parsedResponse.jobSpecificFeedback = jobAnalysis;
+        } catch (error) {
+          console.error('Job-specific analysis failed:', error);
+          parsedResponse.jobSpecificFeedback = "Unable to generate job-specific feedback.";
+        }
+      }
+
+      // Log final structure after fallbacks
+      console.log('Final response structure:', {
         score: parsedResponse.score,
-        identifiedSkillsCount: parsedResponse.identifiedSkills?.length ?? 0,
-        improvementsCount: parsedResponse.suggestedImprovements?.length ?? 0,
+        identifiedSkillsCount: parsedResponse.identifiedSkills.length,
+        improvementsCount: parsedResponse.suggestedImprovements.length,
+        hasJobAnalysis: !!parsedJobDescription,
         timestamp: new Date().toISOString()
       });
-    } catch (parseError: any) {
-      console.error('JSON parsing error:', {
-        error: parseError.message,
-        rawResponse: response.choices[0].message.content.substring(0, 200) + '...'
+
+      return resumeAnalysisResponseSchema.parse(parsedResponse);
+
+    } catch (error: any) {
+      console.error('Resume analysis error:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        validationError: error instanceof z.ZodError ? error.errors : undefined
       });
-      throw new Error('Failed to parse OpenAI response as JSON');
+      throw new Error(`Failed to analyze resume: ${error.message}`);
     }
-
-    // Get additional job-specific analysis if job description was provided
-    if (parsedJobDescription) {
-      try {
-        const jobAnalysis = await analyzeResumeWithJobDescription(content, parsedJobDescription);
-        parsedResponse.jobSpecificFeedback = jobAnalysis;
-      } catch (error) {
-        console.error('Job-specific analysis failed:', error);
-        parsedResponse.jobSpecificFeedback = "Unable to generate job-specific feedback.";
-      }
-    }
-
-    const validatedResponse = resumeAnalysisResponseSchema.parse(parsedResponse);
-
-    console.log('Analysis completed successfully:', {
-      score: validatedResponse.score,
-      skillsCount: validatedResponse.identifiedSkills.length,
-      hasJobAnalysis: !!parsedJobDescription,
-      timestamp: new Date().toISOString()
-    });
-
-    return validatedResponse;
   } catch (error: any) {
     console.error('Resume analysis error:', {
       message: error.message,
       name: error.name,
       stack: error.stack,
-      timestamp: new Date().toISOString(),
-      validationError: error instanceof z.ZodError ? error.errors : undefined
+      timestamp: new Date().toISOString()
     });
     throw new Error(`Failed to analyze resume: ${error.message}`);
   }
