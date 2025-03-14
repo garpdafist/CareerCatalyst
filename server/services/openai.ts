@@ -8,168 +8,122 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. You MUST analyze the resume critically and provide specific, actionable feedback. Return ONLY a JSON object with these exact fields:
+// Response validation schema for job-specific analysis
+const jobAnalysisSchema = z.object({
+  alignmentAndStrengths: z.array(z.string()).min(1),
+  gapsAndConcerns: z.array(z.string()).min(1),
+  recommendationsToTailor: z.array(z.string()).min(1),
+  overallFit: z.string().min(1)
+});
 
-{
-  "score": (number between 0-100, be conservative - most resumes should score 60-75 unless exceptional),
-  "scores": {
-    "keywordsRelevance": {
-      "score": (number between 1-10),
-      "maxScore": 10,
-      "feedback": "detailed feedback (minimum 50 words)",
-      "keywords": ["at least 5 relevant keywords"]
-    },
-    "achievementsMetrics": {
-      "score": (number between 1-10),
-      "maxScore": 10,
-      "feedback": "detailed feedback (minimum 50 words)",
-      "highlights": ["at least 3 quantifiable achievements"]
-    },
-    "structureReadability": {
-      "score": (number between 1-10),
-      "maxScore": 10,
-      "feedback": "detailed feedback (minimum 50 words)"
-    },
-    "summaryClarity": {
-      "score": (number between 1-10),
-      "maxScore": 10,
-      "feedback": "detailed feedback (minimum 50 words)"
-    },
-    "overallPolish": {
-      "score": (number between 1-10),
-      "maxScore": 10,
-      "feedback": "detailed feedback (minimum 50 words)"
-    }
-  },
-  "resumeSections": {
-    "professionalSummary": "detailed analysis (minimum 100 words)",
-    "workExperience": "detailed analysis (minimum 150 words)",
-    "education": "detailed analysis (minimum 50 words)",
-    "technicalSkills": "detailed analysis (minimum 100 words)",
-    "keyAchievements": "detailed analysis (minimum 100 words)"
-  },
-  "identifiedSkills": ["minimum 5 specific skills"],
-  "primaryKeywords": ["minimum 5 important keywords"],
-  "suggestedImprovements": ["minimum 3 actionable suggestions"],
-  "generalFeedback": {
-    "overall": "comprehensive feedback (minimum 200 words)",
-    "strengths": ["REQUIRED: 2-3 specific key strengths"],
-    "actionItems": ["REQUIRED: 2-3 prioritized action items"]
-  },
-  "jobSpecificRecommendations": {
-    "requiredSkillsMatch": "Analysis of required skill match (minimum 100 words)",
-    "experienceLevel": "Analysis of experience level alignment (minimum 50 words)",
-    "industryAlignment": "Analysis of industry alignment (minimum 50 words)",
-    "keyRequirements": "Analysis of key requirements met/unmet (minimum 100 words)",
-    "atsOptimization": "Suggestions for ATS optimization (minimum 50 words)"
-  }
-}
-
-CRITICAL SCORING GUIDELINES:
-1. Be conservative with scoring - most resumes should score between 60-75
-2. Only give scores above 80 if the resume is exceptional and matches job requirements perfectly
-3. Deduct points for:
-   - Missing or vague quantifiable achievements
-   - Generic statements without specifics
-   - Poor formatting or structure
-   - Missing key industry keywords
-   - Lack of relevant experience
-
-CRITICAL FEEDBACK REQUIREMENTS:
-1. All feedback must be specific and actionable
-2. Include exact phrases or sections that need improvement
-3. Provide concrete examples for suggested changes
-4. Never return empty arrays or generic placeholders
-5. Ensure all minimum word counts are met`;
-
-const JOB_ANALYSIS_PROMPT = `Additionally, analyze how well this resume matches the provided job requirements. Pay special attention to:
-
-1. Required Skills Match:
-   - Which specific required skills are present/missing?
-   - How closely do the candidate's skills align?
-   - What technical competencies need strengthening?
-
-2. Experience Level:
-   - Does the experience match the requirements?
-   - Are there gaps in required experience areas?
-   - How relevant is the candidate's background?
-
-3. Industry Alignment:
-   - How well does the experience match the industry?
-   - What industry-specific knowledge is present/missing?
-   - Are there transferable skills to highlight?
-
-4. Key Requirements:
-   - Which job requirements are met/unmet?
-   - What specific areas need strengthening?
-   - How can existing experience be better aligned?
-
-5. ATS Optimization:
-   - Which job-specific keywords are missing?
-   - How can the resume be better optimized?
-   - What terms should be added/modified?
-
-Be critical and specific. Score conservatively if job requirements are not fully met.`;
-
-// Response validation schema
-const resumeAnalysisResponseSchema = z.object({
+// Base resume analysis schema
+const baseResumeAnalysisSchema = z.object({
   score: z.number().min(0).max(100),
   scores: z.object({
     keywordsRelevance: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
-      feedback: z.string().min(1),
-      keywords: z.array(z.string())
+      feedback: z.string().min(50),
+      keywords: z.array(z.string()).min(3)
     }),
     achievementsMetrics: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
-      feedback: z.string().min(1),
-      highlights: z.array(z.string())
+      feedback: z.string().min(50),
+      highlights: z.array(z.string()).min(3)
     }),
     structureReadability: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
-      feedback: z.string().min(1)
+      feedback: z.string().min(50)
     }),
     summaryClarity: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
-      feedback: z.string().min(1)
+      feedback: z.string().min(50)
     }),
     overallPolish: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
-      feedback: z.string().min(1)
+      feedback: z.string().min(50)
     })
   }),
-  resumeSections: z.object({
-    professionalSummary: z.string().min(1),
-    workExperience: z.string().min(1),
-    education: z.string().min(1),
-    technicalSkills: z.string().min(1),
-    keyAchievements: z.string().min(1)
-  }),
-  identifiedSkills: z.array(z.string()),
-  primaryKeywords: z.array(z.string()),
-  targetKeywords: z.array(z.string()).optional(),
-  suggestedImprovements: z.array(z.string()),
+  identifiedSkills: z.array(z.string()).min(3),
+  primaryKeywords: z.array(z.string()).min(3),
+  suggestedImprovements: z.array(z.string()).min(3),
   generalFeedback: z.object({
-    overall: z.string().min(1),
-    strengths: z.array(z.string()).min(1),
-    actionItems: z.array(z.string()).min(1)
-  }),
-  jobSpecificRecommendations: z.object({
-    requiredSkillsMatch: z.string().min(1),
-    experienceLevel: z.string().min(1),
-    industryAlignment: z.string().min(1),
-    keyRequirements: z.string().min(1),
-    atsOptimization: z.string().min(1)
-  }).optional(),
-  jobSpecificFeedback: z.string().optional()
+    overall: z.string().min(100),
+    strengths: z.array(z.string()).min(2),
+    actionItems: z.array(z.string()).min(2)
+  })
+});
+
+// Combined schema with job analysis
+const resumeAnalysisResponseSchema = z.object({
+  ...baseResumeAnalysisSchema.shape,
+  jobAnalysis: jobAnalysisSchema.optional()
 });
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+
+const BASE_SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the resume and return a JSON response with these exact fields:
+
+{
+  "score": (number 0-100, be conservative - most resumes score 60-75),
+  "scores": {
+    "keywordsRelevance": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "detailed feedback (min 50 words)",
+      "keywords": ["at least 3 keywords"]
+    },
+    "achievementsMetrics": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "detailed feedback (min 50 words)",
+      "highlights": ["at least 3 achievements"]
+    },
+    "structureReadability": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "detailed feedback (min 50 words)"
+    },
+    "summaryClarity": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "detailed feedback (min 50 words)"
+    },
+    "overallPolish": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "detailed feedback (min 50 words)"
+    }
+  },
+  "identifiedSkills": ["min 3 specific skills"],
+  "primaryKeywords": ["min 3 important keywords"],
+  "suggestedImprovements": ["min 3 actionable suggestions"],
+  "generalFeedback": {
+    "overall": "comprehensive feedback (min 100 words)",
+    "strengths": ["2-3 specific strengths"],
+    "actionItems": ["2-3 prioritized actions"]
+  }
+}`;
+
+const JOB_ANALYSIS_PROMPT = `Additionally, analyze how this resume matches the job requirements. Add this section to your JSON response:
+
+"jobAnalysis": {
+  "alignmentAndStrengths": ["list specific areas where resume matches job requirements"],
+  "gapsAndConcerns": ["list specific mismatches or missing requirements"],
+  "recommendationsToTailor": ["specific suggestions to align resume with role"],
+  "overallFit": "brief assessment of candidate's suitability for the role"
+}
+
+Guidelines for job analysis:
+1. Be specific - reference exact requirements from the job description
+2. Compare candidate's experience level to requirements
+3. Note any missing technical skills or qualifications
+4. Provide actionable suggestions for improvement
+5. Be direct about fit - don't inflate assessment`;
 
 // Chunk and summarize long text
 async function preprocessText(text: string): Promise<string> {
@@ -181,7 +135,7 @@ async function preprocessText(text: string): Promise<string> {
     const chunks = text.match(/.{1,12000}/g) || [];
     const summaries = await Promise.all(chunks.map(async (chunk) => {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", 
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [
           {
             role: "system",
@@ -200,47 +154,9 @@ async function preprocessText(text: string): Promise<string> {
     return summaries.join('\n\n');
   } catch (error) {
     console.error('Text preprocessing error:', error);
-    return text; 
+    return text;
   }
 }
-
-// Default values for missing fields
-const defaultScoreSection = {
-  score: 1,
-  maxScore: 10,
-  feedback: "No analysis available"
-};
-
-const defaultScores = {
-  keywordsRelevance: { ...defaultScoreSection, keywords: [] },
-  achievementsMetrics: { ...defaultScoreSection, highlights: [] },
-  structureReadability: defaultScoreSection,
-  summaryClarity: defaultScoreSection,
-  overallPolish: defaultScoreSection
-};
-
-const defaultResumeSections = {
-  professionalSummary: "No summary available",
-  workExperience: "No experience details available",
-  education: "No education details available",
-  technicalSkills: "No skills details available",
-  keyAchievements: "No achievements available"
-};
-
-const defaultGeneralFeedback = {
-  overall: "No general feedback available",
-  strengths: ["Demonstrates professional experience", "Has relevant education"], 
-  actionItems: ["Add more quantifiable achievements", "Enhance skills section"] 
-};
-
-const defaultJobSpecificRecommendations = {
-  requiredSkillsMatch: "No analysis available",
-  experienceLevel: "No analysis available",
-  industryAlignment: "No analysis available",
-  keyRequirements: "No analysis available",
-  atsOptimization: "No analysis available"
-}
-
 
 // Main analysis function
 export async function analyzeResumeWithAI(
@@ -261,27 +177,22 @@ export async function analyzeResumeWithAI(
     let parsedJobDescription: JobDescription | undefined;
     if (jobDescription) {
       try {
-        parsedJobDescription = await parseJobDescription(jobDescription);
+        const processedJobDesc = await preprocessText(jobDescription);
+        parsedJobDescription = await parseJobDescription(processedJobDesc);
       } catch (error) {
-        console.error('Job description parsing failed:', error);
-        throw new Error(`Failed to parse job description: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error('Job description processing error:', error);
+        throw new Error(`Failed to process job description: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
     // Build the complete prompt
-    const jobContext = parsedJobDescription ? `
-Additionally, analyze this resume against these job requirements:
-- Role: ${parsedJobDescription.roleTitle}
-- Experience Required: ${parsedJobDescription.yearsOfExperience}
-- Industry: ${parsedJobDescription.industry}
-- Required Skills: ${parsedJobDescription.skills?.join(', ')}
-- Key Requirements: ${parsedJobDescription.requirements?.join('\n')}` : '';
-
-    const finalPrompt = SYSTEM_PROMPT + jobContext;
+    const finalPrompt = parsedJobDescription 
+      ? `${BASE_SYSTEM_PROMPT}\n\nJob Description:\nRole: ${parsedJobDescription.roleTitle}\nExperience: ${parsedJobDescription.yearsOfExperience}\nSkills: ${parsedJobDescription.skills?.join(', ')}\nRequirements: ${parsedJobDescription.requirements?.join('\n')}\n\n${JOB_ANALYSIS_PROMPT}`
+      : BASE_SYSTEM_PROMPT;
 
     // Make the API call
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
       messages: [
         {
           role: "system",
@@ -306,71 +217,10 @@ Additionally, analyze this resume against these job requirements:
       timestamp: new Date().toISOString()
     });
 
-    try {
-      // Parse and validate response
-      const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+    // Parse and validate response
+    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+    return resumeAnalysisResponseSchema.parse(parsedResponse);
 
-      // Log parsed structure before applying defaults
-      console.log('Initial parsed response structure:', {
-        hasScores: !!parsedResponse.scores,
-        hasSummaryClarity: !!parsedResponse.scores?.summaryClarity,
-        hasOverallPolish: !!parsedResponse.scores?.overallPolish,
-        timestamp: new Date().toISOString()
-      });
-
-      // Add fallback values for required fields
-      const enhancedResponse = {
-        score: parsedResponse.score || 0,
-        scores: {
-          ...defaultScores,
-          ...parsedResponse.scores,
-          summaryClarity: parsedResponse.scores?.summaryClarity || defaultScores.summaryClarity,
-          overallPolish: parsedResponse.scores?.overallPolish || defaultScores.overallPolish
-        },
-        resumeSections: {
-          ...defaultResumeSections,
-          ...parsedResponse.resumeSections
-        },
-        identifiedSkills: parsedResponse.identifiedSkills || [],
-        primaryKeywords: parsedResponse.primaryKeywords || [],
-        suggestedImprovements: parsedResponse.suggestedImprovements || [],
-        generalFeedback: {
-          ...defaultGeneralFeedback,
-          ...parsedResponse.generalFeedback,
-          strengths: parsedResponse.generalFeedback?.strengths || defaultGeneralFeedback.strengths, 
-          actionItems: parsedResponse.generalFeedback?.actionItems || defaultGeneralFeedback.actionItems 
-        },
-        jobSpecificRecommendations: parsedResponse.jobSpecificRecommendations || defaultJobSpecificRecommendations
-      };
-
-      // Add job-specific data if available
-      if (parsedJobDescription) {
-        const jobAnalysis = await analyzeResumeWithJobDescription(processedContent, parsedJobDescription);
-        enhancedResponse.jobSpecificFeedback = jobAnalysis;
-        enhancedResponse.targetKeywords = parsedResponse.targetKeywords || [];
-      }
-
-      // Log final structure before validation
-      console.log('Final response structure:', {
-        hasScores: true,
-        hasSummaryClarity: true,
-        hasOverallPolish: true,
-        timestamp: new Date().toISOString()
-      });
-
-      // Validate enhanced response
-      return resumeAnalysisResponseSchema.parse(enhancedResponse);
-
-    } catch (error) {
-      console.error('Response processing error:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        isZodError: error instanceof z.ZodError,
-        zodErrors: error instanceof z.ZodError ? error.errors : undefined,
-        timestamp: new Date().toISOString()
-      });
-      throw new Error(`Failed to process AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
   } catch (error) {
     console.error('Resume analysis error:', {
       message: error instanceof Error ? error.message : 'Unknown error',

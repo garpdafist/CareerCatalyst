@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, FileText, Upload, ChevronRight } from "lucide-react";
+import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -179,6 +179,64 @@ const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
     </div>
   );
 };
+
+// New component for job analysis results
+const JobAnalysisSection = ({ data }: { data: ResumeAnalysis }) => {
+  if (!data.jobAnalysis) return null;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium mb-3">Alignment & Strengths</h3>
+        <ul className="space-y-2">
+          {data.jobAnalysis.alignmentAndStrengths.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100">
+              <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+              <span className="text-green-700">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium mb-3">Gaps & Concerns</h3>
+        <ul className="space-y-2">
+          {data.jobAnalysis.gapsAndConcerns.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm bg-red-50/50 rounded-lg p-3 border border-red-100">
+              <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-600" />
+              <span className="text-red-700">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium mb-3">How to Tailor Your Resume</h3>
+        <ul className="space-y-2">
+          {data.jobAnalysis.recommendationsToTailor.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100">
+              <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
+              <span className="text-blue-700">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium mb-3">Overall Fit Assessment</h3>
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 mt-1 flex-shrink-0 text-gray-600" />
+            <p className="text-sm md:text-base text-gray-600">
+              {data.jobAnalysis.overallFit}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
@@ -509,6 +567,16 @@ export default function ResumeAnalyzer() {
 
                     {/* Updated General Feedback Section */}
                     <GeneralFeedbackSection data={analyzeMutation.data} />
+
+                    {/* Add new Job Analysis section */}
+                    {analyzeMutation.data.jobAnalysis && (
+                      <div className="mt-6 pt-6 border-t border-gray-100">
+                        <h2 className="text-xl md:text-2xl font-semibold mb-6">
+                          Job Match Analysis
+                        </h2>
+                        <JobAnalysisSection data={analyzeMutation.data} />
+                      </div>
+                    )}
 
 
                     {/* Add CTA Section */}

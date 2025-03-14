@@ -1,0 +1,36 @@
+You are an experienced full-stack developer and AI prompt engineer. I want to recreate our analysis page with the following goals:
+
+1) **Separate Flows** (Resume-Only vs. Resume + JD):
+   - Keep the old “resume-only” logic/endpoint, which worked well.
+   - Introduce a new flow or endpoint for “resume + job description,” ensuring it doesn’t break the old approach.
+   - On the UI, if the user toggles “Add Job Description,” we route them to the new logic or pass a param to the same endpoint.
+
+2) **New Sections** in the Final Analysis:
+   - Retain current fields (Key Skills, Suggested Improvements, General Feedback, etc.).
+   - Add new fields:
+     - **Alignment & Strengths** (where does the resume align with the JD?),
+     - **Gaps & Concerns** (where it fails to meet JD requirements),
+     - **Recommendations & How to Tailor the Resume** (job-specific suggestions),
+     - **Overall Fit** (brief summary of how suitable the candidate is for the role).
+   - The AI should produce these fields only if a JD is provided. Otherwise, they can be empty or skipped.
+
+3) **Improving LLM Workflow**:
+   - If we worry about token limits or parse issues, consider a **two-step** approach:
+     1) Summarize the job description and/or resume first,
+     2) Then feed those summaries plus instructions into a final prompt.
+   - Alternatively, keep a single prompt but ensure we strongly instruct the AI about the new sections.
+
+4) **Potential External APIs**:
+   - We could integrate advanced PDF parsing or chunking libraries (like **pdf-lib**, **pdf2json**, or a summarization approach with **LangChain**).
+   - For job descriptions, we might do a quick summarization via an additional AI call if the JD is very long.
+   - If we want to handle analytics or other workflows, consider tools like **Segment**, **n8n**, or advanced data enrichment APIs for better B2B insight.
+
+5) **Implementation & UI**:
+   - Show me a final code snippet or diff:
+     - Splitting “resume-only” vs. “resume + JD” logic,
+     - Adding the new sections in the final JSON and UI,
+     - Possibly a multi-step or chunk-based approach for the AI call if needed.
+   - The UI might have collapsible panels for “Alignment & Strengths,” “Gaps & Concerns,” etc. 
+   - Test both flows (resume-only, resume + JD) to confirm no breakage and that the new sections appear only if a JD is present.
+
+This should let us keep the old approach stable, add more detailed job-specific analysis, and possibly integrate external APIs or multi-call logic to improve parsing and chunking.
