@@ -1,3 +1,4 @@
+import { JobDescription, jobDescriptionSchema } from "@shared/schema";
 import OpenAI from "openai";
 import { z } from "zod";
 import { parseJobDescription, analyzeResumeWithJobDescription } from "./job-description";
@@ -62,7 +63,7 @@ const resumeAnalysisResponseSchema = z.object({
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Return ONLY a JSON object with EXACTLY these fields (no explanations or additional text):
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Return ONLY a JSON object with EXACTLY these fields:
 
 {
   "score": (number between 0-100),
@@ -70,56 +71,56 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Return ONLY a JSON obj
     "keywordsRelevance": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback",
-      "keywords": ["at least 3 keywords"]
+      "feedback": "string with feedback",
+      "keywords": ["array of strings"]
     },
     "achievementsMetrics": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback",
-      "highlights": ["at least 3 achievements"]
+      "feedback": "string with feedback",
+      "highlights": ["array of strings"]
     },
     "structureReadability": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback"
+      "feedback": "string with feedback"
     },
     "summaryClarity": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback"
+      "feedback": "string with feedback"
     },
     "overallPolish": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback"
+      "feedback": "string with feedback"
     }
   },
   "resumeSections": {
-    "professionalSummary": "detailed analysis",
-    "workExperience": "detailed analysis",
-    "education": "detailed analysis",
-    "technicalSkills": "detailed analysis",
-    "keyAchievements": "detailed analysis"
+    "professionalSummary": "string",
+    "workExperience": "string",
+    "education": "string",
+    "technicalSkills": "string",
+    "keyAchievements": "string"
   },
-  "identifiedSkills": ["list of skills"],
-  "primaryKeywords": ["important keywords"],
-  "targetKeywords": ["only if job description provided"],
-  "suggestedImprovements": ["improvement suggestions"],
+  "identifiedSkills": ["array of strings"],
+  "primaryKeywords": ["array of strings"],
+  "suggestedImprovements": ["array of strings"],
   "generalFeedback": {
-    "overall": "comprehensive feedback",
-    "strengths": ["key strengths"],
-    "actionItems": ["action items"]
+    "overall": "string",
+    "strengths": ["array of strings"],
+    "actionItems": ["array of strings"]
   }
 }
 
-Rules:
-1. ALL fields are required except targetKeywords and jobSpecificFeedback
-2. Return ONLY valid JSON, no other text
-3. Never omit any required field
-4. Use empty arrays [] if no items found
-5. Use descriptive text "No [x] available" for empty text fields
-6. Provide specific, actionable feedback`;
+CRITICAL REQUIREMENTS:
+1. ALL fields are required including summaryClarity and overallPolish
+2. Never omit any fields
+3. For any field you cannot analyze, provide defaults:
+   - For scores: use score=1 and feedback="No analysis available"
+   - For arrays: use empty array []
+   - For strings: use "No data available"
+4. Return ONLY valid JSON with no additional text`;
 
 // Chunk and summarize long text
 async function preprocessText(text: string): Promise<string> {
@@ -131,7 +132,7 @@ async function preprocessText(text: string): Promise<string> {
     const chunks = text.match(/.{1,12000}/g) || [];
     const summaries = await Promise.all(chunks.map(async (chunk) => {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", 
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [
           {
             role: "system",
@@ -154,6 +155,35 @@ async function preprocessText(text: string): Promise<string> {
   }
 }
 
+// Default values for missing fields
+const defaultScoreSection = {
+  score: 1,
+  maxScore: 10,
+  feedback: "No analysis available"
+};
+
+const defaultScores = {
+  keywordsRelevance: { ...defaultScoreSection, keywords: [] },
+  achievementsMetrics: { ...defaultScoreSection, highlights: [] },
+  structureReadability: defaultScoreSection,
+  summaryClarity: defaultScoreSection,
+  overallPolish: defaultScoreSection
+};
+
+const defaultResumeSections = {
+  professionalSummary: "No summary available",
+  workExperience: "No experience details available",
+  education: "No education details available",
+  technicalSkills: "No skills details available",
+  keyAchievements: "No achievements available"
+};
+
+const defaultGeneralFeedback = {
+  overall: "No general feedback available",
+  strengths: [],
+  actionItems: []
+};
+
 // Main analysis function
 export async function analyzeResumeWithAI(
   content: string,
@@ -168,21 +198,12 @@ export async function analyzeResumeWithAI(
 
     // Preprocess and chunk long text if needed
     const processedContent = await preprocessText(content);
-    console.log('Content processed:', {
-      originalLength: content.length,
-      processedLength: processedContent.length,
-      wasChunked: content.length !== processedContent.length
-    });
 
     // Parse job description if provided
     let parsedJobDescription: JobDescription | undefined;
     if (jobDescription) {
       try {
         parsedJobDescription = await parseJobDescription(jobDescription);
-        console.log('Job description parsed:', {
-          roleTitle: parsedJobDescription.roleTitle,
-          skillsCount: parsedJobDescription.skills?.length || 0
-        });
       } catch (error) {
         console.error('Job description parsing failed:', error);
         throw new Error(`Failed to parse job description: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -196,14 +217,7 @@ Additionally, analyze this resume against these job requirements:
 - Experience Required: ${parsedJobDescription.yearsOfExperience}
 - Industry: ${parsedJobDescription.industry}
 - Required Skills: ${parsedJobDescription.skills?.join(', ')}
-- Key Requirements: ${parsedJobDescription.requirements?.join('\n')}
-
-Focus on:
-1. Skills alignment and gaps
-2. Experience level match
-3. Industry relevance
-4. Required vs. present keywords
-5. Specific improvements for this role` : '';
+- Key Requirements: ${parsedJobDescription.requirements?.join('\n')}` : '';
 
     const finalPrompt = SYSTEM_PROMPT + jobContext;
 
@@ -238,53 +252,56 @@ Focus on:
       // Parse and validate response
       const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
 
-      // Add fallback values for required fields if missing
-      parsedResponse.score = parsedResponse.score || 0;
-      parsedResponse.scores = parsedResponse.scores || {
-        keywordsRelevance: { score: 1, maxScore: 10, feedback: "No analysis available", keywords: [] },
-        achievementsMetrics: { score: 1, maxScore: 10, feedback: "No analysis available", highlights: [] },
-        structureReadability: { score: 1, maxScore: 10, feedback: "No analysis available" },
-        summaryClarity: { score: 1, maxScore: 10, feedback: "No analysis available" },
-        overallPolish: { score: 1, maxScore: 10, feedback: "No analysis available" }
-      };
-      parsedResponse.resumeSections = parsedResponse.resumeSections || {
-        professionalSummary: "No summary available",
-        workExperience: "No experience details available",
-        education: "No education details available",
-        technicalSkills: "No skills details available",
-        keyAchievements: "No achievements available"
-      };
-      parsedResponse.identifiedSkills = parsedResponse.identifiedSkills || [];
-      parsedResponse.primaryKeywords = parsedResponse.primaryKeywords || [];
-      parsedResponse.suggestedImprovements = parsedResponse.suggestedImprovements || [];
-      parsedResponse.generalFeedback = parsedResponse.generalFeedback || {
-        overall: "No general feedback available",
-        strengths: [],
-        actionItems: []
-      };
-
-      // Get job-specific analysis if needed
-      if (parsedJobDescription) {
-        const jobAnalysis = await analyzeResumeWithJobDescription(processedContent, parsedJobDescription);
-        parsedResponse.jobSpecificFeedback = jobAnalysis;
-        parsedResponse.targetKeywords = parsedResponse.targetKeywords || [];
-      }
-
-      // Log final structure for debugging
-      console.log('Final response structure:', {
-        hasScore: typeof parsedResponse.score === 'number',
+      // Log parsed structure before applying defaults
+      console.log('Initial parsed response structure:', {
         hasScores: !!parsedResponse.scores,
-        hasResumeSections: !!parsedResponse.resumeSections,
-        hasGeneralFeedback: !!parsedResponse.generalFeedback,
-        skillsCount: parsedResponse.identifiedSkills.length,
+        hasSummaryClarity: !!parsedResponse.scores?.summaryClarity,
+        hasOverallPolish: !!parsedResponse.scores?.overallPolish,
         timestamp: new Date().toISOString()
       });
 
-      // Validate against schema
-      return resumeAnalysisResponseSchema.parse(parsedResponse);
+      // Add fallback values for required fields
+      const enhancedResponse = {
+        score: parsedResponse.score || 0,
+        scores: {
+          ...defaultScores,
+          ...parsedResponse.scores,
+          summaryClarity: parsedResponse.scores?.summaryClarity || defaultScores.summaryClarity,
+          overallPolish: parsedResponse.scores?.overallPolish || defaultScores.overallPolish
+        },
+        resumeSections: {
+          ...defaultResumeSections,
+          ...parsedResponse.resumeSections
+        },
+        identifiedSkills: parsedResponse.identifiedSkills || [],
+        primaryKeywords: parsedResponse.primaryKeywords || [],
+        suggestedImprovements: parsedResponse.suggestedImprovements || [],
+        generalFeedback: {
+          ...defaultGeneralFeedback,
+          ...parsedResponse.generalFeedback
+        }
+      };
+
+      // Add job-specific data if available
+      if (parsedJobDescription) {
+        const jobAnalysis = await analyzeResumeWithJobDescription(processedContent, parsedJobDescription);
+        enhancedResponse.jobSpecificFeedback = jobAnalysis;
+        enhancedResponse.targetKeywords = parsedResponse.targetKeywords || [];
+      }
+
+      // Log final structure before validation
+      console.log('Final response structure:', {
+        hasScores: true,
+        hasSummaryClarity: true,
+        hasOverallPolish: true,
+        timestamp: new Date().toISOString()
+      });
+
+      // Validate enhanced response
+      return resumeAnalysisResponseSchema.parse(enhancedResponse);
 
     } catch (error) {
-      console.error('Response parsing/validation error:', {
+      console.error('Response processing error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         isZodError: error instanceof z.ZodError,
