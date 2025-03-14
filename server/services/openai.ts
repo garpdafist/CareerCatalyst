@@ -8,8 +8,8 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Basic schema without defaults or minimums
-const resumeAnalysisResponseSchema = z.object({
+// Basic schema without defaults for resume-only analysis
+const baseAnalysisSchema = z.object({
   score: z.number(),
   scores: z.object({
     keywordsRelevance: z.object({
@@ -47,18 +47,24 @@ const resumeAnalysisResponseSchema = z.object({
     overall: z.string(),
     strengths: z.array(z.string()),
     actionItems: z.array(z.string())
-  }),
+  })
+});
+
+// Schema for job analysis extension
+const jobAnalysisSchema = baseAnalysisSchema.extend({
   jobAnalysis: z.object({
     alignmentAndStrengths: z.array(z.string()),
     gapsAndConcerns: z.array(z.string()),
     recommendationsToTailor: z.array(z.string()),
     overallFit: z.string()
-  }).optional()
+  })
 });
 
-type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+type ResumeOnlyAnalysis = z.infer<typeof baseAnalysisSchema>;
+type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the provided resume carefully and return a JSON response with EXACTLY these fields:
+// Original resume-only prompt that worked well
+const RESUME_ONLY_PROMPT = `You are an expert resume analyzer. Analyze the provided resume thoroughly and return a JSON object with these exact fields:
 
 {
   "score": (overall score 0-100),
@@ -66,57 +72,50 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the provided r
     "keywordsRelevance": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze keyword usage in detail",
+      "feedback": "analyze keyword usage and relevance in detail",
       "keywords": ["list ALL relevant keywords found"]
     },
     "achievementsMetrics": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze quantifiable achievements",
+      "feedback": "analyze quantifiable achievements and impact",
       "highlights": ["list ALL achievements found"]
     },
     "structureReadability": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze resume structure"
+      "feedback": "analyze resume structure and organization"
     },
     "summaryClarity": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze professional summary"
+      "feedback": "analyze professional summary effectiveness"
     },
     "overallPolish": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze overall presentation"
+      "feedback": "analyze overall professional presentation"
     }
   },
   "identifiedSkills": ["list ALL technical and soft skills found"],
   "primaryKeywords": ["list ALL important keywords found"],
   "suggestedImprovements": ["list ALL specific improvements needed"],
   "generalFeedback": {
-    "overall": "provide detailed analysis of strengths and weaknesses",
+    "overall": "provide comprehensive analysis of strengths and weaknesses",
     "strengths": ["list ALL key strengths found"],
     "actionItems": ["list ALL priority actions needed"]
   }
 }
 
 CRITICAL REQUIREMENTS:
-1. Return ALL fields exactly as shown
-2. Include as many items as possible in each array
-3. Provide detailed feedback in each section
-4. Don't skip any fields
-5. Return ONLY valid JSON`;
+1. Provide detailed, specific feedback for each section
+2. Include exact phrases or terms from the resume
+3. List ALL relevant items in arrays (skills, keywords, etc.)
+4. Make feedback actionable and clear
+5. Score conservatively - most resumes score 60-75 unless exceptional
+6. Return ONLY valid JSON with ALL fields shown above`;
 
-const JOB_ANALYSIS_PROMPT = `Also analyze how well the resume matches the job requirements. Add to your response:
-
-"jobAnalysis": {
-  "alignmentAndStrengths": ["list ALL matches with requirements"],
-  "gapsAndConcerns": ["list ALL gaps and mismatches"],
-  "recommendationsToTailor": ["list ALL specific suggestions"],
-  "overallFit": "provide detailed assessment of fit"
-}`;
-
+// Chunk and summarize long text
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
     return text;
@@ -130,7 +129,7 @@ async function preprocessText(text: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "Summarize while keeping all key information about skills, experience, and achievements."
+            content: "Summarize while preserving ALL key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
           },
           { role: "user", content: chunk }
         ],
@@ -142,14 +141,75 @@ async function preprocessText(text: string): Promise<string> {
     return summaries.join('\n\n');
   } catch (error) {
     console.error('Text preprocessing error:', error);
-    return text;
+    throw error;
   }
 }
 
+// Resume-only analysis function
+async function analyzeResumeOnly(content: string): Promise<ResumeOnlyAnalysis> {
+  try {
+    console.log('Starting resume-only analysis...', {
+      contentLength: content.length,
+      timestamp: new Date().toISOString()
+    });
+
+    const processedContent = await preprocessText(content);
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+      messages: [
+        { role: "system", content: RESUME_ONLY_PROMPT },
+        { role: "user", content: processedContent }
+      ],
+      temperature: 0.1,
+      response_format: { type: "json_object" }
+    });
+
+    if (!response.choices[0]?.message?.content) {
+      throw new Error('OpenAI returned an empty response');
+    }
+
+    // Log raw API response for debugging
+    console.log('Raw OpenAI Response:', {
+      content: response.choices[0].message.content,
+      timestamp: new Date().toISOString()
+    });
+
+    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+
+    // Log parsed structure before validation
+    console.log('Parsed response structure:', {
+      hasScore: typeof parsedResponse.score === 'number',
+      hasScores: !!parsedResponse.scores,
+      identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
+      keywordsCount: parsedResponse.primaryKeywords?.length,
+      suggestedImprovementsCount: parsedResponse.suggestedImprovements?.length,
+      hasGeneralFeedback: !!parsedResponse.generalFeedback,
+      generalFeedbackLength: parsedResponse.generalFeedback?.overall?.length,
+      timestamp: new Date().toISOString()
+    });
+
+    return baseAnalysisSchema.parse(parsedResponse);
+  } catch (error) {
+    console.error('Resume analysis error:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+}
+
+// Main analysis function - routes to appropriate analysis based on input
 export async function analyzeResumeWithAI(
   content: string,
   jobDescription?: string
-): Promise<ResumeAnalysisResponse> {
+): Promise<ResumeOnlyAnalysis | JobAnalysis> {
+  if (!jobDescription) {
+    // Use the stable resume-only flow when no job description is provided
+    return analyzeResumeOnly(content);
+  }
+
   try {
     console.log('Starting resume analysis...', {
       contentLength: content.length,
@@ -159,9 +219,13 @@ export async function analyzeResumeWithAI(
 
     const processedContent = await preprocessText(content);
 
-    const prompt = jobDescription 
-      ? `${SYSTEM_PROMPT}\n\nJob Description:\n${jobDescription}\n\n${JOB_ANALYSIS_PROMPT}`
-      : SYSTEM_PROMPT;
+    const prompt = `${RESUME_ONLY_PROMPT}\n\nJob Description:\n${jobDescription}\n\n"jobAnalysis": {
+      "alignmentAndStrengths": ["list ALL matches with requirements"],
+      "gapsAndConcerns": ["list ALL gaps and mismatches"],
+      "recommendationsToTailor": ["list ALL specific suggestions"],
+      "overallFit": "provide detailed assessment of fit"
+    }`;
+
 
     // Log the constructed prompt
     console.log('Analysis prompt:', {
@@ -211,7 +275,7 @@ export async function analyzeResumeWithAI(
       });
 
       // Validate against schema
-      return resumeAnalysisResponseSchema.parse(parsedResponse);
+      return jobAnalysisSchema.parse(parsedResponse);
 
     } catch (error) {
       console.error('Response processing error:', {
@@ -260,11 +324,11 @@ Provide a detailed analysis of how this resume aligns with the job requirements.
 5. Keywords and terminology optimization`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: JOB_ANALYSIS_PROMPT
+          content: "Provide a detailed analysis of how well the resume matches the job description. Focus on skill matches, experience alignment, and areas for improvement."
         },
         {
           role: "user",
