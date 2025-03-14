@@ -668,39 +668,43 @@ async function analyzeResume(content: string, userId: string) {
 
       // Detailed scores
       scores: {
-        keywordsRelevance: rawAnalysis.scores?.keywordsRelevance || 0,
-        achievementsMetrics: rawAnalysis.scores?.achievementsMetrics || 0,
-        structureReadability: rawAnalysis.scores?.structureReadability || 0,
-        summaryClarity: rawAnalysis.scores?.summaryClarity || 0,
-        overallPolish: rawAnalysis.scores?.overallPolish || 0
+        keywordsRelevance: rawAnalysis.scores?.keywordsRelevance?.score || 0,
+        achievementsMetrics: rawAnalysis.scores?.achievementsMetrics?.score || 0,
+        structureReadability: rawAnalysis.scores?.structureReadability?.score || 0,
+        summaryClarity: rawAnalysis.scores?.summaryClarity?.score || 0,
+        overallPolish: rawAnalysis.scores?.overallPolish?.score || 0
       },
+
+      // Keywords and feedback
+      primaryKeywords: rawAnalysis.primaryKeywords || [],
+      generalFeedback: rawAnalysis.generalFeedback?.overall || "No feedback available",
 
       // Map scores to scoring criteria structure
       scoringCriteria: {
         keywordsRelevance: { 
-          score: rawAnalysis.scores?.keywordsRelevance || 0, 
+          score: rawAnalysis.scores?.keywordsRelevance?.score || 0, 
           maxScore: 10, 
-          feedback: rawAnalysis.feedback?.keywordsRelevance || "Keywords analysis" 
+          feedback: rawAnalysis.scores?.keywordsRelevance?.feedback || "Keywords analysis" 
         },
         achievementsMetrics: { 
-          score: rawAnalysis.scores?.achievementsMetrics || 0, 
+          score: rawAnalysis.scores?.achievementsMetrics?.score || 0, 
           maxScore: 10, 
-          feedback: rawAnalysis.feedback?.achievementsMetrics || "Achievements analysis" 
+          feedback: rawAnalysis.scores?.achievementsMetrics?.feedback || "Achievements analysis" 
         },
         structureReadability: { 
-          score: rawAnalysis.scores?.structureReadability || 0, 
+          score: rawAnalysis.scores?.structureReadability?.score || 0, 
           maxScore: 10, 
-          feedback: rawAnalysis.feedback?.structureReadability || "Structure analysis" 
+          feedback: rawAnalysis.scores?.structureReadability?.feedback || "Structure analysis" 
         },
         summaryClarity: { 
-          score: rawAnalysis.scores?.summaryClarity || 0, 
+          score: rawAnalysis.scores?.summaryClarity?.score || 0, 
           maxScore: 10, 
-          feedback: rawAnalysis.feedback?.summaryClarity || "Summary clarity analysis" 
+          feedback: rawAnalysis.scores?.summaryClarity?.feedback || "Summary clarity analysis" 
         },
         overallPolish: { 
-          score: rawAnalysis.scores?.overallPolish || 0, 
+          score: rawAnalysis.scores?.overallPolish?.score || 0, 
           maxScore: 10, 
-          feedback: rawAnalysis.feedback?.overallPolish || "Polish analysis" 
+          feedback: rawAnalysis.scores?.overallPolish?.feedback || "Polish analysis" 
         }
       },
 
