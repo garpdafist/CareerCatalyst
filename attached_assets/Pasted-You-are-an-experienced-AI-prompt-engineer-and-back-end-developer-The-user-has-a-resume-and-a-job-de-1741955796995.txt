@@ -1,0 +1,26 @@
+You are an experienced AI prompt engineer and back-end developer. The user has a resume and a job description, but the AI output doesn’t seem to reflect the JD thoroughly, and the score is often quite high. Please improve the logic:
+
+1) **Enforce Job-Specific References**:
+   - In the AI prompt, explicitly say: “You MUST incorporate relevant requirements from the job description into the final suggestions. Create a ‘Job-Specific Recommendations’ section with at least 2–3 bullet points that reference the job role’s requirements, skills, or experiences the user should emphasize.”
+   - Also instruct the AI: “If a job description is provided, mention how the user’s resume can be aligned to that specific role or company.”
+
+2) **Refine Scoring Logic**:
+   - If we consistently get high scores (like 85 or 90) even for partial matches, consider adjusting the prompt or any weighting. 
+   - Possibly reduce the default or instruct the AI to be more critical, e.g., “Score carefully, and do not inflate the rating if key job requirements are missing.”
+
+3) **Ensure a Distinct “Job-Specific Recommendations” Section**:
+   - The AI output should produce something like:
+     "jobSpecificFeedback": [
+       "Add more detail about your B2B marketing experience to match the job’s requirement for B2B campaigns.",
+       "Highlight your experience with data tools or automation tools (e.g., Airtable, LinkedHelper) as listed in the JD."
+     ]
+   - This is separate from “Suggested Improvements,” which might be more general.
+
+4) **Implementation & Testing**:
+   - Update the system or user prompt to strongly require a dedicated “Job-Specific Recommendations” array. 
+   - If no job description is present, the AI can skip or set that array to empty. 
+   - Show me the final code snippet or diff where you changed the prompt and possibly the fallback logic.
+   - Test with a known job description. Confirm the final JSON includes a “jobSpecificFeedback” or “jobSpecificRecommendations” field referencing the JD’s details. 
+   - Also watch if the score is more realistic (not always 85+).
+
+Let’s ensure the LLM truly references the JD and yields more accurate, job-focused suggestions, plus a more balanced scoring approach.
