@@ -158,9 +158,9 @@ export class DatabaseStorage implements IStorage {
           scores: data.analysis.scores,
           resumeSections: data.analysis.resumeSections,
           identifiedSkills: data.analysis.identifiedSkills,
-          importantKeywords: data.analysis.primaryKeywords || data.analysis.importantKeywords,
+          importantKeywords: data.analysis.primaryKeywords || data.analysis.importantKeywords || [],
           suggestedImprovements: data.analysis.suggestedImprovements,
-          generalFeedback: data.analysis.generalFeedback || data.analysis.feedback,
+          generalFeedback: data.analysis.generalFeedback?.overall || data.analysis.generalFeedback || data.analysis.feedback || "",
           createdAt: new Date(),
           updatedAt: new Date()
         })
