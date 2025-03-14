@@ -8,7 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Response validation schema with more lenient validation
+// Response validation schema
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
   scores: z.object({
@@ -17,35 +17,35 @@ const resumeAnalysisResponseSchema = z.object({
       maxScore: z.literal(10),
       feedback: z.string(),
       keywords: z.array(z.string())
-    }).optional(),
+    }),
     achievementsMetrics: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
       feedback: z.string(),
       highlights: z.array(z.string())
-    }).optional(),
+    }),
     structureReadability: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
       feedback: z.string()
-    }).optional(),
+    }),
     summaryClarity: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
       feedback: z.string()
-    }).optional(),
+    }),
     overallPolish: z.object({
       score: z.number().min(1).max(10),
       maxScore: z.literal(10),
       feedback: z.string()
-    }).optional()
-  }).optional(),
-  identifiedSkills: z.array(z.string()).optional(),
-  primaryKeywords: z.array(z.string()).optional(),
-  suggestedImprovements: z.array(z.string()).optional(),
+    })
+  }),
+  identifiedSkills: z.array(z.string()),
+  primaryKeywords: z.array(z.string()).min(1),  // Ensure at least one keyword
+  suggestedImprovements: z.array(z.string()),
   generalFeedback: z.object({
-    overall: z.string()
-  }).optional(),
+    overall: z.string().min(1)  // Ensure non-empty feedback
+  }),
   jobAnalysis: z.object({
     alignmentAndStrengths: z.array(z.string()),
     gapsAndConcerns: z.array(z.string()),
@@ -56,46 +56,52 @@ const resumeAnalysisResponseSchema = z.object({
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Return a JSON object with these fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Return a JSON object with these EXACT fields:
 
 {
   "score": (overall score 0-100),
   "scores": {
     "keywordsRelevance": {
-      "score": (number between 1-10),
+      "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed keyword analysis",
-      "keywords": ["found keywords"]
+      "feedback": "detailed feedback about keyword usage",
+      "keywords": ["list ALL relevant keywords"]
     },
     "achievementsMetrics": {
-      "score": (number between 1-10),
+      "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed achievement analysis",
-      "highlights": ["key achievements"]
+      "feedback": "detailed feedback about achievements",
+      "highlights": ["list ALL key achievements"]
     },
     "structureReadability": {
-      "score": (number between 1-10),
+      "score": (1-10),
       "maxScore": 10,
-      "feedback": "structure analysis"
+      "feedback": "analyze resume structure"
     },
     "summaryClarity": {
-      "score": (number between 1-10),
+      "score": (1-10),
       "maxScore": 10,
-      "feedback": "summary analysis"
+      "feedback": "analyze professional summary"
     },
     "overallPolish": {
-      "score": (number between 1-10),
+      "score": (1-10),
       "maxScore": 10,
-      "feedback": "polish analysis"
+      "feedback": "analyze overall presentation"
     }
   },
-  "identifiedSkills": ["found skills"],
-  "primaryKeywords": ["important keywords"],
-  "suggestedImprovements": ["suggested improvements"],
+  "identifiedSkills": ["list ALL skills found"],
+  "primaryKeywords": ["list ALL important keywords from resume"],
+  "suggestedImprovements": ["list specific improvements needed"],
   "generalFeedback": {
-    "overall": "comprehensive feedback"
+    "overall": "provide detailed analysis of the resume's strengths and areas for improvement"
   }
-}`;
+}
+
+CRITICAL REQUIREMENTS:
+1. ALWAYS include primaryKeywords with ALL important terms found
+2. ALWAYS provide detailed generalFeedback.overall
+3. Never skip any fields
+4. Return ONLY valid JSON`;
 
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
@@ -172,19 +178,27 @@ export async function analyzeResumeWithAI(
 
     const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
 
-    // Log parsed structure for debugging
-    console.log('Parsed Response Structure:', {
-      hasScore: typeof parsedResponse.score === 'number',
-      hasScores: typeof parsedResponse.scores === 'object',
-      hasKeywordsRelevance: !!parsedResponse.scores?.keywordsRelevance,
-      identifiedSkillsLength: parsedResponse.identifiedSkills?.length,
-      primaryKeywordsLength: parsedResponse.primaryKeywords?.length,
-      generalFeedbackOverall: parsedResponse.generalFeedback?.overall?.substring(0, 50),
+    // Log parsed structure before validation
+    console.log('Before validation:', {
+      hasGeneralFeedback: !!parsedResponse.generalFeedback,
+      generalFeedbackContent: parsedResponse.generalFeedback?.overall,
+      primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
+      primaryKeywords: parsedResponse.primaryKeywords,
       timestamp: new Date().toISOString()
     });
 
     // Validate response
     const validated = resumeAnalysisResponseSchema.parse(parsedResponse);
+
+    // Log validated response
+    console.log('After validation:', {
+      hasGeneralFeedback: !!validated.generalFeedback,
+      generalFeedbackContent: validated.generalFeedback?.overall,
+      primaryKeywordsCount: validated.primaryKeywords.length,
+      primaryKeywords: validated.primaryKeywords,
+      timestamp: new Date().toISOString()
+    });
+
     return validated;
 
   } catch (error) {
@@ -196,9 +210,19 @@ export async function analyzeResumeWithAI(
       timestamp: new Date().toISOString()
     });
 
-    // Return a minimal valid response instead of throwing
+    // Return a minimal valid response
     return {
       score: 60,
+      scores: {
+        keywordsRelevance: { score: 1, maxScore: 10, feedback: "Analysis unavailable", keywords: [] },
+        achievementsMetrics: { score: 1, maxScore: 10, feedback: "Analysis unavailable", highlights: [] },
+        structureReadability: { score: 1, maxScore: 10, feedback: "Analysis unavailable" },
+        summaryClarity: { score: 1, maxScore: 10, feedback: "Analysis unavailable" },
+        overallPolish: { score: 1, maxScore: 10, feedback: "Analysis unavailable" }
+      },
+      identifiedSkills: [],
+      primaryKeywords: ["Resume analysis currently unavailable"],
+      suggestedImprovements: [],
       generalFeedback: {
         overall: "Analysis currently unavailable. Please try again."
       }
