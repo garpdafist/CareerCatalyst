@@ -2,7 +2,6 @@ import { JobDescription, jobDescriptionSchema } from "@shared/schema";
 import OpenAI from "openai";
 import { z } from "zod";
 import { parseJobDescription, analyzeResumeWithJobDescription } from "./job-description";
-import type { JobDescription } from "@shared/schema";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -55,8 +54,8 @@ const resumeAnalysisResponseSchema = z.object({
   suggestedImprovements: z.array(z.string()),
   generalFeedback: z.object({
     overall: z.string().min(1),
-    strengths: z.array(z.string()),
-    actionItems: z.array(z.string())
+    strengths: z.array(z.string()).min(1),
+    actionItems: z.array(z.string()).min(1)
   }),
   jobSpecificFeedback: z.string().optional()
 });
@@ -71,56 +70,57 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Return ONLY a JSON obj
     "keywordsRelevance": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "string with feedback",
-      "keywords": ["array of strings"]
+      "feedback": "detailed feedback",
+      "keywords": ["at least 3 relevant keywords"]
     },
     "achievementsMetrics": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "string with feedback",
-      "highlights": ["array of strings"]
+      "feedback": "detailed feedback",
+      "highlights": ["at least 3 key achievements"]
     },
     "structureReadability": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "string with feedback"
+      "feedback": "detailed feedback"
     },
     "summaryClarity": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "string with feedback"
+      "feedback": "detailed feedback"
     },
     "overallPolish": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "string with feedback"
+      "feedback": "detailed feedback"
     }
   },
   "resumeSections": {
-    "professionalSummary": "string",
-    "workExperience": "string",
-    "education": "string",
-    "technicalSkills": "string",
-    "keyAchievements": "string"
+    "professionalSummary": "detailed analysis",
+    "workExperience": "detailed analysis",
+    "education": "detailed analysis",
+    "technicalSkills": "detailed analysis",
+    "keyAchievements": "detailed analysis"
   },
-  "identifiedSkills": ["array of strings"],
-  "primaryKeywords": ["array of strings"],
-  "suggestedImprovements": ["array of strings"],
+  "identifiedSkills": ["minimum 3 specific skills"],
+  "primaryKeywords": ["minimum 3 important keywords"],
+  "suggestedImprovements": ["minimum 3 actionable improvements"],
   "generalFeedback": {
-    "overall": "string",
-    "strengths": ["array of strings"],
-    "actionItems": ["array of strings"]
+    "overall": "comprehensive feedback (minimum 100 words)",
+    "strengths": ["REQUIRED: 2-3 specific key strengths found in resume"],
+    "actionItems": ["REQUIRED: 2-3 prioritized action items"]
   }
 }
 
 CRITICAL REQUIREMENTS:
-1. ALL fields are required including summaryClarity and overallPolish
-2. Never omit any fields
-3. For any field you cannot analyze, provide defaults:
-   - For scores: use score=1 and feedback="No analysis available"
-   - For arrays: use empty array []
-   - For strings: use "No data available"
-4. Return ONLY valid JSON with no additional text`;
+1. ALL fields are required (except targetKeywords and jobSpecificFeedback)
+2. The 'generalFeedback.strengths' array MUST contain 2-3 specific strengths found in the resume
+3. The 'generalFeedback.actionItems' array MUST contain 2-3 specific prioritized tasks
+4. Never return empty arrays - provide at least one item
+5. Return ONLY valid JSON with no additional text
+6. If you can't find specific strengths or action items, use these defaults:
+   - strengths: ["Demonstrates professional experience", "Has relevant education"]
+   - actionItems: ["Add more quantifiable achievements", "Enhance skills section"]`;
 
 // Chunk and summarize long text
 async function preprocessText(text: string): Promise<string> {
@@ -180,8 +180,8 @@ const defaultResumeSections = {
 
 const defaultGeneralFeedback = {
   overall: "No general feedback available",
-  strengths: [],
-  actionItems: []
+  strengths: ["Demonstrates professional experience", "Has relevant education"], //Added defaults
+  actionItems: ["Add more quantifiable achievements", "Enhance skills section"] //Added defaults
 };
 
 // Main analysis function
@@ -278,7 +278,10 @@ Additionally, analyze this resume against these job requirements:
         suggestedImprovements: parsedResponse.suggestedImprovements || [],
         generalFeedback: {
           ...defaultGeneralFeedback,
-          ...parsedResponse.generalFeedback
+          ...parsedResponse.generalFeedback,
+          strengths: parsedResponse.generalFeedback?.strengths || defaultGeneralFeedback.strengths, //Added fallback
+          actionItems: parsedResponse.generalFeedback?.actionItems || defaultGeneralFeedback.actionItems //Added fallback
+
         }
       };
 
