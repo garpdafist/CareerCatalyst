@@ -44,9 +44,7 @@ const resumeAnalysisResponseSchema = z.object({
   primaryKeywords: z.array(z.string()),
   suggestedImprovements: z.array(z.string()),
   generalFeedback: z.object({
-    overall: z.string(),
-    strengths: z.array(z.string()),
-    actionItems: z.array(z.string())
+    overall: z.string()
   }),
   jobAnalysis: z.object({
     alignmentAndStrengths: z.array(z.string()),
@@ -92,12 +90,10 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the provided r
     }
   },
   "identifiedSkills": ["List of technical and soft skills"],
-  "primaryKeywords": ["List of important keywords"],
+  "primaryKeywords": ["List of ALL important keywords found in the resume"],
   "suggestedImprovements": ["List of specific improvements needed"],
   "generalFeedback": {
-    "overall": "Comprehensive analysis of strengths and weaknesses",
-    "strengths": ["List of key strengths"],
-    "actionItems": ["List of priority actions"]
+    "overall": "Comprehensive analysis of the resume's strengths and areas for improvement"
   }
 }
 
@@ -106,8 +102,10 @@ CRITICAL REQUIREMENTS:
 2. Include specific examples from the resume
 3. Make feedback actionable and clear
 4. Never return empty arrays or generic placeholders
-5. Score conservatively - most resumes score 60-75
-6. Return ONLY valid JSON`;
+5. For primaryKeywords, extract ALL important terms and phrases from the resume
+6. For generalFeedback.overall, provide a thorough analysis
+7. Score conservatively - most resumes score 60-75
+8. Return ONLY valid JSON`;
 
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
@@ -195,8 +193,8 @@ export async function analyzeResumeWithAI(
     console.log('Parsed Response Structure:', {
       hasScore: typeof parsedResponse.score === 'number',
       hasScores: !!parsedResponse.scores,
-      hasGeneralFeedback: !!parsedResponse.generalFeedback,
-      generalFeedbackContent: parsedResponse.generalFeedback,
+      primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
+      generalFeedback: parsedResponse.generalFeedback?.overall,
       timestamp: new Date().toISOString()
     });
 

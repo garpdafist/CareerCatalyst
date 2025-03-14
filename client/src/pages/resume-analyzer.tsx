@@ -122,19 +122,9 @@ const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
   );
 };
 
-// Update the general feedback section with stronger fallbacks and array handling
+// Update the general feedback section to show only overall feedback
 const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
-  const { 
-    generalFeedback: {
-      overall = "No general feedback available",
-      strengths = ["Demonstrates professional experience", "Has relevant education"],
-      actionItems = ["Add more quantifiable achievements", "Enhance skills section"]
-    } = {
-      overall: "No general feedback available",
-      strengths: ["Demonstrates professional experience", "Has relevant education"],
-      actionItems: ["Add more quantifiable achievements", "Enhance skills section"]
-    }
-  } = data;
+  const { generalFeedback: { overall = "No general feedback available" } = {} } = data;
 
   return (
     <div>
@@ -144,36 +134,6 @@ const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
           <p className="text-sm md:text-base text-gray-600">
             {overall}
           </p>
-        </div>
-
-        <div>
-          <h4 className="text-sm font-medium mb-2 text-green-700">Key Strengths</h4>
-          <ul className="space-y-2">
-            {strengths.map((strength, index) => (
-              <li
-                key={index}
-                className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100"
-              >
-                <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
-                <span className="text-green-700">{strength}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="text-sm font-medium mb-2 text-blue-700">Priority Action Items</h4>
-          <ul className="space-y-2">
-            {actionItems.map((item, index) => (
-              <li
-                key={index}
-                className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100"
-              >
-                <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
-                <span className="text-blue-700">{item}</span>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </div>
@@ -236,6 +196,7 @@ const JobAnalysisSection = ({ data }: { data: ResumeAnalysis }) => {
     </div>
   );
 };
+
 
 
 export default function ResumeAnalyzer() {
