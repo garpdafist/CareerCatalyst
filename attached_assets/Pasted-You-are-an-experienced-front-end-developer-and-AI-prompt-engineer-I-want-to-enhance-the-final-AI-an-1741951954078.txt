@@ -1,0 +1,24 @@
+You are an experienced front-end developer and AI prompt engineer. I want to enhance the final AI analysis results with three key changes:
+
+1) **Structure the General Feedback Output**:
+   - Currently, “generalFeedback” is a single paragraph. I want it broken into smaller, more readable sections or bullet points if possible.
+   - For example, the AI might return a multi-sentence paragraph, but we can split it by sentences or use a short list for clarity.
+   - Alternatively, the AI can produce structured sub-points like “Overall Impression,” “Strengths,” “Areas to Improve.”
+
+2) **Add “Primary Keywords” vs. “Primary & Target Keywords”**:
+   - If the user only provides a resume (no job description), display a “Primary Keywords” section listing the user’s identified keywords from the resume.
+   - If the user also provides a job description, rename that section to “Primary & Target Keywords,” showing the user’s resume keywords plus any job-specific or “target” keywords gleaned from the JD.
+
+3) **Create a New Section for JD-Related Suggestions**:
+   - If a job description is provided, add a separate section, e.g. “Job-Specific Recommendations,” that references how the user can tailor their resume to that JD.
+   - The AI should incorporate relevant requirements or keywords from the JD into these suggestions.
+
+**Implementation & Testing**:
+   - Update the final code (server/analysis logic and front-end) to:
+     - Instruct the AI to produce bullet-pointed or sub-sectioned “generalFeedback” for better readability.
+     - Conditionally label the keyword section as “Primary Keywords” (resume only) or “Primary & Target Keywords” (resume + JD).
+     - If JD is present, create “Job-Specific Recommendations” in the final JSON or output. 
+   - Show me a final code snippet or diff. 
+   - Test with both scenarios: (1) resume only, (2) resume + JD. Confirm the new sections and labels appear as intended.
+
+Let’s ensure the final analysis is more structured, has clearer “general feedback,” and includes job-specific suggestions plus the right keywords label depending on whether a JD is present.

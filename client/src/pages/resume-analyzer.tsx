@@ -75,6 +75,98 @@ const getFeedbackColor = (improvement: string): { text: string; bg: string; bord
     : { text: 'text-amber-700', bg: 'bg-amber-50/50', border: 'border-amber-100' };
 };
 
+// Update the keywords section to handle conditional rendering
+const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
+  const hasJobDescription = !!data.targetKeywords?.length;
+
+  return (
+    <div>
+      <h3 className="text-lg font-medium mb-3">
+        {hasJobDescription ? "Primary & Target Keywords" : "Primary Keywords"}
+      </h3>
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground mb-2">Keywords from your resume:</p>
+          <div className="flex flex-wrap gap-2">
+            {limitArrayLength(data.primaryKeywords).map((keyword, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
+              >
+                {keyword}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {hasJobDescription && data.targetKeywords && (
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">Target keywords from job description:</p>
+            <div className="flex flex-wrap gap-2">
+              {limitArrayLength(data.targetKeywords).map((keyword, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+                >
+                  {keyword}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Update the general feedback section to use the new structured format
+const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
+  return (
+    <div>
+      <h3 className="text-lg font-medium mb-3">General Feedback</h3>
+      <div className="space-y-4">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+          <p className="text-sm md:text-base text-gray-600">
+            {data.generalFeedback.overall}
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-medium mb-2 text-green-700">Key Strengths</h4>
+          <ul className="space-y-2">
+            {data.generalFeedback.strengths.map((strength, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100"
+              >
+                <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+                <span className="text-green-700">{strength}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-medium mb-2 text-blue-700">Priority Action Items</h4>
+          <ul className="space-y-2">
+            {data.generalFeedback.actionItems.map((item, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100"
+              >
+                <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
+                <span className="text-blue-700">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -362,6 +454,9 @@ export default function ResumeAnalyzer() {
                       </div>
                     </div>
 
+                    {/* Updated Keywords Section */}
+                    <KeywordsSection data={analyzeMutation.data} />
+
                     {/* Suggested Improvements */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
@@ -383,7 +478,7 @@ export default function ResumeAnalyzer() {
 
                     {/* Job-Specific Recommendations Section */}
                     {analyzeMutation.data.jobSpecificFeedback && (
-                      <div className="mt-6">
+                      <div>
                         <h3 className="text-lg font-medium mb-3">Job-Specific Recommendations</h3>
                         <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                           <p className="text-sm md:text-base text-blue-700 whitespace-pre-line">
@@ -393,13 +488,9 @@ export default function ResumeAnalyzer() {
                       </div>
                     )}
 
-                    {/* General Feedback */}
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">General Feedback</h3>
-                      <p className="text-sm md:text-base text-gray-600 bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-100">
-                        {analyzeMutation.data.generalFeedback}
-                      </p>
-                    </div>
+                    {/* Updated General Feedback Section */}
+                    <GeneralFeedbackSection data={analyzeMutation.data} />
+
 
                     {/* Add CTA Section */}
                     <div className="mt-8 pt-6 border-t border-gray-100">
@@ -419,7 +510,6 @@ export default function ResumeAnalyzer() {
                         </div>
                       </Link>
                     </div>
-
                   </div>
                 </CardContent>
               </Card>
