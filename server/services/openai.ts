@@ -8,35 +8,35 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Basic schema without defaults for resume-only analysis
-const baseAnalysisSchema = z.object({
-  score: z.number(),
+// Response validation schema 
+const resumeAnalysisResponseSchema = z.object({
+  score: z.number().min(0).max(100),
   scores: z.object({
     keywordsRelevance: z.object({
-      score: z.number(),
-      maxScore: z.number(),
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
       feedback: z.string(),
       keywords: z.array(z.string())
     }),
     achievementsMetrics: z.object({
-      score: z.number(),
-      maxScore: z.number(),
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
       feedback: z.string(),
       highlights: z.array(z.string())
     }),
     structureReadability: z.object({
-      score: z.number(),
-      maxScore: z.number(),
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
       feedback: z.string()
     }),
     summaryClarity: z.object({
-      score: z.number(),
-      maxScore: z.number(),
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
       feedback: z.string()
     }),
     overallPolish: z.object({
-      score: z.number(),
-      maxScore: z.number(),
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
       feedback: z.string()
     })
   }),
@@ -47,75 +47,68 @@ const baseAnalysisSchema = z.object({
     overall: z.string(),
     strengths: z.array(z.string()),
     actionItems: z.array(z.string())
-  })
-});
-
-// Schema for job analysis extension
-const jobAnalysisSchema = baseAnalysisSchema.extend({
+  }),
   jobAnalysis: z.object({
     alignmentAndStrengths: z.array(z.string()),
     gapsAndConcerns: z.array(z.string()),
     recommendationsToTailor: z.array(z.string()),
     overallFit: z.string()
-  })
+  }).optional()
 });
 
-type ResumeOnlyAnalysis = z.infer<typeof baseAnalysisSchema>;
-type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
+type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-// Original resume-only prompt that worked well
-const RESUME_ONLY_PROMPT = `You are an expert resume analyzer. Analyze the provided resume thoroughly and return a JSON object with these exact fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the provided resume thoroughly and return a JSON object with these EXACT fields:
 
 {
-  "score": (overall score 0-100),
+  "score": (overall score 0-100, be conservative - most resumes score 60-75),
   "scores": {
     "keywordsRelevance": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze keyword usage and relevance in detail",
-      "keywords": ["list ALL relevant keywords found"]
+      "feedback": "Detailed feedback about keyword usage",
+      "keywords": ["List of found keywords"]
     },
     "achievementsMetrics": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze quantifiable achievements and impact",
-      "highlights": ["list ALL achievements found"]
+      "feedback": "Analysis of quantifiable achievements",
+      "highlights": ["List of key achievements"]
     },
     "structureReadability": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze resume structure and organization"
+      "feedback": "Analysis of resume structure"
     },
     "summaryClarity": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze professional summary effectiveness"
+      "feedback": "Evaluation of professional summary"
     },
     "overallPolish": {
       "score": (number between 1-10),
       "maxScore": 10,
-      "feedback": "analyze overall professional presentation"
+      "feedback": "Assessment of overall presentation"
     }
   },
-  "identifiedSkills": ["list ALL technical and soft skills found"],
-  "primaryKeywords": ["list ALL important keywords found"],
-  "suggestedImprovements": ["list ALL specific improvements needed"],
+  "identifiedSkills": ["List of technical and soft skills"],
+  "primaryKeywords": ["List of important keywords"],
+  "suggestedImprovements": ["List of specific improvements needed"],
   "generalFeedback": {
-    "overall": "provide comprehensive analysis of strengths and weaknesses",
-    "strengths": ["list ALL key strengths found"],
-    "actionItems": ["list ALL priority actions needed"]
+    "overall": "Comprehensive analysis of strengths and weaknesses",
+    "strengths": ["List of key strengths"],
+    "actionItems": ["List of priority actions"]
   }
 }
 
 CRITICAL REQUIREMENTS:
-1. Provide detailed, specific feedback for each section
-2. Include exact phrases or terms from the resume
-3. List ALL relevant items in arrays (skills, keywords, etc.)
-4. Make feedback actionable and clear
-5. Score conservatively - most resumes score 60-75 unless exceptional
-6. Return ONLY valid JSON with ALL fields shown above`;
+1. Provide detailed feedback for each section
+2. Include specific examples from the resume
+3. Make feedback actionable and clear
+4. Never return empty arrays or generic placeholders
+5. Score conservatively - most resumes score 60-75
+6. Return ONLY valid JSON`;
 
-// Chunk and summarize long text
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
     return text;
@@ -129,7 +122,7 @@ async function preprocessText(text: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "Summarize while preserving ALL key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
+            content: "Summarize while preserving all key information about skills, experience, and achievements."
           },
           { role: "user", content: chunk }
         ],
@@ -145,71 +138,10 @@ async function preprocessText(text: string): Promise<string> {
   }
 }
 
-// Resume-only analysis function
-async function analyzeResumeOnly(content: string): Promise<ResumeOnlyAnalysis> {
-  try {
-    console.log('Starting resume-only analysis...', {
-      contentLength: content.length,
-      timestamp: new Date().toISOString()
-    });
-
-    const processedContent = await preprocessText(content);
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-      messages: [
-        { role: "system", content: RESUME_ONLY_PROMPT },
-        { role: "user", content: processedContent }
-      ],
-      temperature: 0.1,
-      response_format: { type: "json_object" }
-    });
-
-    if (!response.choices[0]?.message?.content) {
-      throw new Error('OpenAI returned an empty response');
-    }
-
-    // Log raw API response for debugging
-    console.log('Raw OpenAI Response:', {
-      content: response.choices[0].message.content,
-      timestamp: new Date().toISOString()
-    });
-
-    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
-
-    // Log parsed structure before validation
-    console.log('Parsed response structure:', {
-      hasScore: typeof parsedResponse.score === 'number',
-      hasScores: !!parsedResponse.scores,
-      identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
-      keywordsCount: parsedResponse.primaryKeywords?.length,
-      suggestedImprovementsCount: parsedResponse.suggestedImprovements?.length,
-      hasGeneralFeedback: !!parsedResponse.generalFeedback,
-      generalFeedbackLength: parsedResponse.generalFeedback?.overall?.length,
-      timestamp: new Date().toISOString()
-    });
-
-    return baseAnalysisSchema.parse(parsedResponse);
-  } catch (error) {
-    console.error('Resume analysis error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
-    throw error;
-  }
-}
-
-// Main analysis function - routes to appropriate analysis based on input
 export async function analyzeResumeWithAI(
   content: string,
   jobDescription?: string
-): Promise<ResumeOnlyAnalysis | JobAnalysis> {
-  if (!jobDescription) {
-    // Use the stable resume-only flow when no job description is provided
-    return analyzeResumeOnly(content);
-  }
-
+): Promise<ResumeAnalysisResponse> {
   try {
     console.log('Starting resume analysis...', {
       contentLength: content.length,
@@ -219,13 +151,17 @@ export async function analyzeResumeWithAI(
 
     const processedContent = await preprocessText(content);
 
-    const prompt = `${RESUME_ONLY_PROMPT}\n\nJob Description:\n${jobDescription}\n\n"jobAnalysis": {
-      "alignmentAndStrengths": ["list ALL matches with requirements"],
-      "gapsAndConcerns": ["list ALL gaps and mismatches"],
-      "recommendationsToTailor": ["list ALL specific suggestions"],
-      "overallFit": "provide detailed assessment of fit"
-    }`;
-
+    // Build the prompt
+    let prompt = SYSTEM_PROMPT;
+    if (jobDescription) {
+      prompt += `\n\nJob Description:\n${jobDescription}\n\nAdditionally, add this to your response:
+"jobAnalysis": {
+  "alignmentAndStrengths": ["List matches with job requirements"],
+  "gapsAndConcerns": ["List gaps or mismatches"],
+  "recommendationsToTailor": ["List specific suggestions"],
+  "overallFit": "Assessment of overall fit"
+}`;
+    }
 
     // Log the constructed prompt
     console.log('Analysis prompt:', {
@@ -239,7 +175,7 @@ export async function analyzeResumeWithAI(
         { role: "system", content: prompt },
         { role: "user", content: processedContent }
       ],
-      temperature: 0.2,
+      temperature: 0.1,
       response_format: { type: "json_object" }
     });
 
@@ -247,54 +183,35 @@ export async function analyzeResumeWithAI(
       throw new Error('OpenAI returned an empty response');
     }
 
-    // Log the raw API response
+    // Log raw response for debugging
     console.log('Raw OpenAI Response:', {
       content: response.choices[0].message.content,
       timestamp: new Date().toISOString()
     });
 
-    try {
-      // Parse response and log the structure
-      const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
 
-      console.log('Parsed Response Structure:', {
-        hasScore: typeof parsedResponse.score === 'number',
-        hasScores: typeof parsedResponse.scores === 'object',
-        hasKeywordsRelevance: !!parsedResponse.scores?.keywordsRelevance,
-        hasAchievementsMetrics: !!parsedResponse.scores?.achievementsMetrics,
-        hasStructureReadability: !!parsedResponse.scores?.structureReadability,
-        hasSummaryClarity: !!parsedResponse.scores?.summaryClarity,
-        hasOverallPolish: !!parsedResponse.scores?.overallPolish,
-        identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
-        primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
-        suggestedImprovementsCount: parsedResponse.suggestedImprovements?.length,
-        hasGeneralFeedback: typeof parsedResponse.generalFeedback === 'object',
-        generalFeedbackKeys: Object.keys(parsedResponse.generalFeedback || {}),
-        hasJobAnalysis: typeof parsedResponse.jobAnalysis === 'object',
-        timestamp: new Date().toISOString()
-      });
-
-      // Validate against schema
-      return jobAnalysisSchema.parse(parsedResponse);
-
-    } catch (error) {
-      console.error('Response processing error:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        isZodError: error instanceof z.ZodError,
-        zodErrors: error instanceof z.ZodError ? error.errors : undefined,
-        zodErrorDetails: error instanceof z.ZodError ? JSON.stringify(error.errors, null, 2) : undefined,
-        timestamp: new Date().toISOString()
-      });
-      throw error; // Re-throw to see the actual error
-    }
-  } catch (error) {
-    console.error('Resume analysis error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+    // Log parsed structure before validation
+    console.log('Parsed Response Structure:', {
+      hasScore: typeof parsedResponse.score === 'number',
+      hasScores: !!parsedResponse.scores,
+      hasGeneralFeedback: !!parsedResponse.generalFeedback,
+      generalFeedbackContent: parsedResponse.generalFeedback,
       timestamp: new Date().toISOString()
     });
-    throw error; // Re-throw to see the actual error
+
+    // Validate the response
+    return resumeAnalysisResponseSchema.parse(parsedResponse);
+
+  } catch (error) {
+    console.error('Resume analysis error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      isZodError: error instanceof z.ZodError,
+      zodErrors: error instanceof z.ZodError ? error.errors : undefined,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
   }
 }
 

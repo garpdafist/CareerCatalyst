@@ -1,0 +1,32 @@
+You are an experienced front-end developer and AI prompt engineer. The raw AI response includes a “generalFeedback” object with { overall, strengths, actionItems } but the final UI shows “No general feedback available” or incomplete data. Please fix:
+
+1) **Match Raw AI Fields to UI**:
+   - In the raw response, we have something like:
+     {
+       "score": 78,
+       "identifiedSkills": [...],
+       "suggestedImprovements": [...],
+       "generalFeedback": {
+         "overall": "...",
+         "strengths": [...],
+         "actionItems": [...]
+       }
+     }
+   - Ensure the UI references `analysis.generalFeedback.overall` for the main paragraph, `analysis.generalFeedback.strengths` for “Key Strengths,” and `analysis.generalFeedback.actionItems` for “Priority Action Items.”
+
+2) **Remove/Adjust Fallback Overwrites**:
+   - If we have fallback logic that sets `analysis.generalFeedback = "No general feedback available"` or overwrites partial data, remove it or only apply it if `analysis.generalFeedback` is truly undefined.
+   - This way, if the AI returns `analysis.generalFeedback.overall`, we display it.
+
+3) **Ensure the Score is Correct**:
+   - The raw AI response shows `"score": 78` but the final UI might show 85 or 75. Possibly we are referencing an older or fallback field.
+   - Double-check we’re using `analysis.score` from the raw response, not a leftover or fallback.
+
+4) **Implementation & Testing**:
+   - Show me a final code snippet or diff in the front-end (resume-analyzer.tsx or similar) that:
+     - Properly destructures or references `analysis.generalFeedback.overall`, `analysis.generalFeedback.strengths`, `analysis.generalFeedback.actionItems`.
+     - Removes any fallback that overwrote the actual data.
+     - Uses `analysis.score` from the AI response for the final displayed score.
+   - After changes, test with the same resume to confirm the UI displays the correct “overall” feedback text, lists strengths, action items, and the correct numeric score.
+
+This should unify the raw AI response fields with the final UI so we see the correct “overall” feedback, strengths, action items, and consistent scoring.
