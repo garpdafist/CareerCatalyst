@@ -77,7 +77,8 @@ const getFeedbackColor = (improvement: string): { text: string; bg: string; bord
 
 // Update the keywords section to handle conditional rendering
 const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
-  const hasJobDescription = !!data.targetKeywords?.length;
+  const { primaryKeywords = [], targetKeywords = [] } = data;
+  const hasJobDescription = targetKeywords.length > 0;
 
   return (
     <div>
@@ -88,7 +89,7 @@ const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
         <div>
           <p className="text-sm text-muted-foreground mb-2">Keywords from your resume:</p>
           <div className="flex flex-wrap gap-2">
-            {limitArrayLength(data.primaryKeywords).map((keyword, index) => (
+            {limitArrayLength(primaryKeywords).map((keyword, index) => (
               <Badge
                 key={index}
                 variant="secondary"
@@ -100,11 +101,11 @@ const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
           </div>
         </div>
 
-        {hasJobDescription && data.targetKeywords && (
+        {hasJobDescription && (
           <div>
             <p className="text-sm text-muted-foreground mb-2">Target keywords from job description:</p>
             <div className="flex flex-wrap gap-2">
-              {limitArrayLength(data.targetKeywords).map((keyword, index) => (
+              {limitArrayLength(targetKeywords).map((keyword, index) => (
                 <Badge
                   key={index}
                   variant="secondary"
@@ -121,22 +122,30 @@ const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
   );
 };
 
-// Update the general feedback section to use the new structured format
+// Update the general feedback section with fallbacks
 const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
+  const { 
+    generalFeedback = { 
+      overall: "No feedback available", 
+      strengths: [], 
+      actionItems: [] 
+    } 
+  } = data;
+
   return (
     <div>
       <h3 className="text-lg font-medium mb-3">General Feedback</h3>
       <div className="space-y-4">
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
           <p className="text-sm md:text-base text-gray-600">
-            {data.generalFeedback.overall}
+            {generalFeedback.overall}
           </p>
         </div>
 
         <div>
           <h4 className="text-sm font-medium mb-2 text-green-700">Key Strengths</h4>
           <ul className="space-y-2">
-            {data.generalFeedback.strengths.map((strength, index) => (
+            {(generalFeedback.strengths || []).map((strength, index) => (
               <li
                 key={index}
                 className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100"
@@ -145,13 +154,16 @@ const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
                 <span className="text-green-700">{strength}</span>
               </li>
             ))}
+            {(generalFeedback.strengths || []).length === 0 && (
+              <li className="text-sm text-gray-500">No key strengths identified</li>
+            )}
           </ul>
         </div>
 
         <div>
           <h4 className="text-sm font-medium mb-2 text-blue-700">Priority Action Items</h4>
           <ul className="space-y-2">
-            {data.generalFeedback.actionItems.map((item, index) => (
+            {(generalFeedback.actionItems || []).map((item, index) => (
               <li
                 key={index}
                 className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100"
@@ -160,6 +172,9 @@ const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
                 <span className="text-blue-700">{item}</span>
               </li>
             ))}
+            {(generalFeedback.actionItems || []).length === 0 && (
+              <li className="text-sm text-gray-500">No action items available</li>
+            )}
           </ul>
         </div>
       </div>
@@ -442,7 +457,7 @@ export default function ResumeAnalyzer() {
                     <div>
                       <h3 className="text-lg font-medium mb-3">Key Skills</h3>
                       <div className="flex flex-wrap gap-2">
-                        {limitArrayLength(analyzeMutation.data.identifiedSkills).map((skill, index) => (
+                        {limitArrayLength(analyzeMutation.data.identifiedSkills || []).map((skill, index) => (
                           <Badge
                             key={index}
                             variant="secondary"
@@ -451,6 +466,9 @@ export default function ResumeAnalyzer() {
                             {skill}
                           </Badge>
                         ))}
+                        {(analyzeMutation.data.identifiedSkills || []).length === 0 && (
+                          <p className="text-sm text-gray-500">No key skills identified</p>
+                        )}
                       </div>
                     </div>
 
@@ -461,7 +479,7 @@ export default function ResumeAnalyzer() {
                     <div>
                       <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
                       <ul className="space-y-2 md:space-y-3">
-                        {limitArrayLength(analyzeMutation.data.suggestedImprovements).map((improvement, index) => {
+                        {limitArrayLength(analyzeMutation.data.suggestedImprovements || []).map((improvement, index) => {
                           const colors = getFeedbackColor(improvement);
                           return (
                             <li
@@ -473,6 +491,9 @@ export default function ResumeAnalyzer() {
                             </li>
                           );
                         })}
+                        {(analyzeMutation.data.suggestedImprovements || []).length === 0 && (
+                          <li className="text-sm text-gray-500">No improvements suggested</li>
+                        )}
                       </ul>
                     </div>
 
