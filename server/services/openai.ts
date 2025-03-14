@@ -8,136 +8,122 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Base validation schema
-const baseScoreSchema = {
-  score: z.number().min(1).max(10),
-  maxScore: z.literal(10),
-  feedback: z.string().min(1)
-};
-
 // Response validation schema
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
   scores: z.object({
     keywordsRelevance: z.object({
-      ...baseScoreSchema,
-      keywords: z.array(z.string())
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string().min(50),
+      keywords: z.array(z.string()).min(3)
     }),
     achievementsMetrics: z.object({
-      ...baseScoreSchema,
-      highlights: z.array(z.string())
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string().min(50),
+      highlights: z.array(z.string()).min(3)
     }),
-    structureReadability: z.object(baseScoreSchema),
-    summaryClarity: z.object(baseScoreSchema),
-    overallPolish: z.object(baseScoreSchema)
+    structureReadability: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string().min(50)
+    }),
+    summaryClarity: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string().min(50)
+    }),
+    overallPolish: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string().min(50)
+    })
   }),
-  identifiedSkills: z.array(z.string()),
-  primaryKeywords: z.array(z.string()),
-  suggestedImprovements: z.array(z.string()),
+  identifiedSkills: z.array(z.string()).min(5),
+  primaryKeywords: z.array(z.string()).min(5),
+  suggestedImprovements: z.array(z.string()).min(3),
   generalFeedback: z.object({
-    overall: z.string().min(1),
-    strengths: z.array(z.string()),
-    actionItems: z.array(z.string())
+    overall: z.string().min(100),
+    strengths: z.array(z.string()).min(2),
+    actionItems: z.array(z.string()).min(2)
   }),
   jobAnalysis: z.object({
-    alignmentAndStrengths: z.array(z.string()),
-    gapsAndConcerns: z.array(z.string()),
-    recommendationsToTailor: z.array(z.string()),
-    overallFit: z.string()
+    alignmentAndStrengths: z.array(z.string()).min(1),
+    gapsAndConcerns: z.array(z.string()).min(1),
+    recommendationsToTailor: z.array(z.string()).min(1),
+    overallFit: z.string().min(50)
   }).optional()
 });
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-// Default values
-const defaultScoreSection = {
-  score: 1,
-  maxScore: 10,
-  feedback: "No analysis available"
-};
-
-const defaultResponse = {
-  score: 0,
-  scores: {
-    keywordsRelevance: { ...defaultScoreSection, keywords: [] },
-    achievementsMetrics: { ...defaultScoreSection, highlights: [] },
-    structureReadability: defaultScoreSection,
-    summaryClarity: defaultScoreSection,
-    overallPolish: defaultScoreSection
-  },
-  identifiedSkills: [],
-  primaryKeywords: [],
-  suggestedImprovements: [],
-  generalFeedback: {
-    overall: "No feedback available",
-    strengths: [],
-    actionItems: []
-  }
-};
-
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Return ONLY a JSON object with these EXACT fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. You MUST provide a comprehensive analysis in JSON format containing EXACTLY these fields:
 
 {
-  "score": (number between 0-100),
+  "score": (number between 0-100, be conservative - most resumes score 60-75),
   "scores": {
     "keywordsRelevance": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback",
-      "keywords": ["relevant keywords"]
+      "feedback": "detailed feedback about keyword usage (minimum 50 words)",
+      "keywords": ["REQUIRED: at least 5 relevant industry keywords found"]
     },
     "achievementsMetrics": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback",
-      "highlights": ["key achievements"]
+      "feedback": "detailed feedback about achievements (minimum 50 words)",
+      "highlights": ["REQUIRED: at least 3 quantifiable achievements"]
     },
     "structureReadability": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback"
+      "feedback": "detailed feedback about structure (minimum 50 words)"
     },
     "summaryClarity": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback"
+      "feedback": "detailed feedback about summary (minimum 50 words)"
     },
     "overallPolish": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback"
+      "feedback": "detailed feedback about presentation (minimum 50 words)"
     }
   },
-  "identifiedSkills": ["list of skills"],
-  "primaryKeywords": ["important keywords"],
-  "suggestedImprovements": ["improvement suggestions"],
+  "identifiedSkills": ["REQUIRED: at least 5 specific skills found in resume"],
+  "primaryKeywords": ["REQUIRED: at least 5 important keywords from resume"],
+  "suggestedImprovements": ["REQUIRED: at least 3 specific, actionable improvements"],
   "generalFeedback": {
-    "overall": "detailed feedback",
-    "strengths": ["key strengths"],
-    "actionItems": ["action items"]
+    "overall": "comprehensive analysis of the resume (minimum 100 words)",
+    "strengths": ["REQUIRED: 2-3 specific key strengths with examples"],
+    "actionItems": ["REQUIRED: 2-3 specific priority actions"]
   }
 }
 
 CRITICAL REQUIREMENTS:
-1. ALL fields shown above are required
-2. Never omit any field in the scores object
-3. Always include summaryClarity and overallPolish
-4. For any missing data, use these defaults:
-   - For scores: use score=1 and feedback="No analysis available"
-   - For arrays: use empty array []
-   - For strings: use "No data available"
-5. Return ONLY valid JSON`;
+1. Every field marked as REQUIRED must contain the minimum number of items specified
+2. All feedback text must meet minimum word counts
+3. Never return empty arrays or placeholder text
+4. Be specific and actionable in all feedback
+5. Include exact phrases or sections from the resume in your feedback
+6. For missing or weak areas, suggest specific improvements`;
 
-const JOB_ANALYSIS_PROMPT = `Additionally, analyze how this resume matches the job requirements. Add this to your JSON response:
+const JOB_ANALYSIS_PROMPT = `Additionally, analyze how well this resume matches the job requirements. Add this to your response:
 
 "jobAnalysis": {
-  "alignmentAndStrengths": ["specific matches with job requirements"],
-  "gapsAndConcerns": ["specific mismatches or gaps"],
-  "recommendationsToTailor": ["specific suggestions to align with role"],
-  "overallFit": "assessment of candidate fit"
-}`;
+  "alignmentAndStrengths": ["at least 3 specific matches with job requirements"],
+  "gapsAndConcerns": ["at least 3 specific gaps or mismatches"],
+  "recommendationsToTailor": ["at least 3 specific suggestions to align with role"],
+  "overallFit": "detailed assessment of candidate fit (minimum 50 words)"
+}
 
-// Chunk and summarize long text
+Your job analysis must:
+1. Reference specific requirements from the job description
+2. Point out exact matches and mismatches
+3. Provide actionable suggestions
+4. Be direct about fit - don't inflate assessment`;
+
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
     return text;
@@ -151,7 +137,7 @@ async function preprocessText(text: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "Summarize this text while preserving key information about skills, experience, and achievements."
+            content: "Summarize this text while preserving key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
           },
           { role: "user", content: chunk }
         ],
@@ -167,19 +153,22 @@ async function preprocessText(text: string): Promise<string> {
   }
 }
 
-// Main analysis function
 export async function analyzeResumeWithAI(
   content: string,
   jobDescription?: string
 ): Promise<ResumeAnalysisResponse> {
   try {
+    console.log('Starting resume analysis...', {
+      contentLength: content.length,
+      hasJobDescription: !!jobDescription,
+      timestamp: new Date().toISOString()
+    });
+
     const processedContent = await preprocessText(content);
 
-    let prompt = SYSTEM_PROMPT;
-    if (jobDescription) {
-      const processedJobDesc = await preprocessText(jobDescription);
-      prompt = `${SYSTEM_PROMPT}\n\nJob Description:\n${processedJobDesc}\n\n${JOB_ANALYSIS_PROMPT}`;
-    }
+    const prompt = jobDescription
+      ? `${SYSTEM_PROMPT}\n\nJob Description:\n${jobDescription}\n\n${JOB_ANALYSIS_PROMPT}`
+      : SYSTEM_PROMPT;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
@@ -187,7 +176,7 @@ export async function analyzeResumeWithAI(
         { role: "system", content: prompt },
         { role: "user", content: processedContent }
       ],
-      temperature: 0,
+      temperature: 0.2, // Slightly increased for more varied responses
       response_format: { type: "json_object" }
     });
 
@@ -202,37 +191,36 @@ export async function analyzeResumeWithAI(
     });
 
     try {
-      // Parse response and merge with defaults
-      const parsedResponse = JSON.parse(response.choices[0].message.content);
-      const enhancedResponse = {
-        ...defaultResponse,
-        ...parsedResponse,
-        scores: {
-          ...defaultResponse.scores,
-          ...parsedResponse.scores
-        },
-        generalFeedback: {
-          ...defaultResponse.generalFeedback,
-          ...parsedResponse.generalFeedback
-        }
-      };
+      const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
 
-      // Validate final response
-      return resumeAnalysisResponseSchema.parse(enhancedResponse);
+      // Log parsed structure before validation
+      console.log('Initial parsed response structure:', {
+        hasScore: typeof parsedResponse.score === 'number',
+        hasScores: !!parsedResponse.scores,
+        skillsCount: parsedResponse.identifiedSkills?.length || 0,
+        keywordsCount: parsedResponse.primaryKeywords?.length || 0,
+        improvementsCount: parsedResponse.suggestedImprovements?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+
+      // Validate against schema
+      return resumeAnalysisResponseSchema.parse(parsedResponse);
 
     } catch (error) {
-      console.error('Response processing error:', {
+      console.error('Response validation error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         isZodError: error instanceof z.ZodError,
-        zodErrors: error instanceof z.ZodError ? error.errors : undefined
+        zodErrors: error instanceof z.ZodError ? error.errors : undefined,
+        timestamp: new Date().toISOString()
       });
-      throw new Error(`Failed to process AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to validate AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Resume analysis error:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
     });
     throw new Error(`Failed to analyze resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
