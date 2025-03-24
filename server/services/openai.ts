@@ -8,31 +8,101 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Retry configuration
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000; // 1 second
+// Enhanced retry configuration
+const MAX_RETRIES = 5;  // Increased from 3
+const INITIAL_RETRY_DELAY = 2000; // Increased from 1000ms to 2000ms
+const MAX_RETRY_DELAY = 30000; // Cap at 30 seconds
 
-// Utility function for exponential backoff retries
+// Add jitter to prevent thundering herd
+function getJitteredDelay(baseDelay: number): number {
+  const jitter = baseDelay * 0.1 * Math.random(); // 10% jitter
+  return baseDelay + jitter;
+}
+
+// Request queue implementation
+class RequestQueue {
+  private queue: Array<() => Promise<any>> = [];
+  private processing = false;
+  private lastRequestTime = 0;
+  private readonly minRequestInterval = 1000; // Minimum 1 second between requests
+
+  async add<T>(operation: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          // Ensure minimum time between requests
+          const now = Date.now();
+          const timeSinceLastRequest = now - this.lastRequestTime;
+          if (timeSinceLastRequest < this.minRequestInterval) {
+            await new Promise(r => setTimeout(r, this.minRequestInterval - timeSinceLastRequest));
+          }
+
+          const result = await operation();
+          this.lastRequestTime = Date.now();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      if (!this.processing) {
+        this.processQueue();
+      }
+    });
+  }
+
+  private async processQueue() {
+    if (this.processing || this.queue.length === 0) return;
+
+    this.processing = true;
+    while (this.queue.length > 0) {
+      const nextOperation = this.queue.shift();
+      if (nextOperation) {
+        await nextOperation();
+      }
+    }
+    this.processing = false;
+  }
+}
+
+const requestQueue = new RequestQueue();
+
+// Enhanced exponential backoff with jitter
 async function withExponentialBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = MAX_RETRIES,
   initialDelay: number = INITIAL_RETRY_DELAY
 ): Promise<T> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      // Check if it's a rate limit error
-      if (error?.status === 429 && attempt < maxRetries) {
-        const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 8000); // Cap at 8 seconds
-        console.log(`Rate limit hit (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
+  return requestQueue.add(async () => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        const isRateLimit = error?.status === 429;
+        const isServerError = error?.status >= 500;
+
+        if ((isRateLimit || isServerError) && attempt < maxRetries) {
+          const baseDelay = Math.min(
+            initialDelay * Math.pow(2, attempt - 1),
+            MAX_RETRY_DELAY
+          );
+          const delay = getJitteredDelay(baseDelay);
+
+          console.log(`API error (attempt ${attempt}/${maxRetries}):`, {
+            status: error?.status,
+            message: error?.message,
+            retryIn: delay,
+            timestamp: new Date().toISOString()
+          });
+
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw error;
       }
-      throw error;
     }
-  }
-  throw new Error(`Failed after ${maxRetries} attempts`);
+    throw new Error(`Failed after ${maxRetries} attempts`);
+  });
 }
 
 // Response validation schema

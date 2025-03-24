@@ -92,6 +92,21 @@ const handleAnalysis = async (req: any, res: any) => {
       return res.json(response);
 
     } catch (analysisError: any) {
+      // Enhanced error handling for rate limits
+      if (analysisError?.status === 429) {
+        console.warn('Rate limit reached:', {
+          error: analysisError.message,
+          retryAfter: analysisError.response?.headers?.['retry-after'],
+          timestamp: new Date().toISOString()
+        });
+
+        return res.status(429).json({
+          message: "Service is temporarily busy",
+          details: "Please try again in a few moments",
+          retryAfter: analysisError.response?.headers?.['retry-after'] || 60
+        });
+      }
+
       console.error('Analysis failed:', {
         error: analysisError.message,
         type: analysisError.constructor.name,
