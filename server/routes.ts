@@ -855,18 +855,37 @@ const handleAnalysis = async (req: Request, res: Response) => {
         keywordsCount: analysis.importantKeywords?.length
       });
 
-      console.log('AI Analysis Results:', {
+      // Log the analysis object before sending response
+      console.log('Analysis result before sending:', {
         score: analysis.score,
-        hasStructuredContent: true,
-        structuredContentSections: Object.keys(analysis.resumeSections || {}),
-        hasScoringCriteria: true,
-        scoringCriteriaSections: Object.keys(analysis.scores || {}),
-        feedbackCount: analysis.suggestedImprovements?.length,
-        skillsCount: analysis.identifiedSkills?.length,
-        keywordsCount: analysis.importantKeywords?.length
+        hasPrimaryKeywords: !!analysis.primaryKeywords,
+        primaryKeywordsCount: analysis.primaryKeywords?.length,
+        primaryKeywords: analysis.primaryKeywords,
+        hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback?.overall,
+        timestamp: new Date().toISOString()
       });
 
-      return res.json(analysis);
+      // Ensure critical fields exist before sending
+      const response = {
+        ...analysis,
+        primaryKeywords: analysis.primaryKeywords || [],
+        generalFeedback: {
+          overall: analysis.generalFeedback?.overall || ''
+        }
+      };
+
+      // Log final response
+      console.log('Final response structure:', {
+        hasPrimaryKeywords: !!response.primaryKeywords,
+        primaryKeywordsCount: response.primaryKeywords.length,
+        hasGeneralFeedback: !!response.generalFeedback,
+        generalFeedbackContent: response.generalFeedback.overall,
+        timestamp: new Date().toISOString()
+      });
+
+      return res.json(response);
+
     } catch (analysisError: any) {
       console.error('Analysis failed:', {
         error: analysisError.message,

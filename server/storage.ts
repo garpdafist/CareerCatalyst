@@ -144,7 +144,8 @@ export class DatabaseStorage implements IStorage {
       userId: data.userId,
       score: data.score,
       hasScores: !!data.analysis.scores,
-      hasResumeSections: !!data.analysis.resumeSections,
+      hasGeneralFeedback: !!data.analysis.generalFeedback,
+      hasPrimaryKeywords: !!data.analysis.importantKeywords,
       timestamp: new Date().toISOString()
     });
 
@@ -156,11 +157,12 @@ export class DatabaseStorage implements IStorage {
           content: data.content,
           score: data.score,
           scores: data.analysis.scores,
-          resumeSections: data.analysis.resumeSections,
           identifiedSkills: data.analysis.identifiedSkills,
-          importantKeywords: data.analysis.primaryKeywords || data.analysis.importantKeywords || [],
+          primaryKeywords: data.analysis.importantKeywords || data.analysis.primaryKeywords || [],
           suggestedImprovements: data.analysis.suggestedImprovements,
-          generalFeedback: data.analysis.generalFeedback?.overall || data.analysis.generalFeedback || data.analysis.feedback || "",
+          generalFeedback: typeof data.analysis.generalFeedback === 'object' 
+            ? data.analysis.generalFeedback.overall 
+            : data.analysis.generalFeedback || "",
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -170,6 +172,10 @@ export class DatabaseStorage implements IStorage {
         id: analysis.id,
         userId: analysis.userId,
         score: analysis.score,
+        hasPrimaryKeywords: !!analysis.primaryKeywords,
+        primaryKeywordsCount: analysis.primaryKeywords?.length,
+        hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback,
         timestamp: new Date().toISOString()
       });
 
