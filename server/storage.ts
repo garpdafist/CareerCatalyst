@@ -26,11 +26,10 @@ export interface IStorage {
     score: number;
     analysis: {
       scores: any;
-      resumeSections: any;
       identifiedSkills: string[];
-      importantKeywords: string[];
+      primaryKeywords: string[];
       suggestedImprovements: string[];
-      generalFeedback: string;
+      generalFeedback: { overall: string } | string;
     };
   }): Promise<ResumeAnalysis>;
 
@@ -110,9 +109,8 @@ export class DatabaseStorage implements IStorage {
         score: aiAnalysis.score,
         analysis: {
           scores: aiAnalysis.scores,
-          resumeSections: aiAnalysis.resumeSections,
           identifiedSkills: aiAnalysis.identifiedSkills,
-          importantKeywords: aiAnalysis.importantKeywords,
+          primaryKeywords: aiAnalysis.importantKeywords,
           suggestedImprovements: aiAnalysis.suggestedImprovements,
           generalFeedback: aiAnalysis.generalFeedback
         }
@@ -133,19 +131,21 @@ export class DatabaseStorage implements IStorage {
     score: number;
     analysis: {
       scores: any;
-      resumeSections: any;
       identifiedSkills: string[];
-      importantKeywords: string[];
+      primaryKeywords: string[];
       suggestedImprovements: string[];
-      generalFeedback: string;
+      generalFeedback: { overall: string } | string;
     };
   }): Promise<ResumeAnalysis> {
     console.log('Saving resume analysis:', {
       userId: data.userId,
       score: data.score,
-      hasScores: !!data.analysis.scores,
       hasGeneralFeedback: !!data.analysis.generalFeedback,
-      hasPrimaryKeywords: !!data.analysis.importantKeywords,
+      generalFeedbackContent: typeof data.analysis.generalFeedback === 'object' 
+        ? data.analysis.generalFeedback.overall 
+        : data.analysis.generalFeedback,
+      hasPrimaryKeywords: !!data.analysis.primaryKeywords,
+      primaryKeywordsCount: data.analysis.primaryKeywords?.length,
       timestamp: new Date().toISOString()
     });
 
@@ -158,11 +158,11 @@ export class DatabaseStorage implements IStorage {
           score: data.score,
           scores: data.analysis.scores,
           identifiedSkills: data.analysis.identifiedSkills,
-          primaryKeywords: data.analysis.importantKeywords || data.analysis.primaryKeywords || [],
+          primaryKeywords: data.analysis.primaryKeywords || [],
           suggestedImprovements: data.analysis.suggestedImprovements,
-          generalFeedback: typeof data.analysis.generalFeedback === 'object' 
-            ? data.analysis.generalFeedback.overall 
-            : data.analysis.generalFeedback || "",
+          generalFeedback: typeof data.analysis.generalFeedback === 'object'
+            ? data.analysis.generalFeedback.overall
+            : data.analysis.generalFeedback || '',
           createdAt: new Date(),
           updatedAt: new Date()
         })

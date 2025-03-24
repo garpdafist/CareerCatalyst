@@ -681,30 +681,30 @@ async function analyzeResume(content: string, userId: string) {
 
       // Map scores to scoring criteria structure
       scoringCriteria: {
-        keywordsRelevance: { 
-          score: rawAnalysis.scores?.keywordsRelevance?.score || 0, 
-          maxScore: 10, 
-          feedback: rawAnalysis.scores?.keywordsRelevance?.feedback || "Keywords analysis" 
+        keywordsRelevance: {
+          score: rawAnalysis.scores?.keywordsRelevance?.score || 0,
+          maxScore: 10,
+          feedback: rawAnalysis.scores?.keywordsRelevance?.feedback || "Keywords analysis"
         },
-        achievementsMetrics: { 
-          score: rawAnalysis.scores?.achievementsMetrics?.score || 0, 
-          maxScore: 10, 
-          feedback: rawAnalysis.scores?.achievementsMetrics?.feedback || "Achievements analysis" 
+        achievementsMetrics: {
+          score: rawAnalysis.scores?.achievementsMetrics?.score || 0,
+          maxScore: 10,
+          feedback: rawAnalysis.scores?.achievementsMetrics?.feedback || "Achievements analysis"
         },
-        structureReadability: { 
-          score: rawAnalysis.scores?.structureReadability?.score || 0, 
-          maxScore: 10, 
-          feedback: rawAnalysis.scores?.structureReadability?.feedback || "Structure analysis" 
+        structureReadability: {
+          score: rawAnalysis.scores?.structureReadability?.score || 0,
+          maxScore: 10,
+          feedback: rawAnalysis.scores?.structureReadability?.feedback || "Structure analysis"
         },
-        summaryClarity: { 
-          score: rawAnalysis.scores?.summaryClarity?.score || 0, 
-          maxScore: 10, 
-          feedback: rawAnalysis.scores?.summaryClarity?.feedback || "Summary clarity analysis" 
+        summaryClarity: {
+          score: rawAnalysis.scores?.summaryClarity?.score || 0,
+          maxScore: 10,
+          feedback: rawAnalysis.scores?.summaryClarity?.feedback || "Summary clarity analysis"
         },
-        overallPolish: { 
-          score: rawAnalysis.scores?.overallPolish?.score || 0, 
-          maxScore: 10, 
-          feedback: rawAnalysis.scores?.overallPolish?.feedback || "Polish analysis" 
+        overallPolish: {
+          score: rawAnalysis.scores?.overallPolish?.score || 0,
+          maxScore: 10,
+          feedback: rawAnalysis.scores?.overallPolish?.feedback || "Polish analysis"
         }
       },
 
@@ -855,28 +855,29 @@ const handleAnalysis = async (req: Request, res: Response) => {
         keywordsCount: analysis.importantKeywords?.length
       });
 
-      // Log the analysis object before sending response
-      console.log('Analysis result before sending:', {
-        score: analysis.score,
+      // Log raw analysis before any transformation
+      console.log('Raw analysis from storage:', {
+        hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback,
         hasPrimaryKeywords: !!analysis.primaryKeywords,
         primaryKeywordsCount: analysis.primaryKeywords?.length,
         primaryKeywords: analysis.primaryKeywords,
-        hasGeneralFeedback: !!analysis.generalFeedback,
-        generalFeedbackContent: analysis.generalFeedback?.overall,
         timestamp: new Date().toISOString()
       });
 
-      // Ensure critical fields exist before sending
+      // Ensure critical fields exist in response
       const response = {
         ...analysis,
-        primaryKeywords: analysis.primaryKeywords || [],
+        primaryKeywords: analysis.primaryKeywords || [], // Ensure array exists
         generalFeedback: {
-          overall: analysis.generalFeedback?.overall || ''
+          overall: typeof analysis.generalFeedback === 'object'
+          ? analysis.generalFeedback.overall
+          : analysis.generalFeedback || ''
         }
       };
 
-      // Log final response
-      console.log('Final response structure:', {
+      // Log final response before sending
+      console.log('Final response to client:', {
         hasPrimaryKeywords: !!response.primaryKeywords,
         primaryKeywordsCount: response.primaryKeywords.length,
         hasGeneralFeedback: !!response.generalFeedback,
