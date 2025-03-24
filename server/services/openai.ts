@@ -8,6 +8,33 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+
+// Utility function for exponential backoff retries
+async function withExponentialBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES,
+  initialDelay: number = INITIAL_RETRY_DELAY
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      // Check if it's a rate limit error
+      if (error?.status === 429 && attempt < maxRetries) {
+        const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 8000); // Cap at 8 seconds
+        console.log(`Rate limit hit (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error(`Failed after ${maxRetries} attempts`);
+}
+
 // Response validation schema
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
@@ -112,18 +139,20 @@ async function preprocessText(text: string): Promise<string> {
   try {
     const chunks = text.match(/.{1,12000}/g) || [];
     const summaries = await Promise.all(chunks.map(async (chunk) => {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-        messages: [
-          {
-            role: "system",
-            content: "Summarize while preserving ALL key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
-          },
-          { role: "user", content: chunk }
-        ],
-        temperature: 0
+      return await withExponentialBackoff(async () => {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", 
+          messages: [
+            {
+              role: "system",
+              content: "Summarize while preserving ALL key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
+            },
+            { role: "user", content: chunk }
+          ],
+          temperature: 0
+        });
+        return response.choices[0].message.content || '';
       });
-      return response.choices[0].message.content || '';
     }));
 
     return summaries.join('\n\n');
@@ -157,49 +186,51 @@ export async function analyzeResumeWithAI(
 }`;
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-      messages: [
-        { role: "system", content: prompt },
-        { role: "user", content: processedContent }
-      ],
-      temperature: 0.1,
-      response_format: { type: "json_object" }
-    });
+    return await withExponentialBackoff(async () => {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", 
+        messages: [
+          { role: "system", content: prompt },
+          { role: "user", content: processedContent }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      });
 
-    if (!response.choices[0]?.message?.content) {
-      throw new Error('OpenAI returned an empty response');
-    }
-
-    // Log raw response for debugging
-    console.log('Raw OpenAI Response:', {
-      content: response.choices[0].message.content,
-      timestamp: new Date().toISOString()
-    });
-
-    // Parse and log intermediate structure
-    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
-    console.log('Parsed Response Structure:', {
-      hasGeneralFeedback: !!parsedResponse.generalFeedback,
-      generalFeedbackContent: parsedResponse.generalFeedback?.overall,
-      hasPrimaryKeywords: !!parsedResponse.primaryKeywords,
-      primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
-      primaryKeywords: parsedResponse.primaryKeywords,
-      identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
-      timestamp: new Date().toISOString()
-    });
-
-    // Ensure required fields exist
-    const validatedResponse = {
-      ...parsedResponse,
-      primaryKeywords: parsedResponse.primaryKeywords || [],
-      generalFeedback: {
-        overall: parsedResponse.generalFeedback?.overall || ''
+      if (!response.choices[0]?.message?.content) {
+        throw new Error('OpenAI returned an empty response');
       }
-    };
 
-    // Validate and return
-    return resumeAnalysisResponseSchema.parse(validatedResponse);
+      // Log raw response for debugging
+      console.log('Raw OpenAI Response:', {
+        content: response.choices[0].message.content,
+        timestamp: new Date().toISOString()
+      });
+
+      // Parse and log intermediate structure
+      const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+      console.log('Parsed Response Structure:', {
+        hasGeneralFeedback: !!parsedResponse.generalFeedback,
+        generalFeedbackContent: parsedResponse.generalFeedback?.overall,
+        hasPrimaryKeywords: !!parsedResponse.primaryKeywords,
+        primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
+        primaryKeywords: parsedResponse.primaryKeywords,
+        identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
+        timestamp: new Date().toISOString()
+      });
+
+      // Ensure required fields exist
+      const validatedResponse = {
+        ...parsedResponse,
+        primaryKeywords: parsedResponse.primaryKeywords || [],
+        generalFeedback: {
+          overall: parsedResponse.generalFeedback?.overall || ''
+        }
+      };
+
+      // Validate and return
+      return resumeAnalysisResponseSchema.parse(validatedResponse);
+    });
 
   } catch (error) {
     console.error('Resume analysis error:', {
@@ -238,21 +269,23 @@ Provide a detailed analysis of how this resume aligns with the job requirements.
 4. Specific improvements needed for this role
 5. Keywords and terminology optimization`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "Provide a detailed analysis of how well the resume matches the job description. Focus on skill matches, experience alignment, and areas for improvement."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ]
-    });
+    return await withExponentialBackoff(async () => {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "Provide a detailed analysis of how well the resume matches the job description. Focus on skill matches, experience alignment, and areas for improvement."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      });
 
-    return response.choices[0].message.content || 'No analysis generated';
+      return response.choices[0].message.content || 'No analysis generated';
+    });
   } catch (error: any) {
     console.error('Resume-job analysis error:', error);
     throw new Error(`Failed to analyze resume against job description: ${error.message}`);
