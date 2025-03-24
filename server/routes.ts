@@ -986,5 +986,7 @@ app.post("/api/analyze-linkedin-content", requireAuth, async (req, res) => {
   }
 });
 
-const httpServer = createServer(app);
-export default httpServer;
+export function registerRoutes(app: Express) {
+  const httpServer = createServer(app);
+  return httpServer;
+}
