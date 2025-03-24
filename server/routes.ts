@@ -789,21 +789,27 @@ const handleAnalysis = async (req: Request, res: Response) => {
 
       try {
         content = await extractTextFromFile(req.file);
-        console.log('File content extracted:', {
+        if (!content || content.trim().length === 0) {
+          throw new Error('Extracted content is empty');
+        }
+        console.log('File content extracted successfully:', {
           success: true,
           contentLength: content.length,
-          preview: content.substring(0, 100) + '...'
+          preview: content.substring(0, 100) + '...',
+          timestamp: new Date().toISOString()
         });
       } catch (fileError: any) {
         console.error('File processing error:', {
           error: fileError.message,
           stack: fileError.stack,
-          type: fileError.constructor.name
+          type: fileError.constructor.name,
+          timestamp: new Date().toISOString()
         });
         return res.status(400).json({
+          status: 'error',
           message: "Failed to process file",
           error: fileError.message,
-          details: "Please ensure the file is a valid PDF or text document"
+          details: "Please ensure the file is a valid PDF or text document and contains extractable text"
         });
       }
     } else if (req.body?.content) {
