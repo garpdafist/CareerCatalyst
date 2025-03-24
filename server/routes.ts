@@ -987,4 +987,4 @@ app.post("/api/analyze-linkedin-content", requireAuth, async (req, res) => {
 });
 
 const httpServer = createServer(app);
-return httpServer;
+export default httpServer;
