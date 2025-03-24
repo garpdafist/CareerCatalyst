@@ -56,7 +56,7 @@ const resumeAnalysisResponseSchema = z.object({
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. CAREFULLY analyze the resume and return a JSON object with EXACTLY these fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. CAREFULLY analyze the resume and provide a complete analysis in JSON format containing EXACTLY these fields:
 
 {
   "score": (overall score 0-100),
@@ -64,45 +64,45 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. CAREFULLY analyze the 
     "keywordsRelevance": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed keyword analysis",
-      "keywords": ["extract keywords from resume"]
+      "feedback": "detailed analysis of keyword usage",
+      "keywords": ["extract ALL relevant keywords"]
     },
     "achievementsMetrics": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze achievements",
-      "highlights": ["list achievements"]
+      "feedback": "analysis of achievements",
+      "highlights": ["extract ALL achievements"]
     },
     "structureReadability": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze structure"
+      "feedback": "analysis of resume structure"
     },
     "summaryClarity": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze summary"
+      "feedback": "analysis of professional summary"
     },
     "overallPolish": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze polish"
+      "feedback": "analysis of overall presentation"
     }
   },
-  "identifiedSkills": ["extract ALL skills from resume"],
-  "primaryKeywords": ["extract ALL important keywords"],
-  "suggestedImprovements": ["list improvements needed"],
+  "identifiedSkills": ["extract ALL technical and soft skills"],
+  "primaryKeywords": ["extract ALL important keywords and terms"],
+  "suggestedImprovements": ["list ALL specific improvements needed"],
   "generalFeedback": {
-    "overall": "provide detailed feedback"
+    "overall": "provide detailed analysis of strengths and weaknesses"
   }
 }
 
-CRITICAL: You MUST extract actual content from the resume for:
-1. identifiedSkills - List ALL technical and soft skills found
-2. primaryKeywords - List ALL important keywords and terms
-3. generalFeedback.overall - Provide detailed analysis
-
-Do not return empty arrays or placeholder text.`;
+CRITICAL REQUIREMENTS:
+1. You MUST extract and include ALL relevant keywords in primaryKeywords array
+2. You MUST provide detailed feedback in generalFeedback.overall
+3. ALL arrays must contain actual content from the resume
+4. Never return empty arrays or placeholder text
+5. Return ONLY valid JSON`;
 
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
@@ -117,7 +117,7 @@ async function preprocessText(text: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "Summarize while preserving ALL key information about skills, experience, and achievements."
+            content: "Summarize while preserving ALL key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
           },
           { role: "user", content: chunk }
         ],
@@ -150,10 +150,10 @@ export async function analyzeResumeWithAI(
     if (jobDescription) {
       prompt += `\n\nAnalyze against this job description:\n${jobDescription}\n\nAdd this to your response:
 "jobAnalysis": {
-  "alignmentAndStrengths": ["list matches"],
-  "gapsAndConcerns": ["list gaps"],
-  "recommendationsToTailor": ["list recommendations"],
-  "overallFit": "detailed fit assessment"
+  "alignmentAndStrengths": ["list specific matches with requirements"],
+  "gapsAndConcerns": ["list specific gaps or mismatches"],
+  "recommendationsToTailor": ["list specific suggestions to align with role"],
+  "overallFit": "provide detailed assessment of fit"
 }`;
     }
 
@@ -177,21 +177,29 @@ export async function analyzeResumeWithAI(
       timestamp: new Date().toISOString()
     });
 
+    // Parse and log intermediate structure
     const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
-
-    // Log parsed response before validation
-    console.log('Parsed Response:', {
+    console.log('Parsed Response Structure:', {
       hasGeneralFeedback: !!parsedResponse.generalFeedback,
       generalFeedbackContent: parsedResponse.generalFeedback?.overall,
+      hasPrimaryKeywords: !!parsedResponse.primaryKeywords,
       primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
       primaryKeywords: parsedResponse.primaryKeywords,
       identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
-      identifiedSkills: parsedResponse.identifiedSkills,
       timestamp: new Date().toISOString()
     });
 
-    // Return parsed response directly (schema will validate)
-    return resumeAnalysisResponseSchema.parse(parsedResponse);
+    // Ensure required fields exist
+    const validatedResponse = {
+      ...parsedResponse,
+      primaryKeywords: parsedResponse.primaryKeywords || [],
+      generalFeedback: {
+        overall: parsedResponse.generalFeedback?.overall || ''
+      }
+    };
+
+    // Validate and return
+    return resumeAnalysisResponseSchema.parse(validatedResponse);
 
   } catch (error) {
     console.error('Resume analysis error:', {
@@ -201,8 +209,6 @@ export async function analyzeResumeWithAI(
       zodErrors: error instanceof z.ZodError ? error.errors : undefined,
       timestamp: new Date().toISOString()
     });
-
-    // Throw the error instead of returning a default response
     throw error;
   }
 }
