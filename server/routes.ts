@@ -676,8 +676,8 @@ async function analyzeResume(content: string, userId: string) {
       },
 
       // Keywords and feedback
-      primaryKeywords: rawAnalysis.primaryKeywords || [],
-      generalFeedback: rawAnalysis.generalFeedback?.overall || "No feedback available",
+      primaryKeywords: rawAnalysis.primaryKeywords || rawAnalysis.importantKeywords || [],
+      generalFeedback: rawAnalysis.generalFeedback || "No feedback available",
 
       // Map scores to scoring criteria structure
       scoringCriteria: {
