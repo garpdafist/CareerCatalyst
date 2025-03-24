@@ -8,7 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Basic validation schema with required fields
+// Response validation schema
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
   scores: z.object({
@@ -56,7 +56,7 @@ const resumeAnalysisResponseSchema = z.object({
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the resume and return a JSON object with EXACTLY these fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. CAREFULLY analyze the resume and return a JSON object with EXACTLY these fields:
 
 {
   "score": (overall score 0-100),
@@ -64,14 +64,14 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the resume and
     "keywordsRelevance": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze keywords",
-      "keywords": ["found keywords"]
+      "feedback": "detailed keyword analysis",
+      "keywords": ["extract keywords from resume"]
     },
     "achievementsMetrics": {
       "score": (1-10),
       "maxScore": 10,
       "feedback": "analyze achievements",
-      "highlights": ["found achievements"]
+      "highlights": ["list achievements"]
     },
     "structureReadability": {
       "score": (1-10),
@@ -89,15 +89,20 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the resume and
       "feedback": "analyze polish"
     }
   },
-  "identifiedSkills": ["found skills"],
-  "primaryKeywords": ["found keywords"],
-  "suggestedImprovements": ["found improvements"],
+  "identifiedSkills": ["extract ALL skills from resume"],
+  "primaryKeywords": ["extract ALL important keywords"],
+  "suggestedImprovements": ["list improvements needed"],
   "generalFeedback": {
-    "overall": "general analysis feedback"
+    "overall": "provide detailed feedback"
   }
 }
 
-Critical: You MUST include primaryKeywords and generalFeedback.overall in your response.`;
+CRITICAL: You MUST extract actual content from the resume for:
+1. identifiedSkills - List ALL technical and soft skills found
+2. primaryKeywords - List ALL important keywords and terms
+3. generalFeedback.overall - Provide detailed analysis
+
+Do not return empty arrays or placeholder text.`;
 
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
@@ -112,7 +117,7 @@ async function preprocessText(text: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "Summarize while preserving key information about skills, experience, and achievements."
+            content: "Summarize while preserving ALL key information about skills, experience, and achievements."
           },
           { role: "user", content: chunk }
         ],
@@ -145,10 +150,10 @@ export async function analyzeResumeWithAI(
     if (jobDescription) {
       prompt += `\n\nAnalyze against this job description:\n${jobDescription}\n\nAdd this to your response:
 "jobAnalysis": {
-  "alignmentAndStrengths": ["matches"],
-  "gapsAndConcerns": ["gaps"],
-  "recommendationsToTailor": ["recommendations"],
-  "overallFit": "fit assessment"
+  "alignmentAndStrengths": ["list matches"],
+  "gapsAndConcerns": ["list gaps"],
+  "recommendationsToTailor": ["list recommendations"],
+  "overallFit": "detailed fit assessment"
 }`;
     }
 
@@ -166,36 +171,27 @@ export async function analyzeResumeWithAI(
       throw new Error('OpenAI returned an empty response');
     }
 
-    // Log raw response and parsed structure
-    const rawResponse = response.choices[0].message.content;
+    // Log raw response for debugging
     console.log('Raw OpenAI Response:', {
-      content: rawResponse,
+      content: response.choices[0].message.content,
       timestamp: new Date().toISOString()
     });
 
-    const parsedResponse = JSON.parse(rawResponse.trim());
+    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
 
     // Log parsed response before validation
-    console.log('Parsed Response Structure:', {
+    console.log('Parsed Response:', {
       hasGeneralFeedback: !!parsedResponse.generalFeedback,
       generalFeedbackContent: parsedResponse.generalFeedback?.overall,
-      hasPrimaryKeywords: !!parsedResponse.primaryKeywords,
       primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
       primaryKeywords: parsedResponse.primaryKeywords,
+      identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
+      identifiedSkills: parsedResponse.identifiedSkills,
       timestamp: new Date().toISOString()
     });
 
-    // Clean and validate the response
-    const cleanedResponse = {
-      ...parsedResponse,
-      primaryKeywords: Array.isArray(parsedResponse.primaryKeywords) ? parsedResponse.primaryKeywords : [],
-      generalFeedback: {
-        overall: parsedResponse.generalFeedback?.overall || "No feedback available"
-      }
-    };
-
-    // Validate and return
-    return resumeAnalysisResponseSchema.parse(cleanedResponse);
+    // Return parsed response directly (schema will validate)
+    return resumeAnalysisResponseSchema.parse(parsedResponse);
 
   } catch (error) {
     console.error('Resume analysis error:', {
@@ -206,23 +202,8 @@ export async function analyzeResumeWithAI(
       timestamp: new Date().toISOString()
     });
 
-    // Return basic response on error
-    return {
-      score: 60,
-      scores: {
-        keywordsRelevance: { score: 1, maxScore: 10, feedback: "Analysis unavailable", keywords: [] },
-        achievementsMetrics: { score: 1, maxScore: 10, feedback: "Analysis unavailable", highlights: [] },
-        structureReadability: { score: 1, maxScore: 10, feedback: "Analysis unavailable" },
-        summaryClarity: { score: 1, maxScore: 10, feedback: "Analysis unavailable" },
-        overallPolish: { score: 1, maxScore: 10, feedback: "Analysis unavailable" }
-      },
-      identifiedSkills: [],
-      primaryKeywords: ["Analysis unavailable"],
-      suggestedImprovements: [],
-      generalFeedback: {
-        overall: "Analysis unavailable"
-      }
-    };
+    // Throw the error instead of returning a default response
+    throw error;
   }
 }
 
