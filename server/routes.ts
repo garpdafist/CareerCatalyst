@@ -41,7 +41,7 @@ const upload = multer({
     const allowedExtensions = ['pdf', 'txt'];
     const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
 
-    if (allowedTypes.includes(file.mimetype) || 
+    if (allowedTypes.includes(file.mimetype) ||
         (fileExtension && allowedExtensions.includes(fileExtension))) {
       cb(null, true);
     } else {
@@ -57,7 +57,18 @@ const requireAuth = async (req: any, res: any, next: any) => {
   next();
 };
 
-// Resume analysis handler
+// Add timeout middleware after other imports
+const requestTimeout = (req: any, res: any, next: any) => {
+  res.setTimeout(30000, () => {
+    res.status(408).json({
+      message: "Request timeout",
+      details: "The analysis is taking longer than expected. Please try with a smaller document or try again later."
+    });
+  });
+  next();
+};
+
+// Modified handleAnalysis function
 const handleAnalysis = async (req: any, res: any) => {
   try {
     let content = req.body?.content || '';
@@ -73,6 +84,10 @@ const handleAnalysis = async (req: any, res: any) => {
         details: "Please provide either a file upload or text content"
       });
     }
+
+    // Send keep-alive headers
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Keep-Alive', 'timeout=30');
 
     // Process content
     try {
@@ -137,8 +152,9 @@ export function registerRoutes(app: Express): Server {
     res.json({ message: "pong" });
   });
 
-  // Resume analysis routes
+  // Resume analysis routes with timeout middleware
   app.post("/api/resume-analyze",
+    requestTimeout,
     requireAuth,
     upload.single('file'),
     handleAnalysis
