@@ -97,8 +97,8 @@ export class DatabaseStorage implements IStorage {
       console.log('Received AI analysis:', {
         score: aiAnalysis.score,
         hasScores: !!aiAnalysis.scores,
-        hasResumeSections: !!aiAnalysis.resumeSections,
-        skillsCount: aiAnalysis.identifiedSkills?.length || 0,
+        primaryKeywordsCount: aiAnalysis.primaryKeywords?.length,
+        primaryKeywords: aiAnalysis.primaryKeywords,
         timestamp: new Date().toISOString()
       });
 
@@ -110,7 +110,7 @@ export class DatabaseStorage implements IStorage {
         analysis: {
           scores: aiAnalysis.scores,
           identifiedSkills: aiAnalysis.identifiedSkills,
-          primaryKeywords: aiAnalysis.importantKeywords,
+          primaryKeywords: aiAnalysis.primaryKeywords || [], // Ensure we use primaryKeywords consistently
           suggestedImprovements: aiAnalysis.suggestedImprovements,
           generalFeedback: aiAnalysis.generalFeedback
         }
@@ -141,11 +141,12 @@ export class DatabaseStorage implements IStorage {
       userId: data.userId,
       score: data.score,
       hasGeneralFeedback: !!data.analysis.generalFeedback,
-      generalFeedbackContent: typeof data.analysis.generalFeedback === 'object' 
-        ? data.analysis.generalFeedback.overall 
+      generalFeedbackContent: typeof data.analysis.generalFeedback === 'object'
+        ? data.analysis.generalFeedback.overall
         : data.analysis.generalFeedback,
       hasPrimaryKeywords: !!data.analysis.primaryKeywords,
       primaryKeywordsCount: data.analysis.primaryKeywords?.length,
+      primaryKeywords: data.analysis.primaryKeywords,
       timestamp: new Date().toISOString()
     });
 
@@ -158,7 +159,7 @@ export class DatabaseStorage implements IStorage {
           score: data.score,
           scores: data.analysis.scores,
           identifiedSkills: data.analysis.identifiedSkills,
-          primaryKeywords: data.analysis.primaryKeywords || [],
+          primaryKeywords: data.analysis.primaryKeywords, // Use primaryKeywords directly
           suggestedImprovements: data.analysis.suggestedImprovements,
           generalFeedback: typeof data.analysis.generalFeedback === 'object'
             ? data.analysis.generalFeedback.overall
@@ -174,6 +175,7 @@ export class DatabaseStorage implements IStorage {
         score: analysis.score,
         hasPrimaryKeywords: !!analysis.primaryKeywords,
         primaryKeywordsCount: analysis.primaryKeywords?.length,
+        primaryKeywords: analysis.primaryKeywords,
         hasGeneralFeedback: !!analysis.generalFeedback,
         generalFeedbackContent: analysis.generalFeedback,
         timestamp: new Date().toISOString()

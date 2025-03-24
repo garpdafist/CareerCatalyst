@@ -845,23 +845,11 @@ const handleAnalysis = async (req: Request, res: Response) => {
       console.log('Analysis completed successfully:', {
         analysisId: analysis.id,
         score: analysis.score,
-        skillsCount: analysis.identifiedSkills?.length,
-        hasStructuredContent: true,
-        structuredContentSections: Object.keys(analysis.resumeSections || {}),
-        hasScoringCriteria: true,
-        scoringCriteriaSections: Object.keys(analysis.scores || {}),
-        feedbackCount: analysis.suggestedImprovements?.length,
-        skillsCount: analysis.identifiedSkills?.length,
-        keywordsCount: analysis.importantKeywords?.length
-      });
-
-      // Log raw analysis before any transformation
-      console.log('Raw analysis from storage:', {
-        hasGeneralFeedback: !!analysis.generalFeedback,
-        generalFeedbackContent: analysis.generalFeedback,
         hasPrimaryKeywords: !!analysis.primaryKeywords,
         primaryKeywordsCount: analysis.primaryKeywords?.length,
         primaryKeywords: analysis.primaryKeywords,
+        hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback,
         timestamp: new Date().toISOString()
       });
 
@@ -871,15 +859,16 @@ const handleAnalysis = async (req: Request, res: Response) => {
         primaryKeywords: analysis.primaryKeywords || [], // Ensure array exists
         generalFeedback: {
           overall: typeof analysis.generalFeedback === 'object'
-          ? analysis.generalFeedback.overall
-          : analysis.generalFeedback || ''
+            ? analysis.generalFeedback.overall
+            : analysis.generalFeedback || ''
         }
       };
 
       // Log final response before sending
       console.log('Final response to client:', {
         hasPrimaryKeywords: !!response.primaryKeywords,
-        primaryKeywordsCount: response.primaryKeywords.length,
+        primaryKeywordsCount: response.primaryKeywords?.length,
+        primaryKeywords: response.primaryKeywords,
         hasGeneralFeedback: !!response.generalFeedback,
         generalFeedbackContent: response.generalFeedback.overall,
         timestamp: new Date().toISOString()
@@ -895,7 +884,6 @@ const handleAnalysis = async (req: Request, res: Response) => {
       });
       throw analysisError;
     }
-
   } catch (error: any) {
     console.error('Resume analysis error:', {
       message: error.message,
@@ -910,232 +898,94 @@ const handleAnalysis = async (req: Request, res: Response) => {
   }
 };
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  //  // Add session middleware
-  app.use(sessionMiddleware);
+app.post("/api/resume-analyze",
+  requireAuth,
+  upload.single('file'),
+  handleAnalysis
+);
 
-  // Modify the /api/user route to return mock user for testing
-  app.get("/api/user", async (req, res) => {
-    // For testing: Always return mock user
-    const mockUser = {
-      id: "test-user-123",
-      email: "test@example.com",
-      emailVerified: new Date(),
-      lastLoginAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    res.json(mockUser);
+app.get("/api/resume-analysis/:id", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id);
+  const analysis = await storage.getResumeAnalysis(id);
+
+  if (!analysis) {
+    res.status(404).json({ message: "Analysis not found" });
+    return;
+  }
+
+  // Ensure user can only access their own analyses
+  if (analysis.userId !== req.session.userId) {
+    res.status(403).json({ message: "Forbidden" });
+    return;
+  }
+
+  res.json(analysis);
+});
+
+app.get("/api/user/analyses", requireAuth, async (req, res) => {
+  const analyses = await storage.getUserAnalyses(req.session.userId!);
+  res.json(analyses);
+});
+
+// Add configuration endpoint
+app.get("/api/config", (_req, res) => {
+  res.json({
+    supabaseUrl: process.env.VITE_SUPABASE_URL || "",
+    supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || ""
   });
+});
 
-  // Auth routes
-  app.post("/api/auth/login", async (req, res) => {
-    const schema = z.object({
-      email: z.string().email(),
+app.post("/api/generate-cover-letter", requireAuth, async (req, res) => {
+  try {
+    const { role, company, achievements, brand, formats, resumeData } = req.body;
+
+    if (!role || !company || !formats || formats.length === 0) {
+      return res.status(400).json({
+        message: "Missing required fields: role, company, and at least one format"
+      });
+    }
+
+    const content = await generateCoverLetterContent(
+      role,
+      company,
+      achievements,
+      brand,
+      formats,
+      resumeData
+    );
+
+    res.json(content);
+  } catch (error: any) {
+    console.error('Cover letter generation error:', error);
+    res.status(500).json({
+      message: "Failed to generate content",
+      error: error.message
     });
+  }
+});
 
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      res.status(400).json({ message: "Invalid email" });
-      return;
+
+app.post("/api/analyze-linkedin-content", requireAuth, async (req, res) => {
+  try {
+    const { sections } = req.body;
+
+    if (!sections || !Array.isArray(sections)) {
+      return res.status(400).json({
+        message: "Sections array is required"
+      });
     }
 
-    const { email } = result.data;
-
-    try {
-      // Generate OTP and magic link token
-      const otp = generateOTP();
-      const magicToken = randomBytes(32).toString('hex');
-
-      // Store OTP and magic token with expiry
-      await storage.storeVerification(email, otp, magicToken);
-
-      // Generate magic link
-      const magicLink = `${process.env.APP_URL}/auth/verify?token=${magicToken}`;
-
-      // Send verification email
-      await sendVerificationEmail(email, otp, magicLink);
-
-      res.json({ message: "Verification email sent" });
-    } catch (error) {
-      console.error('Error sending verification:', error);
-      res.status(500).json({ message: "Failed to send verification" });
-    }
-  });
-
-  app.post("/api/auth/verify", async (req, res) => {
-    const schema = z.object({
-      email: z.string().email(),
-      otp: z.string().length(6),
-    });
-
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      res.status(400).json({ message: "Invalid verification data" });
-      return;
-    }
-
-    const { email, otp } = result.data;
-
-    try {
-      // Verify OTP
-      const isValid = await storage.verifyOTP(email, otp);
-      if (!isValid) {
-        res.status(401).json({ message: "Invalid or expired verification code" });
-        return;
-      }
-
-      // Get or create user
-      let user = await storage.getUserByEmail(email);
-      if (!user) {
-        user = await storage.createUser(email);
-      }
-
-      // Set session
-      req.session.userId = user.id;
-      req.session.email = email;
-
-      res.json(user);
-    } catch (error) {
-      console.error('Verification error:', error);
-      res.status(500).json({ message: "Verification failed" });
-    }
-  });
-
-  app.get("/api/auth/verify", async (req, res) => {
-    const token = req.query.token as string;
-    if (!token) {
-      res.status(400).json({ message: "Missing verification token" });
-      return;
-    }
-
-    try {
-      // Verify magic link token
-      const email = await storage.verifyMagicToken(token);
-      if (!email) {
-        res.status(401).json({ message: "Invalid or expired verification link" });
-        return;
-      }
-
-      // Get or create user
-      let user = await storage.getUserByEmail(email);
-      if (!user) {
-        user = await storage.createUser(email);
-      }
-
-      // Set session
-      req.session.userId = user.id;
-      req.session.email = email;
-
-      // Redirect to home page
-      res.redirect('/');
-    } catch (error) {
-      console.error('Magic link verification error:', error);
-      res.status(500).json({ message: "Verification failed" });
-    }
-  });
-
-  app.post("/api/auth/logout", (req, res) => {
-    // Clear the session
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('Error during logout:', err);
-        return res.status(500).json({ message: "Failed to logout" });
-      }
-      res.clearCookie('connect.sid'); // Clear the session cookie
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  // Protected resume routes
-  app.post("/api/resume-analyze",
-    requireAuth,
-    upload.single('file'),
-    handleAnalysis
-  );
-
-  app.get("/api/resume-analysis/:id", requireAuth, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const analysis = await storage.getResumeAnalysis(id);
-
-    if (!analysis) {
-      res.status(404).json({ message: "Analysis not found" });
-      return;
-    }
-
-    // Ensure user can only access their own analyses
-    if (analysis.userId !== req.session.userId) {
-      res.status(403).json({ message: "Forbidden" });
-      return;
-    }
-
+    const analysis = await analyzeLinkedInContent(sections);
     res.json(analysis);
-  });
-
-  app.get("/api/user/analyses", requireAuth, async (req, res) => {
-    const analyses = await storage.getUserAnalyses(req.session.userId!);
-    res.json(analyses);
-  });
-
-  // Add configuration endpoint
-  app.get("/api/config", (_req, res) => {
-    res.json({
-      supabaseUrl: process.env.VITE_SUPABASE_URL || "",
-      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || ""
+  } catch (error: any) {
+    console.error('LinkedIn content analysis error:', error);
+    res.status(500).json({
+      message: "Failed to analyze LinkedIn content",
+      error: error.message
     });
-  });
+  }
+});
 
-  app.post("/api/generate-cover-letter", requireAuth, async (req, res) => {
-    try {
-      const { role, company, achievements, brand, formats, resumeData } = req.body;
-
-      if (!role || !company || !formats || formats.length === 0) {
-        return res.status(400).json({
-          message: "Missing required fields: role, company, and at least one format"
-        });
-      }
-
-      const content = await generateCoverLetterContent(
-        role,
-        company,
-        achievements,
-        brand,
-        formats,
-        resumeData
-      );
-
-      res.json(content);
-    } catch (error: any) {
-      console.error('Cover letter generation error:', error);
-      res.status(500).json({
-        message: "Failed to generate content",
-        error: error.message
-      });
-    }
-  });
-
-
-  app.post("/api/analyze-linkedin-content", requireAuth, async (req, res) => {
-    try {
-      const { sections } = req.body;
-
-      if (!sections || !Array.isArray(sections)) {
-        return res.status(400).json({
-          message: "Sections array is required"
-        });
-      }
-
-      const analysis = await analyzeLinkedInContent(sections);
-      res.json(analysis);
-    } catch (error: any) {
-      console.error('LinkedIn content analysis error:', error);
-      res.status(500).json({
-        message: "Failed to analyze LinkedIn content",
-        error: error.message
-      });
-    }
-  });
-
-  const httpServer = createServer(app);
-  return httpServer;
+const httpServer = createServer(app);
+return httpServer;
 }
