@@ -9,28 +9,21 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
 // Enhanced retry configuration
-const MAX_RETRIES = 5;  // Increased from 3
-const INITIAL_RETRY_DELAY = 2000; // Increased from 1000ms to 2000ms
-const MAX_RETRY_DELAY = 30000; // Cap at 30 seconds
+const MAX_RETRIES = 3;  // Reduced from 5
+const INITIAL_RETRY_DELAY = 1000; // Reduced from 2000ms to 1000ms
+const MAX_RETRY_DELAY = 10000; // Reduced from 30s to 10s
 
-// Add jitter to prevent thundering herd
-function getJitteredDelay(baseDelay: number): number {
-  const jitter = baseDelay * 0.1 * Math.random(); // 10% jitter
-  return baseDelay + jitter;
-}
-
-// Request queue implementation
+// Simplified request queue implementation
 class RequestQueue {
   private queue: Array<() => Promise<any>> = [];
   private processing = false;
   private lastRequestTime = 0;
-  private readonly minRequestInterval = 1000; // Minimum 1 second between requests
+  private readonly minRequestInterval = 500; // Reduced from 1000ms to 500ms
 
   async add<T>(operation: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this.queue.push(async () => {
         try {
-          // Ensure minimum time between requests
           const now = Date.now();
           const timeSinceLastRequest = now - this.lastRequestTime;
           if (timeSinceLastRequest < this.minRequestInterval) {
@@ -53,8 +46,8 @@ class RequestQueue {
 
   private async processQueue() {
     if (this.processing || this.queue.length === 0) return;
-
     this.processing = true;
+
     while (this.queue.length > 0) {
       const nextOperation = this.queue.shift();
       if (nextOperation) {
@@ -67,94 +60,100 @@ class RequestQueue {
 
 const requestQueue = new RequestQueue();
 
-// Enhanced exponential backoff with jitter
-async function withExponentialBackoff<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES,
-  initialDelay: number = INITIAL_RETRY_DELAY
-): Promise<T> {
-  return requestQueue.add(async () => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await operation();
-      } catch (error: any) {
-        const isRateLimit = error?.status === 429;
-        const isServerError = error?.status >= 500;
+// Optimized text preprocessing
+async function preprocessText(text: string): Promise<string> {
+  // Only preprocess if text is too long
+  if (text.length <= MAX_TEXT_LENGTH) {
+    return text;
+  }
 
-        if ((isRateLimit || isServerError) && attempt < maxRetries) {
-          const baseDelay = Math.min(
-            initialDelay * Math.pow(2, attempt - 1),
-            MAX_RETRY_DELAY
-          );
-          const delay = getJitteredDelay(baseDelay);
+  try {
+    const chunks = text.match(/.{1,12000}/g) || [];
+    const summaries = await Promise.all(chunks.map(async (chunk) => {
+      return await requestQueue.add(async () => {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", 
+          messages: [
+            {
+              role: "system",
+              content: "Summarize while preserving key information about skills, experience, and metrics."
+            },
+            { role: "user", content: chunk }
+          ],
+          temperature: 0
+        });
+        return response.choices[0].message.content || '';
+      });
+    }));
 
-          console.log(`API error (attempt ${attempt}/${maxRetries}):`, {
-            status: error?.status,
-            message: error?.message,
-            retryIn: delay,
-            timestamp: new Date().toISOString()
-          });
-
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        throw error;
-      }
-    }
-    throw new Error(`Failed after ${maxRetries} attempts`);
-  });
+    return summaries.join('\n\n');
+  } catch (error) {
+    console.error('Text preprocessing error:', error);
+    // Return original text if preprocessing fails
+    return text;
+  }
 }
 
-// Response validation schema
-const resumeAnalysisResponseSchema = z.object({
-  score: z.number().min(0).max(100),
-  scores: z.object({
-    keywordsRelevance: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string(),
-      keywords: z.array(z.string())
-    }),
-    achievementsMetrics: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string(),
-      highlights: z.array(z.string())
-    }),
-    structureReadability: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string()
-    }),
-    summaryClarity: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string()
-    }),
-    overallPolish: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string()
-    })
-  }),
-  identifiedSkills: z.array(z.string()),
-  primaryKeywords: z.array(z.string()),
-  suggestedImprovements: z.array(z.string()),
-  generalFeedback: z.object({
-    overall: z.string()
-  }),
-  jobAnalysis: z.object({
-    alignmentAndStrengths: z.array(z.string()),
-    gapsAndConcerns: z.array(z.string()),
-    recommendationsToTailor: z.array(z.string()),
-    overallFit: z.string()
-  }).optional()
-});
+// Streamlined API request with retries
+async function makeOpenAIRequest<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES
+): Promise<T> {
+  let lastError;
 
-type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await requestQueue.add(operation);
+    } catch (error: any) {
+      lastError = error;
+
+      if (error?.status === 429 && attempt < maxRetries) {
+        const delay = Math.min(
+          INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1),
+          MAX_RETRY_DELAY
+        );
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
+export async function analyzeResumeWithAI(
+  content: string,
+  jobDescription?: string
+): Promise<any> {
+  try {
+    const processedContent = await preprocessText(content);
+
+    return await makeOpenAIRequest(async () => {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert resume analyzer. Analyze the resume and provide detailed feedback focusing on:
+1. Key skills and qualifications
+2. Experience and achievements
+3. Areas for improvement`
+          },
+          { role: "user", content: processedContent }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    });
+  } catch (error) {
+    console.error('Resume analysis error:', error);
+    throw error;
+  }
+}
 
 const SYSTEM_PROMPT = `You are an expert resume analyzer. CAREFULLY analyze the resume and provide a complete analysis in JSON format containing EXACTLY these fields:
-
 {
   "score": (overall score 0-100),
   "scores": {
@@ -201,118 +200,53 @@ CRITICAL REQUIREMENTS:
 4. Never return empty arrays or placeholder text
 5. Return ONLY valid JSON`;
 
-async function preprocessText(text: string): Promise<string> {
-  if (text.length <= MAX_TEXT_LENGTH) {
-    return text;
-  }
+type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-  try {
-    const chunks = text.match(/.{1,12000}/g) || [];
-    const summaries = await Promise.all(chunks.map(async (chunk) => {
-      return await withExponentialBackoff(async () => {
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o", 
-          messages: [
-            {
-              role: "system",
-              content: "Summarize while preserving ALL key information about skills, experience, achievements, and metrics. Keep all dates and specific technical terms."
-            },
-            { role: "user", content: chunk }
-          ],
-          temperature: 0
-        });
-        return response.choices[0].message.content || '';
-      });
-    }));
+const resumeAnalysisResponseSchema = z.object({
+  score: z.number().min(0).max(100),
+  scores: z.object({
+    keywordsRelevance: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string(),
+      keywords: z.array(z.string())
+    }),
+    achievementsMetrics: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string(),
+      highlights: z.array(z.string())
+    }),
+    structureReadability: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string()
+    }),
+    summaryClarity: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string()
+    }),
+    overallPolish: z.object({
+      score: z.number().min(1).max(10),
+      maxScore: z.literal(10),
+      feedback: z.string()
+    })
+  }),
+  identifiedSkills: z.array(z.string()),
+  primaryKeywords: z.array(z.string()),
+  suggestedImprovements: z.array(z.string()),
+  generalFeedback: z.object({
+    overall: z.string()
+  }),
+  jobAnalysis: z.object({
+    alignmentAndStrengths: z.array(z.string()),
+    gapsAndConcerns: z.array(z.string()),
+    recommendationsToTailor: z.array(z.string()),
+    overallFit: z.string()
+  }).optional()
+});
 
-    return summaries.join('\n\n');
-  } catch (error) {
-    console.error('Text preprocessing error:', error);
-    throw error;
-  }
-}
-
-export async function analyzeResumeWithAI(
-  content: string,
-  jobDescription?: string
-): Promise<ResumeAnalysisResponse> {
-  try {
-    console.log('Starting resume analysis...', {
-      contentLength: content.length,
-      hasJobDescription: !!jobDescription,
-      timestamp: new Date().toISOString()
-    });
-
-    const processedContent = await preprocessText(content);
-
-    let prompt = SYSTEM_PROMPT;
-    if (jobDescription) {
-      prompt += `\n\nAnalyze against this job description:\n${jobDescription}\n\nAdd this to your response:
-"jobAnalysis": {
-  "alignmentAndStrengths": ["list specific matches with requirements"],
-  "gapsAndConcerns": ["list specific gaps or mismatches"],
-  "recommendationsToTailor": ["list specific suggestions to align with role"],
-  "overallFit": "provide detailed assessment of fit"
-}`;
-    }
-
-    return await withExponentialBackoff(async () => {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", 
-        messages: [
-          { role: "system", content: prompt },
-          { role: "user", content: processedContent }
-        ],
-        temperature: 0.1,
-        response_format: { type: "json_object" }
-      });
-
-      if (!response.choices[0]?.message?.content) {
-        throw new Error('OpenAI returned an empty response');
-      }
-
-      // Log raw response for debugging
-      console.log('Raw OpenAI Response:', {
-        content: response.choices[0].message.content,
-        timestamp: new Date().toISOString()
-      });
-
-      // Parse and log intermediate structure
-      const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
-      console.log('Parsed Response Structure:', {
-        hasGeneralFeedback: !!parsedResponse.generalFeedback,
-        generalFeedbackContent: parsedResponse.generalFeedback?.overall,
-        hasPrimaryKeywords: !!parsedResponse.primaryKeywords,
-        primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
-        primaryKeywords: parsedResponse.primaryKeywords,
-        identifiedSkillsCount: parsedResponse.identifiedSkills?.length,
-        timestamp: new Date().toISOString()
-      });
-
-      // Ensure required fields exist
-      const validatedResponse = {
-        ...parsedResponse,
-        primaryKeywords: parsedResponse.primaryKeywords || [],
-        generalFeedback: {
-          overall: parsedResponse.generalFeedback?.overall || ''
-        }
-      };
-
-      // Validate and return
-      return resumeAnalysisResponseSchema.parse(validatedResponse);
-    });
-
-  } catch (error) {
-    console.error('Resume analysis error:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      isZodError: error instanceof z.ZodError,
-      zodErrors: error instanceof z.ZodError ? error.errors : undefined,
-      timestamp: new Date().toISOString()
-    });
-    throw error;
-  }
-}
 
 export async function analyzeResumeWithJobDescription(
   resumeText: string,
@@ -360,4 +294,41 @@ Provide a detailed analysis of how this resume aligns with the job requirements.
     console.error('Resume-job analysis error:', error);
     throw new Error(`Failed to analyze resume against job description: ${error.message}`);
   }
+}
+
+async function withExponentialBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES,
+  initialDelay: number = INITIAL_RETRY_DELAY
+): Promise<T> {
+  return requestQueue.add(async () => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        const isRateLimit = error?.status === 429;
+        const isServerError = error?.status >= 500;
+
+        if ((isRateLimit || isServerError) && attempt < maxRetries) {
+          const baseDelay = Math.min(
+            initialDelay * Math.pow(2, attempt - 1),
+            MAX_RETRY_DELAY
+          );
+          const delay = baseDelay; // Removed jitter
+
+          console.log(`API error (attempt ${attempt}/${maxRetries}):`, {
+            status: error?.status,
+            message: error?.message,
+            retryIn: delay,
+            timestamp: new Date().toISOString()
+          });
+
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new Error(`Failed after ${maxRetries} attempts`);
+  });
 }
