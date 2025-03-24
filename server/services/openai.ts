@@ -8,7 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 12000; // About 3000 tokens
 
-// Response validation schema
+// Basic validation schema with required fields
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
   scores: z.object({
@@ -41,10 +41,10 @@ const resumeAnalysisResponseSchema = z.object({
     })
   }),
   identifiedSkills: z.array(z.string()),
-  primaryKeywords: z.array(z.string()).min(1),  // Ensure at least one keyword
+  primaryKeywords: z.array(z.string()),
   suggestedImprovements: z.array(z.string()),
   generalFeedback: z.object({
-    overall: z.string().min(1)  // Ensure non-empty feedback
+    overall: z.string()
   }),
   jobAnalysis: z.object({
     alignmentAndStrengths: z.array(z.string()),
@@ -56,7 +56,7 @@ const resumeAnalysisResponseSchema = z.object({
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
-const SYSTEM_PROMPT = `You are an expert resume analyzer. Return a JSON object with these EXACT fields:
+const SYSTEM_PROMPT = `You are an expert resume analyzer. Analyze the resume and return a JSON object with EXACTLY these fields:
 
 {
   "score": (overall score 0-100),
@@ -64,44 +64,40 @@ const SYSTEM_PROMPT = `You are an expert resume analyzer. Return a JSON object w
     "keywordsRelevance": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback about keyword usage",
-      "keywords": ["list ALL relevant keywords"]
+      "feedback": "analyze keywords",
+      "keywords": ["found keywords"]
     },
     "achievementsMetrics": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "detailed feedback about achievements",
-      "highlights": ["list ALL key achievements"]
+      "feedback": "analyze achievements",
+      "highlights": ["found achievements"]
     },
     "structureReadability": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze resume structure"
+      "feedback": "analyze structure"
     },
     "summaryClarity": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze professional summary"
+      "feedback": "analyze summary"
     },
     "overallPolish": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analyze overall presentation"
+      "feedback": "analyze polish"
     }
   },
-  "identifiedSkills": ["list ALL skills found"],
-  "primaryKeywords": ["list ALL important keywords from resume"],
-  "suggestedImprovements": ["list specific improvements needed"],
+  "identifiedSkills": ["found skills"],
+  "primaryKeywords": ["found keywords"],
+  "suggestedImprovements": ["found improvements"],
   "generalFeedback": {
-    "overall": "provide detailed analysis of the resume's strengths and areas for improvement"
+    "overall": "general analysis feedback"
   }
 }
 
-CRITICAL REQUIREMENTS:
-1. ALWAYS include primaryKeywords with ALL important terms found
-2. ALWAYS provide detailed generalFeedback.overall
-3. Never skip any fields
-4. Return ONLY valid JSON`;
+Critical: You MUST include primaryKeywords and generalFeedback.overall in your response.`;
 
 async function preprocessText(text: string): Promise<string> {
   if (text.length <= MAX_TEXT_LENGTH) {
@@ -147,10 +143,10 @@ export async function analyzeResumeWithAI(
 
     let prompt = SYSTEM_PROMPT;
     if (jobDescription) {
-      prompt += `\n\nAlso analyze against this job description:\n${jobDescription}\n\nAdd this to your response:
+      prompt += `\n\nAnalyze against this job description:\n${jobDescription}\n\nAdd this to your response:
 "jobAnalysis": {
-  "alignmentAndStrengths": ["matching requirements"],
-  "gapsAndConcerns": ["gaps found"],
+  "alignmentAndStrengths": ["matches"],
+  "gapsAndConcerns": ["gaps"],
   "recommendationsToTailor": ["recommendations"],
   "overallFit": "fit assessment"
 }`;
@@ -170,36 +166,36 @@ export async function analyzeResumeWithAI(
       throw new Error('OpenAI returned an empty response');
     }
 
-    // Log raw response for debugging
+    // Log raw response and parsed structure
+    const rawResponse = response.choices[0].message.content;
     console.log('Raw OpenAI Response:', {
-      content: response.choices[0].message.content,
+      content: rawResponse,
       timestamp: new Date().toISOString()
     });
 
-    const parsedResponse = JSON.parse(response.choices[0].message.content.trim());
+    const parsedResponse = JSON.parse(rawResponse.trim());
 
-    // Log parsed structure before validation
-    console.log('Before validation:', {
+    // Log parsed response before validation
+    console.log('Parsed Response Structure:', {
       hasGeneralFeedback: !!parsedResponse.generalFeedback,
       generalFeedbackContent: parsedResponse.generalFeedback?.overall,
+      hasPrimaryKeywords: !!parsedResponse.primaryKeywords,
       primaryKeywordsCount: parsedResponse.primaryKeywords?.length,
       primaryKeywords: parsedResponse.primaryKeywords,
       timestamp: new Date().toISOString()
     });
 
-    // Validate response
-    const validated = resumeAnalysisResponseSchema.parse(parsedResponse);
+    // Clean and validate the response
+    const cleanedResponse = {
+      ...parsedResponse,
+      primaryKeywords: Array.isArray(parsedResponse.primaryKeywords) ? parsedResponse.primaryKeywords : [],
+      generalFeedback: {
+        overall: parsedResponse.generalFeedback?.overall || "No feedback available"
+      }
+    };
 
-    // Log validated response
-    console.log('After validation:', {
-      hasGeneralFeedback: !!validated.generalFeedback,
-      generalFeedbackContent: validated.generalFeedback?.overall,
-      primaryKeywordsCount: validated.primaryKeywords.length,
-      primaryKeywords: validated.primaryKeywords,
-      timestamp: new Date().toISOString()
-    });
-
-    return validated;
+    // Validate and return
+    return resumeAnalysisResponseSchema.parse(cleanedResponse);
 
   } catch (error) {
     console.error('Resume analysis error:', {
@@ -210,51 +206,21 @@ export async function analyzeResumeWithAI(
       timestamp: new Date().toISOString()
     });
 
-    // Return a structured response matching our schema
+    // Return basic response on error
     return {
       score: 60,
       scores: {
-        keywordsRelevance: { 
-          score: 6, 
-          maxScore: 10, 
-          feedback: "Automated analysis in progress", 
-          keywords: [] 
-        },
-        achievementsMetrics: { 
-          score: 6, 
-          maxScore: 10, 
-          feedback: "Automated analysis in progress", 
-          highlights: [] 
-        },
-        structureReadability: { 
-          score: 6, 
-          maxScore: 10, 
-          feedback: "Automated analysis in progress"
-        },
-        summaryClarity: { 
-          score: 6, 
-          maxScore: 10, 
-          feedback: "Automated analysis in progress"
-        },
-        overallPolish: { 
-          score: 6, 
-          maxScore: 10, 
-          feedback: "Automated analysis in progress"
-        }
+        keywordsRelevance: { score: 1, maxScore: 10, feedback: "Analysis unavailable", keywords: [] },
+        achievementsMetrics: { score: 1, maxScore: 10, feedback: "Analysis unavailable", highlights: [] },
+        structureReadability: { score: 1, maxScore: 10, feedback: "Analysis unavailable" },
+        summaryClarity: { score: 1, maxScore: 10, feedback: "Analysis unavailable" },
+        overallPolish: { score: 1, maxScore: 10, feedback: "Analysis unavailable" }
       },
       identifiedSkills: [],
-      primaryKeywords: ["analyzing"],
-      importantKeywords: ["analyzing"],
-      suggestedImprovements: ["Waiting for detailed analysis"],
+      primaryKeywords: ["Analysis unavailable"],
+      suggestedImprovements: [],
       generalFeedback: {
-        overall: "Analysis in progress. Please wait for detailed results."
-      },
-      resumeSections: {
-        professionalSummary: "",
-        workExperience: "",
-        education: "",
-        skills: "",
-        projects: ""
+        overall: "Analysis unavailable"
       }
     };
   }
