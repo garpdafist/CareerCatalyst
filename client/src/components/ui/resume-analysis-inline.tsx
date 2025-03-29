@@ -48,8 +48,23 @@ export function ResumeAnalysisInline({
     primaryKeywordsCount: Array.isArray(analysisData.primaryKeywords) ? analysisData.primaryKeywords.length : 0,
     hasGeneralFeedback: !!analysisData.generalFeedback,
     generalFeedbackType: typeof analysisData.generalFeedback,
-    jobAnalysisPresent: !!analysisData.jobAnalysis,
+    hasJobDescription: !!analysisData.jobDescription,
+    jobDescriptionType: typeof analysisData.jobDescription,
+    hasJobAnalysis: !!analysisData.jobAnalysis,
+    jobAnalysisType: analysisData.jobAnalysis ? typeof analysisData.jobAnalysis : 'undefined',
     jobAnalysisKeys: analysisData.jobAnalysis ? Object.keys(analysisData.jobAnalysis) : []
+  });
+  
+  // Debug message for job analysis section - enhanced logging
+  console.log("Job Analysis Section Debug:", {
+    shouldShowJobSection: !!analysisData.jobDescription || !!analysisData.jobAnalysis,
+    jobDescriptionValue: analysisData.jobDescription,
+    jobDescriptionType: typeof analysisData.jobDescription,
+    jobDescriptionJson: analysisData.jobDescription ? JSON.stringify(analysisData.jobDescription).substring(0, 100) : null,
+    jobAnalysisValue: analysisData.jobAnalysis,
+    jobAnalysisType: typeof analysisData.jobAnalysis,
+    jobAnalysisKeys: analysisData.jobAnalysis ? Object.keys(analysisData.jobAnalysis) : [],
+    jobAnalysisJson: analysisData.jobAnalysis ? JSON.stringify(analysisData.jobAnalysis).substring(0, 100) : null
   });
 
   return (
@@ -164,7 +179,17 @@ export function ResumeAnalysisInline({
         </div>
 
         {/* Job Analysis Section - Check if job description exists */}
-        {analysisData.jobDescription ? (
+        {/* Add explicit debug display */}
+        <div className="mb-1 hidden">
+          <pre className="text-xs">
+            Has job description: {JSON.stringify(!!analysisData.jobDescription)}
+            Job description type: {JSON.stringify(typeof analysisData.jobDescription)}
+            Has job analysis: {JSON.stringify(!!analysisData.jobAnalysis)}
+          </pre>
+        </div>
+
+        {/* Show job analysis if EITHER job description OR job analysis data exists */}
+        {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-2">Job Match Analysis</h3>
             
