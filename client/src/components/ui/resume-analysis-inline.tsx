@@ -31,6 +31,9 @@ export function ResumeAnalysisInline({
     return arr.slice(0, maxLength);
   };
 
+  // Debug data
+  console.log("Analysis Data:", analysisData);
+
   if (isLoading) {
     return (
       <div className="p-6 flex flex-col items-center justify-center">
@@ -53,12 +56,36 @@ export function ResumeAnalysisInline({
     );
   }
   
+  // Extract optional data with fallbacks
+  const identifiedSkills = analysisData.identifiedSkills || [];
+  const primaryKeywords = analysisData.primaryKeywords || [];
+  const suggestedImprovements = analysisData.suggestedImprovements || [];
+  const generalFeedback = analysisData.generalFeedback || "No general feedback available";
+  
+  // Normalize optional scores and fields
+  if (!analysisData.score && analysisData.scores) {
+    // Try to extract score from scores field if available
+    const totalScore = analysisData.scores.keywordsRelevance?.score + 
+                      analysisData.scores.achievementsMetrics?.score +
+                      analysisData.scores.structureReadability?.score +
+                      analysisData.scores.summaryClarity?.score +
+                      analysisData.scores.overallPolish?.score;
+    analysisData.score = totalScore || 70; // Default to 70 if we can't calculate
+  }
+  
+  // Helper to check if an array exists and has items
+  const hasItems = (arr?: string[] | null): boolean => {
+    return Boolean(arr && arr.length > 0);
+  };
+  
   // Check if we have job description analysis
-  const hasJobAnalysis = analysisData.jobAnalysis && 
-    (analysisData.jobAnalysis.alignmentAndStrengths?.length > 0 || 
-     analysisData.jobAnalysis.gapsAndConcerns?.length > 0 ||
-     analysisData.jobAnalysis.recommendationsToTailor?.length > 0 ||
-     analysisData.jobAnalysis.overallFit);
+  const jobAnalysis = analysisData.jobAnalysis || null;
+  const hasJobAnalysis = jobAnalysis && (
+    hasItems(jobAnalysis.alignmentAndStrengths) || 
+    hasItems(jobAnalysis.gapsAndConcerns) || 
+    hasItems(jobAnalysis.recommendationsToTailor) || 
+    Boolean(jobAnalysis.overallFit)
+  );
 
   return (
     <div className="space-y-8 bg-[#faf9f4] p-6 rounded-lg">
