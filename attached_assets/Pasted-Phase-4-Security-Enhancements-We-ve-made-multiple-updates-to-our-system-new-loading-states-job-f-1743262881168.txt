@@ -1,0 +1,31 @@
+Phase 4: Security Enhancements
+
+We’ve made multiple updates to our system (new loading states, job flows, saved analyses), but now we must finalize security measures:
+
+1. **Environment & Configuration Security**
+   - Confirm that all sensitive environment variables (DATABASE_URL, OPENAI_API_KEY, SESSION_SECRET, etc.) are only accessible server-side.
+   - Verify that production settings (NEXTAUTH_URL, NEXTAUTH_SECRET, DATABASE_URL) are correctly configured and not exposed in client code.
+
+2. **API & Rate Limiting**
+   - Add rate limiting (e.g., using Redis or an in-memory store) for critical endpoints (resume analysis, job-specific analysis) to prevent spam or DDoS attacks.
+   - Ensure error responses do not reveal sensitive details (like stack traces or DB info).
+
+3. **Authentication & Authorization**
+   - Ensure only authenticated users can see or retrieve saved analyses. Tie each analysis to userId in the DB.
+   - If admin features exist (like viewing all analyses), implement role-based checks or a separate admin area.
+
+4. **CSRF & Input Validation**
+   - Confirm we have CSRF protection for all POST requests, especially for session-based actions.
+   - Use Zod or similar for consistent input validation on all routes (resume text, job description, etc.). 
+   - Sanitize any user-generated content before storing or displaying.
+
+5. **Logging & Monitoring**
+   - Integrate or confirm we have an error tracking solution (e.g., Sentry or Datadog).
+   - Log key security events (login failures, repeated rate limit hits) for potential intrusion detection.
+   - If feasible, set up alerts for unusual spikes in usage or errors.
+
+6. **User Privacy & Data Retention**
+   - Decide on a data retention policy for old analyses. Provide a way for users to delete their data if needed (compliance with GDPR/CCPA if relevant).
+   - Document these policies in a Terms/Privacy page if not already done.
+
+Please implement these security enhancements, ensuring our new flows (with job, saved analyses) are fully protected. Provide a summary of each change (e.g., new middleware for rate limiting, updated environment variable usage) so we can verify we meet industry best practices.

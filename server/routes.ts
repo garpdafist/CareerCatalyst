@@ -7,9 +7,62 @@ import { ResumeAnalysis } from "@shared/schema";
 import session from "express-session";
 import nodemailer from 'nodemailer';
 import multer from 'multer';
+import { WebSocketServer } from 'ws';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import csrf from 'csurf';
 import OpenAI from "openai";
 import { parsePdf } from "./services/pdf-parser";
 import { analyzeResume } from "./services/resume-analyzer";
+
+// Import our comprehensive security middleware
+import { 
+  createMiddlewarePipeline 
+} from './middleware';
+
+// Import data privacy handlers
+import {
+  privacyPolicyHandler,
+  termsOfServiceHandler,
+  handleDataAccessRequest,
+  handleDataDeletionRequest
+} from './middleware/data-privacy';
+
+// Import rate limiters
+import {
+  generalLimiter,
+  resumeAnalysisLimiter,
+  jobAnalysisLimiter,
+  authLimiter,
+  coverLetterLimiter,
+  linkedInLimiter,
+  getAnalysesLimiter
+} from './middleware/rate-limit';
+
+// Import validation middleware
+import {
+  validateResumeContent,
+  validateJobDescription,
+  validateUserAuth,
+  validateLinkedInProfile,
+  validateParamId
+} from './middleware/validation';
+
+// Import logging middleware
+import {
+  requestId,
+  apiLogger,
+  securityLogger,
+  errorLogger
+} from './middleware/logger';
+
+// Import security middleware
+import { 
+  addSecurityHeaders, 
+  cspViolationReporter, 
+  handleCSRFError,
+  setupCSRFTokenRoute 
+} from './middleware/security';
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -411,23 +464,51 @@ const handleAnalysis = async (req: any, res: any) => {
 };
 
 export function registerRoutes(app: Express): Server {
+  // Add request ID for request tracking
+  app.use(requestId);
+  
+  // Add API logging middleware
+  app.use(apiLogger);
+  
+  // Add security middleware
+  app.use(helmet());
+  app.use(cookieParser());
+  
   // Add session middleware
   app.use(sessionMiddleware);
+  
+  // Add CSRF protection for all routes except file uploads
+  const csrfProtection = csrf({ cookie: true });
+  
+  // Set up CSRF token route
+  setupCSRFTokenRoute(app);
+  
+  // Add Content Security Policy violation reporter
+  app.post('/api/csp-report', cspViolationReporter);
+  
+  // Add general rate limiting for all routes
+  app.use(generalLimiter);
 
   // Add a simple ping route for testing
   app.get("/api/ping", (_req, res) => {
-    res.json({ message: "pong" });
+    res.json({ message: "pong", timestamp: new Date().toISOString() });
   });
 
   // Resume analysis routes with timeout middleware
   app.post("/api/resume-analyze",
     requestTimeout,
     requireAuth,
+    resumeAnalysisLimiter, // Apply specific rate limiting
+    validateResumeContent, // Validate input
     upload.single('file'),
     handleAnalysis
   );
 
-  app.get("/api/resume-analysis/:id", requireAuth, async (req: any, res: any) => {
+  app.get("/api/resume-analysis/:id", 
+    requireAuth, 
+    getAnalysesLimiter,
+    validateAnalysisId,
+    async (req: any, res: any) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -469,10 +550,18 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/user/analyses", requireAuth, async (req: any, res: any) => {
-    const analyses = await storage.getUserAnalyses(req.session.userId!);
-    res.json(analyses);
-  });
+  app.get("/api/user/analyses", 
+    requireAuth, 
+    getAnalysesLimiter,
+    async (req: any, res: any) => {
+      const analyses = await storage.getUserAnalyses(req.session.userId!);
+      
+      // Add security logging
+      securityLogger.logDataAccess(req, 'analyses', req.session.userId);
+      
+      res.json(analyses);
+    }
+  );
 
   app.get("/api/config", (_req: any, res: any) => {
     res.json({
@@ -481,7 +570,12 @@ export function registerRoutes(app: Express): Server {
     });
   });
 
-  app.post("/api/generate-cover-letter", requireAuth, async (req: any, res: any) => {
+  app.post("/api/generate-cover-letter", 
+    requireAuth, 
+    coverLetterLimiter,
+    validateCoverLetter,
+    csrfProtection,
+    async (req: any, res: any) => {
     try {
       const { role, company, achievements, brand, formats, resumeData } = req.body;
 
@@ -511,7 +605,12 @@ export function registerRoutes(app: Express): Server {
   });
 
 
-  app.post("/api/analyze-linkedin-content", requireAuth, async (req: any, res: any) => {
+  app.post("/api/analyze-linkedin-content", 
+    requireAuth, 
+    linkedInLimiter,
+    validateLinkedInProfile,
+    csrfProtection,
+    async (req: any, res: any) => {
     try {
       const { sections } = req.body;
 
@@ -532,6 +631,47 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Privacy and data management endpoints
+  app.get("/api/privacy-policy", privacyPolicyHandler);
+  app.get("/api/terms-of-service", termsOfServiceHandler);
+  
+  // CSRF protected data management routes
+  app.get("/api/user/data", 
+    requireAuth,
+    csrfProtection, 
+    handleDataAccessRequest
+  );
+  
+  app.delete("/api/user/data", 
+    requireAuth,
+    csrfProtection, 
+    handleDataDeletionRequest
+  );
+  
+  // Create WebSocket Server for real-time communication
   const httpServer = createServer(app);
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Set up WebSocket connection handling
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    
+    ws.on('message', (message) => {
+      console.log('WebSocket message received:', message.toString());
+      // Handle messages here if needed
+    });
+    
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+    
+    // Send initial welcome message
+    ws.send(JSON.stringify({
+      type: 'connection_established',
+      message: 'Connected to Resume Analyzer WebSocket server',
+      timestamp: new Date().toISOString()
+    }));
+  });
+  
   return httpServer;
 }
