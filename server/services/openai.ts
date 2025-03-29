@@ -125,30 +125,57 @@ export async function analyzeResumeWithAI(
   content: string,
   jobDescription?: string
 ): Promise<any> {
+  // Add start timestamp for debugging
+  const startTime = Date.now();
+  console.log(`[${new Date().toISOString()}] Starting resume analysis for content of length ${content.length}`);
+  
   try {
+    console.log(`[${new Date().toISOString()}] Preprocessing text...`);
     const processedContent = await preprocessText(content);
+    console.log(`[${new Date().toISOString()}] Text preprocessing complete. Processing length: ${processedContent.length}`);
 
-    return await makeOpenAIRequest(async () => {
+    console.log(`[${new Date().toISOString()}] Making OpenAI request...`);
+    const result = await makeOpenAIRequest(async () => {
+      console.log(`[${new Date().toISOString()}] Creating chat completion...`);
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [
           {
             role: "system",
-            content: `You are an expert resume analyzer. Analyze the resume and provide detailed feedback focusing on:
-1. Key skills and qualifications
-2. Experience and achievements
-3. Areas for improvement`
+            content: SYSTEM_PROMPT // Use the more detailed system prompt defined above
           },
           { role: "user", content: processedContent }
         ],
         temperature: 0.1,
         response_format: { type: "json_object" }
       });
-
-      return JSON.parse(response.choices[0].message.content || '{}');
+      
+      console.log(`[${new Date().toISOString()}] OpenAI response received. Content length: ${response.choices[0].message.content?.length || 0}`);
+      
+      try {
+        // Parse and validate the response
+        const parsedResponse = JSON.parse(response.choices[0].message.content || '{}');
+        console.log(`[${new Date().toISOString()}] Response parsed successfully`);
+        return parsedResponse;
+      } catch (error: any) {
+        console.error(`[${new Date().toISOString()}] Error parsing OpenAI response:`, error);
+        throw new Error(`Failed to parse OpenAI response: ${error.message}`);
+      }
     });
-  } catch (error) {
-    console.error('Resume analysis error:', error);
+    
+    // Log completion
+    const duration = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] Resume analysis completed in ${duration}ms`);
+    
+    return result;
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error(`[${new Date().toISOString()}] Resume analysis failed after ${duration}ms:`, {
+      message: error.message,
+      type: error.constructor.name,
+      status: error.status,
+      stack: error.stack
+    });
     throw error;
   }
 }

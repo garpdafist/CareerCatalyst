@@ -27,7 +27,7 @@ const iosSwitch = `
   after:h-[28px] after:w-[28px] after:rounded-full 
   after:border-none after:bg-white
   after:shadow-[0_2px_2px_rgba(0,0,0,0.2)]
-  after:transition-transform after:duration-200 after:ease-[cubic-bezier(0.34,1.56,0.64,1)]
+  after:transition-transform after:duration-200 after:ease-in-out
   checked:after:translate-x-[20px] hover:cursor-pointer
   disabled:cursor-not-allowed disabled:opacity-50
 `;

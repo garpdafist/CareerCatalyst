@@ -179,30 +179,47 @@ const requestTimeout = (req: any, res: any, next: any) => {
   next();
 };
 
-// Modified handleAnalysis function
+// Enhanced handleAnalysis function with better logging and error handling
 const handleAnalysis = async (req: any, res: any) => {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(2, 15);
+  
+  console.log(`[${new Date().toISOString()}] [${requestId}] Resume analysis request received`);
+  
   try {
     let content = req.body?.content || '';
+    let contentSource = 'body';
 
     // Handle file upload
     if (req.file) {
+      console.log(`[${new Date().toISOString()}] [${requestId}] Processing uploaded file: ${req.file.originalname}, size: ${req.file.size} bytes`);
       content = req.file.buffer.toString('utf-8');
+      contentSource = 'file';
     }
 
     if (!content?.trim()) {
+      console.warn(`[${new Date().toISOString()}] [${requestId}] Missing resume content`);
       return res.status(400).json({
         message: "Resume content is required",
         details: "Please provide either a file upload or text content"
       });
     }
 
+    console.log(`[${new Date().toISOString()}] [${requestId}] Content received, source: ${contentSource}, length: ${content.length} chars`);
+    
     // Send keep-alive headers with increased timeout (3 minutes)
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Keep-Alive', 'timeout=180');
-
-    // Process content
+    
+    // Send a periodic data event to keep the connection alive
+    const keepAliveInterval = setInterval(() => {
+      res.write(':keepalive\n\n');
+    }, 30000); // Send keepalive every 30 seconds
+    
     try {
+      console.log(`[${new Date().toISOString()}] [${requestId}] Starting AI analysis`);
       const analysis = await analyzeResumeWithAI(content);
+      console.log(`[${new Date().toISOString()}] [${requestId}] AI analysis completed`);
 
       // Ensure critical fields exist in response
       const response = {
@@ -215,14 +232,21 @@ const handleAnalysis = async (req: any, res: any) => {
         }
       };
 
+      clearInterval(keepAliveInterval);
+      const duration = Date.now() - startTime;
+      console.log(`[${new Date().toISOString()}] [${requestId}] Resume analysis completed in ${duration}ms`);
+      
       return res.json(response);
 
     } catch (analysisError: any) {
+      clearInterval(keepAliveInterval);
+      
       // Enhanced error handling for rate limits
       if (analysisError?.status === 429) {
-        console.warn('Rate limit reached:', {
+        console.warn(`[${new Date().toISOString()}] [${requestId}] Rate limit reached:`, {
           error: analysisError.message,
           retryAfter: analysisError.response?.headers?.['retry-after'],
+          status: analysisError.status,
           timestamp: new Date().toISOString()
         });
 
@@ -233,15 +257,32 @@ const handleAnalysis = async (req: any, res: any) => {
         });
       }
 
-      console.error('Analysis failed:', {
+      // Handle timeout errors
+      if (analysisError.message?.includes('timeout') || analysisError.code === 'ETIMEDOUT') {
+        console.error(`[${new Date().toISOString()}] [${requestId}] Analysis timed out:`, {
+          error: analysisError.message,
+          code: analysisError.code,
+          duration: Date.now() - startTime
+        });
+        
+        return res.status(408).json({
+          message: "Analysis timed out",
+          details: "The operation took too long to complete. Please try with a smaller document or try again later."
+        });
+      }
+
+      console.error(`[${new Date().toISOString()}] [${requestId}] Analysis failed:`, {
         error: analysisError.message,
         type: analysisError.constructor.name,
-        stack: analysisError.stack
+        stack: analysisError.stack,
+        status: analysisError.status,
+        duration: Date.now() - startTime
       });
       throw analysisError;
     }
   } catch (error: any) {
-    console.error('Resume analysis error:', {
+    const duration = Date.now() - startTime;
+    console.error(`[${new Date().toISOString()}] [${requestId}] Resume analysis error after ${duration}ms:`, {
       message: error.message,
       type: error.constructor.name,
       stack: error.stack
