@@ -25,12 +25,32 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-  options?: RequestInit,
+  options?: RequestInit & { timeout?: number },
 ): Promise<Response> {
   try {
-    const headers: Record<string, string> = {
-      ...(options?.headers || {}),
-    };
+    // Create a simple headers object that contains only strings
+    const headersObj: Record<string, string> = {};
+    
+    // Copy any headers from options safely
+    if (options?.headers) {
+      const headers = options.headers;
+      if (headers instanceof Headers) {
+        // Convert Headers instance to plain object
+        headers.forEach((value, key) => {
+          headersObj[key] = value;
+        });
+      } else if (typeof headers === 'object') {
+        // Handle plain object headers safely
+        Object.entries(headers as Record<string, unknown>).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            headersObj[key] = value;
+          }
+        });
+      }
+    }
+
+    // Set up timeout - default to 60 seconds for long-running operations
+    const timeout = options?.timeout || 60000;
 
     // Log request preparation
     console.log('Preparing request:', {
@@ -38,12 +58,13 @@ export async function apiRequest(
       url,
       isFormData: data instanceof FormData,
       dataType: data ? typeof data : 'undefined',
-      hasHeaders: Object.keys(headers).length > 0
+      hasHeaders: Object.keys(headersObj).length > 0,
+      timeout
     });
 
     // Only add Content-Type if NOT FormData
     if (data && !(data instanceof FormData)) {
-      headers["Content-Type"] = "application/json";
+      headersObj["Content-Type"] = "application/json";
       console.log('Setting Content-Type: application/json');
     } else if (data instanceof FormData) {
       console.log('FormData detected - browser will set Content-Type automatically');
@@ -51,35 +72,63 @@ export async function apiRequest(
       console.log('FormData entries:', Array.from((data as FormData).entries()).map(([key]) => key));
     }
 
+    // Create Headers object from our safe headersObj
+    const headers = new Headers();
+    Object.entries(headersObj).forEach(([key, value]) => {
+      headers.append(key, value);
+    });
+    
     const requestConfig = {
       method,
       headers,
       body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
       credentials: "include" as RequestCredentials,
-      ...options,
+      ...(options || {}),
     };
+    
+    // Remove timeout from passed options to prevent fetch error
+    if (requestConfig.timeout) {
+      delete requestConfig.timeout;
+    }
 
     // Log final request configuration
     console.log('Sending request with config:', {
       method: requestConfig.method,
       headers: requestConfig.headers,
       hasBody: !!requestConfig.body,
-      bodyType: requestConfig.body ? requestConfig.body.constructor.name : 'none'
+      bodyType: requestConfig.body ? requestConfig.body.constructor.name : 'none',
+      timeout
     });
 
-    const res = await fetch(url, requestConfig);
-
-    // Log response details
-    console.log(`Response from ${url}:`, {
-      status: res.status,
-      statusText: res.statusText,
-      contentType: res.headers.get('content-type'),
-      size: res.headers.get('content-length')
-    });
-
-    await throwIfResNotOk(res);
-    return res;
-  } catch (error) {
+    // Create fetch with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const res = await fetch(url, {
+        ...requestConfig,
+        signal: controller.signal,
+      });
+  
+      // Log response details
+      console.log(`Response from ${url}:`, {
+        status: res.status,
+        statusText: res.statusText,
+        contentType: res.headers.get('content-type'),
+        size: res.headers.get('content-length')
+      });
+  
+      await throwIfResNotOk(res);
+      return res;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error(`API request timeout after ${options?.timeout || 60000}ms (${method} ${url})`);
+      throw new Error(`Request timeout: The operation took too long to complete. Please try with a smaller document or try again later.`);
+    }
+    
     console.error(`API request error (${method} ${url}):`, error);
     throw error;
   }

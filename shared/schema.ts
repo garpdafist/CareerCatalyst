@@ -72,8 +72,38 @@ export const resumeAnalyses = pgTable("resume_analyses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Enhanced Resume Analysis schema with extended properties for the frontend
+export const resumeAnalysisResponseSchema = z.object({
+  id: z.number(),
+  userId: z.string(),
+  content: z.string(),
+  jobDescription: z.any().optional(),
+  score: z.number(),
+  scores: z.any(),
+  resumeSections: z.any(),
+  identifiedSkills: z.array(z.string()).nullable(),
+  primaryKeywords: z.array(z.string()).nullable(),
+  targetKeywords: z.array(z.string()).optional(),
+  suggestedImprovements: z.array(z.string()).nullable(),
+  generalFeedback: z.union([
+    z.string(),
+    z.object({
+      overall: z.string().optional()
+    })
+  ]).nullable(),
+  jobSpecificFeedback: z.string().optional(),
+  jobAnalysis: z.object({
+    alignmentAndStrengths: z.array(z.string()).optional(),
+    gapsAndConcerns: z.array(z.string()).optional(),
+    recommendationsToTailor: z.array(z.string()).optional(),
+    overallFit: z.string().optional(),
+  }).nullable().optional(),
+  createdAt: z.date().nullable(),
+  updatedAt: z.date().nullable(),
+});
+
 // Types for our application
-export type ResumeAnalysis = typeof resumeAnalyses.$inferSelect;
+export type ResumeAnalysis = z.infer<typeof resumeAnalysisResponseSchema>;
 export type InsertResumeAnalysis = typeof resumeAnalyses.$inferInsert;
 export type ScoringCriteria = z.infer<typeof scoringCriteriaSchema>;
 export type ResumeSections = z.infer<typeof resumeSectionsSchema>;

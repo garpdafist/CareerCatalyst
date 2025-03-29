@@ -299,27 +299,43 @@ Provide a detailed analysis of how this resume aligns with the job requirements.
 async function withExponentialBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = MAX_RETRIES,
-  initialDelay: number = INITIAL_RETRY_DELAY
+  initialDelay: number = INITIAL_RETRY_DELAY,
+  timeout: number = 120000 // 2 minute default timeout
 ): Promise<T> {
   return requestQueue.add(async () => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        return await operation();
+        // Create a promise that rejects in <timeout> milliseconds
+        const timeoutPromise = new Promise<T>((_, reject) => {
+          const id = setTimeout(() => {
+            clearTimeout(id);
+            reject(new Error('Operation timed out'));
+          }, timeout);
+        });
+
+        // Returns a race between our operation and the timeout
+        return await Promise.race([
+          operation(),
+          timeoutPromise
+        ]);
       } catch (error: any) {
         const isRateLimit = error?.status === 429;
         const isServerError = error?.status >= 500;
+        const isTimeout = error?.message === 'Operation timed out';
 
-        if ((isRateLimit || isServerError) && attempt < maxRetries) {
+        // Retry on rate limits, server errors, or timeouts
+        if ((isRateLimit || isServerError || isTimeout) && attempt < maxRetries) {
           const baseDelay = Math.min(
             initialDelay * Math.pow(2, attempt - 1),
             MAX_RETRY_DELAY
           );
-          const delay = baseDelay; // Removed jitter
+          const delay = baseDelay;
 
           console.log(`API error (attempt ${attempt}/${maxRetries}):`, {
             status: error?.status,
             message: error?.message,
             retryIn: delay,
+            isTimeout: isTimeout,
             timestamp: new Date().toISOString()
           });
 

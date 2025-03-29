@@ -169,7 +169,8 @@ const requireAuth = async (req: any, res: any, next: any) => {
 
 // Add timeout middleware after other imports
 const requestTimeout = (req: any, res: any, next: any) => {
-  res.setTimeout(30000, () => {
+  // Increase timeout to 3 minutes (180000ms) for resume analysis operations
+  res.setTimeout(180000, () => {
     res.status(408).json({
       message: "Request timeout",
       details: "The analysis is taking longer than expected. Please try with a smaller document or try again later."
@@ -195,9 +196,9 @@ const handleAnalysis = async (req: any, res: any) => {
       });
     }
 
-    // Send keep-alive headers
+    // Send keep-alive headers with increased timeout (3 minutes)
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Keep-Alive', 'timeout=30');
+    res.setHeader('Keep-Alive', 'timeout=180');
 
     // Process content
     try {

@@ -77,7 +77,9 @@ const getFeedbackColor = (improvement: string): { text: string; bg: string; bord
 
 // Update the keywords section to handle conditional rendering
 const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
-  const { primaryKeywords = [], targetKeywords = [] } = data;
+  // Safely extract keywords with proper type handling
+  const primaryKeywords = data.primaryKeywords || [];
+  const targetKeywords = (data as any).targetKeywords || [];
   const hasJobDescription = targetKeywords.length > 0;
 
   return (
@@ -124,7 +126,20 @@ const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
 
 // Update the general feedback section to show only overall feedback
 const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
-  const { generalFeedback: { overall = "No general feedback available" } = {} } = data;
+  // Safely extract the feedback content with proper type handling
+  let feedback = "No general feedback available";
+  
+  if (data.generalFeedback) {
+    if (typeof data.generalFeedback === 'string') {
+      feedback = data.generalFeedback;
+    } else if (typeof data.generalFeedback === 'object' && data.generalFeedback !== null) {
+      // If it's an object, try to get the 'overall' property if it exists
+      const feedbackObj = data.generalFeedback as { overall?: string };
+      if (feedbackObj.overall) {
+        feedback = feedbackObj.overall;
+      }
+    }
+  }
 
   return (
     <div>
@@ -132,7 +147,7 @@ const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
       <div className="space-y-4">
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
           <p className="text-sm md:text-base text-gray-600">
-            {overall}
+            {feedback}
           </p>
         </div>
       </div>
@@ -140,59 +155,70 @@ const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
   );
 };
 
-// New component for job analysis results
+// New component for job analysis results with proper typing
 const JobAnalysisSection = ({ data }: { data: ResumeAnalysis }) => {
+  // Return null if jobAnalysis is null or undefined
   if (!data.jobAnalysis) return null;
+  
+  // The jobAnalysis field is now properly typed in the schema
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-3">Alignment & Strengths</h3>
-        <ul className="space-y-2">
-          {data.jobAnalysis.alignmentAndStrengths.map((item, index) => (
-            <li key={index} className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100">
-              <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
-              <span className="text-green-700">{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {data.jobAnalysis?.alignmentAndStrengths && data.jobAnalysis.alignmentAndStrengths.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-3">Alignment & Strengths</h3>
+          <ul className="space-y-2">
+            {data.jobAnalysis.alignmentAndStrengths.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100">
+                <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+                <span className="text-green-700">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-      <div>
-        <h3 className="text-lg font-medium mb-3">Gaps & Concerns</h3>
-        <ul className="space-y-2">
-          {data.jobAnalysis.gapsAndConcerns.map((item, index) => (
-            <li key={index} className="flex items-start gap-2 text-sm bg-red-50/50 rounded-lg p-3 border border-red-100">
-              <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-600" />
-              <span className="text-red-700">{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {data.jobAnalysis?.gapsAndConcerns && data.jobAnalysis.gapsAndConcerns.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-3">Gaps & Concerns</h3>
+          <ul className="space-y-2">
+            {data.jobAnalysis.gapsAndConcerns.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm bg-red-50/50 rounded-lg p-3 border border-red-100">
+                <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-600" />
+                <span className="text-red-700">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-      <div>
-        <h3 className="text-lg font-medium mb-3">How to Tailor Your Resume</h3>
-        <ul className="space-y-2">
-          {data.jobAnalysis.recommendationsToTailor.map((item, index) => (
-            <li key={index} className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-              <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
-              <span className="text-blue-700">{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {data.jobAnalysis?.recommendationsToTailor && data.jobAnalysis.recommendationsToTailor.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-3">How to Tailor Your Resume</h3>
+          <ul className="space-y-2">
+            {data.jobAnalysis.recommendationsToTailor.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100">
+                <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
+                <span className="text-blue-700">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-      <div>
-        <h3 className="text-lg font-medium mb-3">Overall Fit Assessment</h3>
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 mt-1 flex-shrink-0 text-gray-600" />
-            <p className="text-sm md:text-base text-gray-600">
-              {data.jobAnalysis.overallFit}
-            </p>
+      {data.jobAnalysis?.overallFit && (
+        <div>
+          <h3 className="text-lg font-medium mb-3">Overall Fit Assessment</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 mt-1 flex-shrink-0 text-gray-600" />
+              <p className="text-sm md:text-base text-gray-600">
+                {data.jobAnalysis.overallFit}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -219,11 +245,17 @@ export default function ResumeAnalyzer() {
         // If we have job description, append it to the FormData or include in the request body
         if (data instanceof FormData && isApplyingForJob && jobDescription) {
           data.append('jobDescription', jobDescription);
-        } else if (!data instanceof FormData && isApplyingForJob && jobDescription) {
+        } else if (!(data instanceof FormData) && isApplyingForJob && jobDescription) {
           data = { ...data, jobDescription };
         }
 
-        const res = await apiRequest("POST", "/api/resume-analyze", data);
+        // Use a 3-minute timeout for resume analysis (180000ms)
+        const res = await apiRequest(
+          "POST", 
+          "/api/resume-analyze", 
+          data, 
+          { timeout: 180000 }
+        );
         clearInterval(progressInterval);
         setAnalysisProgress(100);
         return await res.json() as ResumeAnalysis;
