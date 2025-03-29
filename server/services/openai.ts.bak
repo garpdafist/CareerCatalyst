@@ -13,9 +13,6 @@ const MAX_RETRY_DELAY = 10000; // Reduced from 30s to 10s
 // Maximum text length before chunking
 const MAX_TEXT_LENGTH = 7000; // About 1750 tokens, reduced from 12000
 
-// Constants for text processing
-const CHUNK_SIZE = 3500; // Optimal size for GPT-3.5-turbo processing
-
 // Simplified request queue implementation
 class RequestQueue {
   private queue: Array<() => Promise<any>> = [];
@@ -63,6 +60,9 @@ class RequestQueue {
 
 const requestQueue = new RequestQueue();
 
+// Constants for text processing
+const CHUNK_SIZE = 3500; // Optimal size for GPT-3.5-turbo processing
+
 // Improved text preprocessing with smart chunking and parallel processing
 async function preprocessText(text: string): Promise<string> {
   console.log(`[${new Date().toISOString()}] Preprocessing text of length: ${text.length}`);
@@ -105,6 +105,7 @@ async function preprocessText(text: string): Promise<string> {
         console.log(`[${new Date().toISOString()}] Summarizing chunk ${index+1}/${chunks.length}, size: ${chunk.length}`);
         
         // Use GPT-3.5 for summarization to save time and costs
+        // Use timeout through the withExponentialBackoff function instead of in the API call
         const response = await openai.chat.completions.create({
           model: "gpt-3.5-turbo", // Use 3.5 for summarization instead of 4
           messages: [
@@ -135,7 +136,7 @@ async function preprocessText(text: string): Promise<string> {
     try {
       console.log(`[${new Date().toISOString()}] Attempting fallback preprocessing strategy`);
       // Simple chunking by splitting the text into smaller pieces
-      const simpleChunks = text.match(/.{1,5000}/g) || [text];
+      const simpleChunks = text.match(/.{1,5000}/gs) || [text];
       
       let simpleSummary = '';
       // Process one chunk at a time to avoid overwhelming the API
@@ -215,52 +216,6 @@ function createHash(str: string): string {
   return crypto.createHash('md5').update(str).digest('hex');
 }
 
-// Optimized system prompt with more concise instructions
-const OPTIMIZED_SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a complete analysis in JSON format containing these fields:
-{
-  "score": (overall score 0-100),
-  "scores": {
-    "keywordsRelevance": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of keyword usage",
-      "keywords": ["all relevant keywords"]
-    },
-    "achievementsMetrics": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of achievements",
-      "highlights": ["key achievements"]
-    },
-    "structureReadability": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of resume structure"
-    },
-    "summaryClarity": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of professional summary"
-    },
-    "overallPolish": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of overall presentation"
-    }
-  },
-  "identifiedSkills": ["technical and soft skills"],
-  "primaryKeywords": ["important keywords and terms"],
-  "suggestedImprovements": ["specific improvements needed"],
-  "generalFeedback": {
-    "overall": "analysis of strengths and weaknesses"
-  }
-}
-
-Requirements: Extract all relevant keywords, provide detailed feedback, include actual content from resume, no empty arrays, return valid JSON only.`;
-
-// Legacy system prompt kept for reference
-const SYSTEM_PROMPT = OPTIMIZED_SYSTEM_PROMPT;
-
 // Optimized two-stage analysis process using GPT-3.5 and GPT-4
 export async function analyzeResumeWithAI(
   content: string,
@@ -315,7 +270,8 @@ Format as JSON with these exact fields:
           { role: "user", content: processedContent }
         ],
         temperature: 0,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        timeout: 45000 // 45 second timeout for initial extraction
       });
       
       console.log(`[${new Date().toISOString()}] Initial analysis received. Parsing...`);
@@ -341,12 +297,13 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
         messages: [
           {
             role: "system",
-            content: OPTIMIZED_SYSTEM_PROMPT
+            content: OPTIMIZED_SYSTEM_PROMPT // Use the optimized prompt
           },
           { role: "user", content: enhancedPrompt }
         ],
         temperature: 0.1,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        timeout: 90000 // 90 second timeout for final analysis
       });
       
       console.log(`[${new Date().toISOString()}] Final analysis received. Content length: ${response.choices[0].message.content?.length || 0}`);
@@ -414,6 +371,52 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
     throw error;
   }
 }
+
+// Optimized system prompt with more concise instructions
+const OPTIMIZED_SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a complete analysis in JSON format containing these fields:
+{
+  "score": (overall score 0-100),
+  "scores": {
+    "keywordsRelevance": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "analysis of keyword usage",
+      "keywords": ["all relevant keywords"]
+    },
+    "achievementsMetrics": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "analysis of achievements",
+      "highlights": ["key achievements"]
+    },
+    "structureReadability": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "analysis of resume structure"
+    },
+    "summaryClarity": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "analysis of professional summary"
+    },
+    "overallPolish": {
+      "score": (1-10),
+      "maxScore": 10,
+      "feedback": "analysis of overall presentation"
+    }
+  },
+  "identifiedSkills": ["technical and soft skills"],
+  "primaryKeywords": ["important keywords and terms"],
+  "suggestedImprovements": ["specific improvements needed"],
+  "generalFeedback": {
+    "overall": "analysis of strengths and weaknesses"
+  }
+}
+
+Requirements: Extract all relevant keywords, provide detailed feedback, include actual content from resume, no empty arrays, return valid JSON only.`;
+
+// Legacy system prompt kept for reference
+const SYSTEM_PROMPT = OPTIMIZED_SYSTEM_PROMPT;
 
 type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
