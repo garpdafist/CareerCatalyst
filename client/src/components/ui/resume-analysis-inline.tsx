@@ -154,7 +154,7 @@ export function ResumeAnalysisInline({
                           a 15.9155 15.9155 0 0 1 0 31.831
                           a 15.9155 15.9155 0 0 1 0 -31.831"
                         fill="none"
-                        stroke={analysisData.score >= 80 ? '#10B981' : analysisData.score >= 60 ? '#FBBF24' : '#EF4444'}
+                        stroke={analysisData.score >= 80 ? '#009963' : analysisData.score >= 60 ? '#4CAF50' : '#FBBF24'}
                         strokeWidth="3"
                         strokeDasharray={`${analysisData.score}, 100`}
                       />
@@ -183,7 +183,7 @@ export function ResumeAnalysisInline({
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-amber-700 border-amber-200 hover:bg-amber-50"
+                className="text-green-700 border-green-200 hover:bg-green-50"
                 onClick={() => toggleSection('improvements')}
               >
                 <Lightbulb className="h-4 w-4 mr-1" />
@@ -194,7 +194,7 @@ export function ResumeAnalysisInline({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                  className="text-green-700 border-green-200 hover:bg-green-50"
                   onClick={() => toggleSection('jobAnalysis')}
                 >
                   <Briefcase className="h-4 w-4 mr-1" />
@@ -212,7 +212,7 @@ export function ResumeAnalysisInline({
         <div className={`mb-8 ${expandedSections.score ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-gray-800">
-              <BarChart3 className="h-6 w-6 mr-2 text-gray-600" />
+              <BarChart3 className="h-6 w-6 mr-2 text-green-600" />
               Resume Score
             </h2>
             <button 
@@ -242,7 +242,7 @@ export function ResumeAnalysisInline({
                         a 15.9155 15.9155 0 0 1 0 31.831
                         a 15.9155 15.9155 0 0 1 0 -31.831"
                       fill="none"
-                      stroke={analysisData.score >= 80 ? '#10B981' : analysisData.score >= 60 ? '#FBBF24' : '#EF4444'}
+                      stroke={analysisData.score >= 80 ? '#009963' : analysisData.score >= 60 ? '#4CAF50' : '#FBBF24'}
                       strokeWidth="3"
                       strokeDasharray={`${analysisData.score}, 100`}
                     />
@@ -262,9 +262,9 @@ export function ResumeAnalysisInline({
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-1000 ease-out ${
-                      analysisData.score >= 80 ? 'bg-green-500' : 
-                      analysisData.score >= 60 ? 'bg-amber-500' : 
-                      'bg-red-500'
+                      analysisData.score >= 80 ? 'bg-green-600' : 
+                      analysisData.score >= 60 ? 'bg-green-500' : 
+                      'bg-amber-500'
                     }`}
                     style={{ width: `${analysisData.score}%` }}
                   ></div>
@@ -307,7 +307,7 @@ export function ResumeAnalysisInline({
                 return (
                   <span 
                     key={i} 
-                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                    className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
                   >
                     {propercaseKeyword}
                   </span>
@@ -361,10 +361,10 @@ export function ResumeAnalysisInline({
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
             <div className="space-y-2">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="p-4 bg-amber-50/50 rounded-md border border-amber-100">
+                <div key={i} className="p-4 bg-green-50/50 rounded-md border border-green-100">
                   <div className="flex items-start">
-                    <span className="text-amber-600 mr-2">›</span>
-                    <p className="text-amber-800">{improvement}</p>
+                    <span className="text-green-600 mr-2">›</span>
+                    <p className="text-green-800">{improvement}</p>
                   </div>
                 </div>
               ))}
@@ -374,27 +374,6 @@ export function ResumeAnalysisInline({
               <p className="text-amber-700">
                 We weren't able to generate specific improvement suggestions for this resume. This might be due to an analysis issue or insufficient data in your resume.
                 Try adding more detailed information to your resume, or analyze again with a job description for more targeted improvements.
-              </p>
-            </div>
-          )}
-        </div>
-        
-        {/* General Feedback - New section */}
-        <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">General Feedback</h3>
-          {analysisData.generalFeedback ? (
-            <div className="p-4 bg-gray-50 rounded-md border border-gray-100">
-              <p className="text-gray-700">
-                {typeof analysisData.generalFeedback === 'string' 
-                  ? analysisData.generalFeedback 
-                  : analysisData.generalFeedback?.overall || 'No overall feedback available.'}
-              </p>
-            </div>
-          ) : (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-              <p className="text-amber-700">
-                No general feedback was generated for this resume. This might be due to an analysis issue or insufficient data in your resume.
-                Try adding more detailed information to your resume, or analyze again with a job description for more targeted feedback.
               </p>
             </div>
           )}
@@ -417,74 +396,45 @@ export function ResumeAnalysisInline({
             
             {/* Show job analysis content if it exists */}
             {analysisData.jobAnalysis && typeof analysisData.jobAnalysis === 'object' ? (
-              <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="p-4 bg-green-50 rounded-lg">
                 {/* Strengths */}
                 {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
                 analysisData.jobAnalysis.alignmentAndStrengths.length > 0 ? (
                   <div className="mb-4">
-                    <h4 className="font-medium text-blue-700 mb-1">Your Resume Strengths</h4>
+                    <h4 className="font-medium text-green-700 mb-1">Your Resume Strengths</h4>
                     <ul className="list-disc pl-5 space-y-1">
                       {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
                         <li key={i} className="text-gray-700">{strength}</li>
                       ))}
                     </ul>
                   </div>
-                ) : (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-blue-700 mb-1">Your Resume Strengths</h4>
-                    <p className="text-gray-700 italic">No specific strengths were identified for this job</p>
-                  </div>  
-                )}
+                ) : null}
                 
                 {/* Gaps */}
                 {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
                 analysisData.jobAnalysis.gapsAndConcerns.length > 0 ? (
                   <div className="mb-4">
-                    <h4 className="font-medium text-blue-700 mb-1">Gaps to Address</h4>
+                    <h4 className="font-medium text-amber-700 mb-1">Gaps to Address</h4>
                     <ul className="list-disc pl-5 space-y-1">
                       {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
                         <li key={i} className="text-gray-700">{gap}</li>
                       ))}
                     </ul>
                   </div>
-                ) : (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-blue-700 mb-1">Gaps to Address</h4>
-                    <p className="text-gray-700 italic">No specific gaps were identified for this job</p>
-                  </div>
-                )}
+                ) : null}
                 
-                {/* Recommendations */}
-                {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
-                analysisData.jobAnalysis.recommendationsToTailor.length > 0 ? (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-blue-700 mb-1">Tailoring Recommendations</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
-                        <li key={i} className="text-gray-700">{rec}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-blue-700 mb-1">Tailoring Recommendations</h4>
-                    <p className="text-gray-700 italic">No specific recommendations were generated</p>
-                  </div>
-                )}
-                
-                {/* Overall Fit */}
+                {/* Overall fit */}
                 {analysisData.jobAnalysis.overallFit ? (
-                  <div>
-                    <h4 className="font-medium text-blue-700 mb-1">Overall Job Fit</h4>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-green-700 mb-1">Overall Job Fit</h4>
                     <p className="text-gray-700">{analysisData.jobAnalysis.overallFit}</p>
                   </div>
                 ) : (
                   <div>
-                    <h4 className="font-medium text-blue-700 mb-1">Overall Job Fit</h4>
+                    <h4 className="font-medium text-green-700 mb-1">Overall Job Fit</h4>
                     <p className="text-gray-700 italic">No overall job fit analysis was generated</p>
                   </div>
                 )}
-              </div>
               </div>
             ) : (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">

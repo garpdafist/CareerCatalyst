@@ -98,34 +98,34 @@ export function ResumeAnalysisEnhanced({
     );
   }
 
-  // Determine color scheme based on score with warmer, relaxed colors
+  // Determine color scheme based on score with professional green colors
   const getScoreColor = (score: number) => {
     if (score >= 80) return {
-      bg: 'bg-amber-400', // Bright yellow-orange for high scores
+      bg: 'bg-green-400', // Bright green for high scores
+      text: 'text-green-700',
+      border: 'border-green-200',
+      light: 'bg-green-50',
+      med: 'bg-green-100',
+      dark: 'bg-green-600',
+      icon: 'text-green-500'
+    };
+    if (score >= 60) return {
+      bg: 'bg-green-400', // Medium green for medium scores
+      text: 'text-green-700',
+      border: 'border-green-200',
+      light: 'bg-green-50',
+      med: 'bg-green-100',
+      dark: 'bg-green-600',
+      icon: 'text-green-500'
+    };
+    return {
+      bg: 'bg-amber-400', // Amber for low scores (warning color)
       text: 'text-amber-700',
       border: 'border-amber-200',
       light: 'bg-amber-50',
       med: 'bg-amber-100',
       dark: 'bg-amber-600',
       icon: 'text-amber-500'
-    };
-    if (score >= 60) return {
-      bg: 'bg-orange-400', // Warm orange for medium scores
-      text: 'text-orange-700',
-      border: 'border-orange-200',
-      light: 'bg-orange-50',
-      med: 'bg-orange-100',
-      dark: 'bg-orange-600',
-      icon: 'text-orange-500'
-    };
-    return {
-      bg: 'bg-rose-400', // Softer rose for low scores
-      text: 'text-rose-700',
-      border: 'border-rose-200',
-      light: 'bg-rose-50',
-      med: 'bg-rose-100',
-      dark: 'bg-rose-600',
-      icon: 'text-rose-500'
     };
   };
 
@@ -139,7 +139,7 @@ export function ResumeAnalysisEnhanced({
         className={`${isSticky ? 'sticky top-0 z-10 shadow-md' : ''} 
                    transition-all duration-300 ease-in-out`}
       >
-        <div className={`bg-gradient-to-r from-amber-50 to-orange-50 bg-opacity-95 backdrop-blur-sm border-b border-amber-100 py-3 px-4 
+        <div className={`bg-gradient-to-r from-green-50 to-green-100 bg-opacity-95 backdrop-blur-sm border-b border-green-100 py-3 px-4 
                        ${isSticky ? 'rounded-b-lg' : 'rounded-t-lg border-t border-x'}`}>
           {/* Quick Navigation */}
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -183,7 +183,7 @@ export function ResumeAnalysisEnhanced({
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-amber-700 border-amber-200 hover:bg-amber-50"
+                className="text-green-700 border-green-200 hover:bg-green-50"
                 onClick={() => toggleSection('improvements')}
               >
                 <Lightbulb className="h-4 w-4 mr-1" />
@@ -194,7 +194,7 @@ export function ResumeAnalysisEnhanced({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                  className="text-green-700 border-green-200 hover:bg-green-50"
                   onClick={() => toggleSection('jobAnalysis')}
                 >
                   <Briefcase className="h-4 w-4 mr-1" />
@@ -207,7 +207,7 @@ export function ResumeAnalysisEnhanced({
       </div>
       
       {/* Analysis Results Container */}
-      <div className="bg-gradient-to-b from-amber-50/70 to-orange-50/70 p-6 sm:p-8 rounded-b-lg border border-t-0 border-amber-100 shadow-sm mb-6">
+      <div className="bg-gradient-to-b from-green-50/70 to-green-100/70 p-6 sm:p-8 rounded-b-lg border border-t-0 border-green-100 shadow-sm mb-6">
         {/* Score Section */}
         <div className={`mb-8 ${expandedSections.score ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
@@ -225,7 +225,7 @@ export function ResumeAnalysisEnhanced({
           
           <div className="space-y-6">
             {/* Overall Score with circular indicator */}
-            <div className="flex flex-col md:flex-row md:items-center p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100">
+            <div className="flex flex-col md:flex-row md:items-center p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-100">
               <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
                 <div className="relative w-28 h-28 mx-auto">
                   <svg className="w-full h-full" viewBox="0 0 36 36">
@@ -346,7 +346,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.feedback ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-gray-800">
-              <FileText className="h-6 w-6 mr-2 text-amber-600" />
+              <FileText className="h-6 w-6 mr-2 text-green-600" />
               Overall Feedback
             </h2>
             <button 
@@ -358,7 +358,7 @@ export function ResumeAnalysisEnhanced({
           </div>
           
           {analysisData.generalFeedback ? (
-            <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100 backdrop-blur-sm">
+            <div className="p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-100 backdrop-blur-sm">
               <p className="text-gray-700 leading-relaxed">
                 {typeof analysisData.generalFeedback === 'object' 
                   ? analysisData.generalFeedback.overall 
@@ -366,10 +366,10 @@ export function ResumeAnalysisEnhanced({
               </p>
             </div>
           ) : (
-            <div className="p-5 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="p-5 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex">
-                <Lightbulb className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
-                <p className="text-amber-800">
+                <Lightbulb className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-green-800">
                   We weren't able to generate overall feedback for this resume. This might be due to an analysis issue or insufficient data. 
                   Please try analyzing your resume again or contact support if this problem persists.
                 </p>
@@ -382,7 +382,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.skills ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-gray-800">
-              <Zap className="h-6 w-6 mr-2 text-amber-600" />
+              <Zap className="h-6 w-6 mr-2 text-green-600" />
               Skills & Keywords
             </h2>
             <button 
@@ -395,9 +395,9 @@ export function ResumeAnalysisEnhanced({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Key Skills */}
-            <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 p-5 rounded-lg border border-amber-100">
+            <div className="bg-gradient-to-r from-green-50/80 to-green-100/80 p-5 rounded-lg border border-green-100">
               <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <CheckCircle2 className="h-5 w-5 mr-2 text-amber-600" />
+                <CheckCircle2 className="h-5 w-5 mr-2 text-green-600" />
                 Key Skills
               </h3>
               
@@ -412,7 +412,7 @@ export function ResumeAnalysisEnhanced({
                     return (
                       <span 
                         key={i} 
-                        className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-sm font-medium border border-amber-200 shadow-sm"
+                        className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-200 shadow-sm"
                       >
                         {propercaseKeyword}
                       </span>
@@ -420,8 +420,8 @@ export function ResumeAnalysisEnhanced({
                   })}
                 </div>
               ) : (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-                  <p className="text-amber-700 text-sm">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-green-700 text-sm">
                     No key skills were identified in your resume. This might indicate that your resume lacks industry-specific terminology
                     or that there was an issue with the analysis process.
                   </p>
@@ -430,9 +430,9 @@ export function ResumeAnalysisEnhanced({
             </div>
             
             {/* Primary Keywords */}
-            <div className="bg-gradient-to-r from-orange-50/80 to-amber-50/80 p-5 rounded-lg border border-orange-100">
+            <div className="bg-gradient-to-r from-green-100/80 to-green-50/80 p-5 rounded-lg border border-green-100">
               <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <FileCheck className="h-5 w-5 mr-2 text-orange-600" />
+                <FileCheck className="h-5 w-5 mr-2 text-green-600" />
                 Primary Keywords
               </h3>
               
@@ -447,7 +447,7 @@ export function ResumeAnalysisEnhanced({
                     return (
                       <span 
                         key={i} 
-                        className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-full text-sm font-medium border border-orange-200 shadow-sm"
+                        className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium border border-green-200 shadow-sm"
                       >
                         {propercaseSkill}
                       </span>
@@ -455,8 +455,8 @@ export function ResumeAnalysisEnhanced({
                   })}
                 </div>
               ) : (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-                  <p className="text-amber-700 text-sm">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-green-700 text-sm">
                     No primary keywords were identified in your resume. Consider revising your resume to clearly highlight your technical 
                     and soft skills using industry-standard terminology.
                   </p>
@@ -470,7 +470,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.improvements ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-gray-800">
-              <Lightbulb className="h-6 w-6 mr-2 text-amber-600" />
+              <Lightbulb className="h-6 w-6 mr-2 text-green-600" />
               Suggested Improvements
             </h2>
             <button 
@@ -484,19 +484,19 @@ export function ResumeAnalysisEnhanced({
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
             <div className="space-y-3">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="p-4 bg-amber-50 rounded-lg border border-amber-100 shadow-sm transition-all hover:shadow-md">
+                <div key={i} className="p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm transition-all hover:shadow-md">
                   <div className="flex items-start group">
-                    <span className="text-amber-600 mr-2 group-hover:text-amber-700 transition-colors">→</span>
-                    <p className="text-amber-800 group-hover:text-amber-900 transition-colors">{improvement}</p>
+                    <span className="text-green-600 mr-2 group-hover:text-green-700 transition-colors">→</span>
+                    <p className="text-green-800 group-hover:text-green-900 transition-colors">{improvement}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="p-5 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="p-5 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex">
-                <Lightbulb className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
-                <p className="text-amber-800">
+                <Lightbulb className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-green-800">
                   We weren't able to generate specific improvement suggestions for this resume. This might be due to an analysis issue or insufficient data in your resume.
                   Try adding more detailed information to your resume, or analyze again with a job description for more targeted improvements.
                 </p>
@@ -510,7 +510,7 @@ export function ResumeAnalysisEnhanced({
           <div className={`mb-8 ${expandedSections.jobAnalysis ? '' : 'hidden'}`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold flex items-center text-gray-800">
-                <Briefcase className="h-6 w-6 mr-2 text-amber-600" />
+                <Briefcase className="h-6 w-6 mr-2 text-green-600" />
                 Job Match Analysis
               </h2>
               <button 
@@ -525,17 +525,17 @@ export function ResumeAnalysisEnhanced({
               <div className="space-y-6">
                 {/* Overall Fit with progress indicator */}
                 {analysisData.jobAnalysis.overallFit && (
-                  <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100">
-                    <h3 className="text-lg font-medium text-amber-800 mb-2">Overall Job Fit</h3>
+                  <div className="p-5 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-100">
+                    <h3 className="text-lg font-medium text-green-800 mb-2">Overall Job Fit</h3>
                     <p className="text-gray-700 mb-4">{analysisData.jobAnalysis.overallFit}</p>
                   </div>
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Strengths */}
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-lg border border-amber-100">
-                    <h3 className="text-lg font-medium text-amber-800 mb-3 flex items-center">
-                      <CheckCircle2 className="h-5 w-5 mr-2 text-amber-600" />
+                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-lg border border-green-100">
+                    <h3 className="text-lg font-medium text-green-800 mb-3 flex items-center">
+                      <CheckCircle2 className="h-5 w-5 mr-2 text-green-600" />
                       Your Resume Strengths
                     </h3>
                     
@@ -544,7 +544,7 @@ export function ResumeAnalysisEnhanced({
                       <ul className="space-y-2">
                         {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
                           <li key={i} className="flex items-start">
-                            <span className="text-amber-600 mr-2">✓</span>
+                            <span className="text-green-600 mr-2">✓</span>
                             <span className="text-gray-700">{strength}</span>
                           </li>
                         ))}
@@ -580,16 +580,16 @@ export function ResumeAnalysisEnhanced({
                 {/* Recommendations */}
                 {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
                 analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
-                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-5 rounded-lg border border-amber-100">
-                    <h3 className="text-lg font-medium text-amber-800 mb-3 flex items-center">
-                      <Lightbulb className="h-5 w-5 mr-2 text-amber-600" />
+                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-5 rounded-lg border border-green-100">
+                    <h3 className="text-lg font-medium text-green-800 mb-3 flex items-center">
+                      <Lightbulb className="h-5 w-5 mr-2 text-green-600" />
                       Tailoring Recommendations
                     </h3>
                     
                     <ul className="space-y-2">
                       {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
                         <li key={i} className="flex items-start">
-                          <span className="text-amber-600 mr-2">→</span>
+                          <span className="text-green-600 mr-2">→</span>
                           <span className="text-gray-700">{rec}</span>
                         </li>
                       ))}
@@ -598,18 +598,18 @@ export function ResumeAnalysisEnhanced({
                 )}
               </div>
             ) : (
-              <div className="p-5 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="p-5 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex">
-                  <Briefcase className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <Briefcase className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-amber-800 font-medium mb-2">
+                    <p className="text-green-800 font-medium mb-2">
                       Job Analysis Information
                     </p>
-                    <p className="text-amber-700">
+                    <p className="text-green-700">
                       We detected a job description in your submission, but we weren't able to generate 
                       a complete job-specific analysis for your resume.
                     </p>
-                    <p className="text-amber-700 mt-2">
+                    <p className="text-green-700 mt-2">
                       This might be due to an analysis processing issue or insufficient details in the job description.
                       Try providing a more detailed job description with clear requirements and responsibilities for better matching results.
                     </p>
@@ -624,14 +624,14 @@ export function ResumeAnalysisEnhanced({
       {/* Action Buttons - Enhanced styling */}
       <div className="mt-8">
         {/* Primary CTA Container with modern styling */}
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-lg border border-amber-200 shadow-sm mb-6">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200 shadow-sm mb-6">
           <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Ready to Improve Your Resume?</h3>
           
           {/* Button Group: Primary and Secondary CTAs side by side on desktop, stacked on mobile */}
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Primary CTA - More prominent styling with gradient background */}
             <Button 
-              className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white 
+              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white 
                         flex items-center justify-center shadow-sm transition-all duration-200 text-base py-6"
               onClick={onImproveResume}
               size="lg"
@@ -645,7 +645,7 @@ export function ResumeAnalysisEnhanced({
               variant="outline"
               onClick={onGenerateCoverLetter}
               size="lg"
-              className="flex-1 border-amber-300 text-amber-800 hover:bg-amber-50 flex items-center justify-center
+              className="flex-1 border-green-300 text-green-800 hover:bg-green-50 flex items-center justify-center
                         transition-all duration-200 py-6 text-base"
             >
               <FileText className="h-5 w-5 mr-2" />
