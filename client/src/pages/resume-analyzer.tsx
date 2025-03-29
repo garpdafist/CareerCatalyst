@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle, Clock, Search } from "lucide-react";
+import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,8 +16,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
-import { formatDistanceToNow } from "date-fns";
 import { SavedAnalyses } from "@/components/saved-analyses";
+import { ResumeAnalysisPopup } from "@/components/ui/resume-analysis-popup";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
@@ -77,154 +77,6 @@ const getFeedbackColor = (improvement: string): { text: string; bg: string; bord
     : { text: 'text-amber-700', bg: 'bg-amber-50/50', border: 'border-amber-100' };
 };
 
-// Update the keywords section to handle conditional rendering
-const KeywordsSection = ({ data }: { data: ResumeAnalysis }) => {
-  // Safely extract keywords with proper type handling
-  const primaryKeywords = data.primaryKeywords || [];
-  const targetKeywords = (data as any).targetKeywords || [];
-  const hasJobDescription = targetKeywords.length > 0;
-
-  return (
-    <div>
-      <h3 className="text-lg font-medium mb-3">
-        {hasJobDescription ? "Primary & Target Keywords" : "Primary Keywords"}
-      </h3>
-      <div className="space-y-4">
-        <div>
-          <p className="text-sm text-muted-foreground mb-2">Keywords from your resume:</p>
-          <div className="flex flex-wrap gap-2">
-            {limitArrayLength(primaryKeywords).map((keyword, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
-              >
-                {keyword}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        {hasJobDescription && (
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Target keywords from job description:</p>
-            <div className="flex flex-wrap gap-2">
-              {limitArrayLength(targetKeywords).map((keyword, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
-                >
-                  {keyword}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Update the general feedback section to show only overall feedback
-const GeneralFeedbackSection = ({ data }: { data: ResumeAnalysis }) => {
-  // Safely extract the feedback content with proper type handling
-  let feedback = "No general feedback available";
-  
-  if (data.generalFeedback) {
-    if (typeof data.generalFeedback === 'string') {
-      feedback = data.generalFeedback;
-    } else if (typeof data.generalFeedback === 'object' && data.generalFeedback !== null) {
-      // If it's an object, try to get the 'overall' property if it exists
-      const feedbackObj = data.generalFeedback as { overall?: string };
-      if (feedbackObj.overall) {
-        feedback = feedbackObj.overall;
-      }
-    }
-  }
-
-  return (
-    <div>
-      <h3 className="text-lg font-medium mb-3">General Feedback</h3>
-      <div className="space-y-4">
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-          <p className="text-sm md:text-base text-gray-600">
-            {feedback}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// New component for job analysis results with proper typing
-const JobAnalysisSection = ({ data }: { data: ResumeAnalysis }) => {
-  // Return null if jobAnalysis is null or undefined
-  if (!data.jobAnalysis) return null;
-  
-  // The jobAnalysis field is now properly typed in the schema
-
-  return (
-    <div className="space-y-6">
-      {data.jobAnalysis?.alignmentAndStrengths && data.jobAnalysis.alignmentAndStrengths.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">Alignment & Strengths</h3>
-          <ul className="space-y-2">
-            {data.jobAnalysis.alignmentAndStrengths.map((item, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm bg-green-50/50 rounded-lg p-3 border border-green-100">
-                <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
-                <span className="text-green-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {data.jobAnalysis?.gapsAndConcerns && data.jobAnalysis.gapsAndConcerns.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">Gaps & Concerns</h3>
-          <ul className="space-y-2">
-            {data.jobAnalysis.gapsAndConcerns.map((item, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm bg-red-50/50 rounded-lg p-3 border border-red-100">
-                <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-red-600" />
-                <span className="text-red-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {data.jobAnalysis?.recommendationsToTailor && data.jobAnalysis.recommendationsToTailor.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">How to Tailor Your Resume</h3>
-          <ul className="space-y-2">
-            {data.jobAnalysis.recommendationsToTailor.map((item, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-                <ChevronRight className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
-                <span className="text-blue-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {data.jobAnalysis?.overallFit && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">Overall Fit Assessment</h3>
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 mt-1 flex-shrink-0 text-gray-600" />
-              <p className="text-sm md:text-base text-gray-600">
-                {data.jobAnalysis.overallFit}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function ResumeAnalyzer() {
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -240,6 +92,18 @@ export default function ResumeAnalyzer() {
     analysisId,
     setAnalysisId,
     refetchUserAnalyses
+  } = useSavedAnalysis();
+  
+  // State to hold the displayed analysis (either from mutation or from saved analysis)
+  const [displayedAnalysis, setDisplayedAnalysis] = useState<ResumeAnalysis | null>(null);
+  
+  // State to control the visibility of the analysis popup
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  
+  // Import additional functions
+  const { 
+    findAnalysisInCache, 
+    analysisStatus 
   } = useSavedAnalysis();
   
   const analyzeMutation = useMutation({
@@ -297,29 +161,6 @@ export default function ResumeAnalyzer() {
     setContent("");
   };
 
-  // State to hold the displayed analysis (either from mutation or from saved analysis)
-  const [displayedAnalysis, setDisplayedAnalysis] = useState<ResumeAnalysis | null>(null);
-  
-  // Create a default empty analysis for TypeScript (not actually used)
-  const emptyAnalysis: ResumeAnalysis = {
-    id: 0,
-    userId: "",
-    content: "",
-    score: 0,
-    identifiedSkills: [],
-    primaryKeywords: [],
-    suggestedImprovements: [],
-    generalFeedback: "",
-    createdAt: null,
-    updatedAt: null,
-  };
-
-  // Import additional functions
-  const { 
-    findAnalysisInCache, 
-    analysisStatus 
-  } = useSavedAnalysis();
-
   // Enhanced effect to load saved analysis with optimized loading
   useEffect(() => {
     console.log('Resume Analyzer useEffect:');
@@ -333,11 +174,13 @@ export default function ResumeAnalyzer() {
       // New analysis results have priority
       console.log('Setting displayed analysis to analyzeMutation.data');
       setDisplayedAnalysis(analyzeMutation.data);
+      setIsPopupOpen(true); // Automatically open popup for new analyses
     } 
     else if (savedAnalysis) {
       // We have data from the API
       console.log('Setting displayed analysis to savedAnalysis from API');
       setDisplayedAnalysis(savedAnalysis);
+      setIsPopupOpen(true); // Automatically open popup for saved analyses
     } 
     else if (analysisId) {
       // Try to find in cache for immediate display while API loads
@@ -345,6 +188,7 @@ export default function ResumeAnalyzer() {
       if (cachedAnalysis && !displayedAnalysis) {
         console.log('Setting displayed analysis from cache');
         setDisplayedAnalysis(cachedAnalysis);
+        setIsPopupOpen(true); // Automatically open popup for cached analyses
       }
     }
   }, [
@@ -578,8 +422,8 @@ export default function ResumeAnalyzer() {
             </form>
           )}
 
-          {/* Results Section */}
-          {displayedAnalysis && (
+          {/* Results Section - Just display a button to show the popup */}
+          {displayedAnalysis && !analyzeMutation.isPending && !isLoadingSavedAnalysis && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -587,110 +431,23 @@ export default function ResumeAnalyzer() {
               className="mt-6 md:mt-8"
             >
               <Card>
-                <CardContent className="pt-6">
-                  {/* Analysis Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <h2 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
-                      <Brain className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
-                      Analysis Results
-                    </h2>
-                    <span className={`text-2xl md:text-3xl font-bold ${
-                      displayedAnalysis.score > 70 ? 'text-green-600' :
-                        displayedAnalysis.score > 50 ? 'text-yellow-600' :
-                          'text-red-600'
-                    }`}>
-                      {displayedAnalysis.score}/100
-                    </span>
-                  </div>
-
-                  <div className="mt-6 md:mt-8 space-y-6 md:space-y-8">
-                    {/* Key Skills */}
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-medium mb-3">Key Skills</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {limitArrayLength(displayedAnalysis.identifiedSkills || []).map((skill, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
-                          >
-                            {skill}
-                          </Badge>
-                        ))}
-                        {(displayedAnalysis.identifiedSkills || []).length === 0 && (
-                          <p className="text-sm text-gray-500">No key skills identified</p>
-                        )}
-                      </div>
+                      <h2 className="text-xl font-semibold flex items-center gap-2 mb-1">
+                        <Brain className="h-5 w-5 text-green-600" />
+                        Analysis Complete
+                      </h2>
+                      <p className="text-muted-foreground text-sm">
+                        Your resume analysis is ready to view
+                      </p>
                     </div>
-
-                    {/* Updated Keywords Section */}
-                    <KeywordsSection data={displayedAnalysis} />
-
-                    {/* Suggested Improvements */}
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
-                      <ul className="space-y-2 md:space-y-3">
-                        {limitArrayLength(displayedAnalysis.suggestedImprovements || []).map((improvement, index) => {
-                          const colors = getFeedbackColor(improvement);
-                          return (
-                            <li
-                              key={index}
-                              className={`flex items-start gap-2 rounded-lg p-2 md:p-3 ${colors.bg} ${colors.text} border ${colors.border}`}
-                            >
-                              <ChevronRight className={`h-5 w-5 mt-0.5 flex-shrink-0 ${colors.text}`} />
-                              <span className="text-sm md:text-base">{improvement}</span>
-                            </li>
-                          );
-                        })}
-                        {(displayedAnalysis.suggestedImprovements || []).length === 0 && (
-                          <li className="text-sm text-gray-500">No improvements suggested</li>
-                        )}
-                      </ul>
-                    </div>
-
-                    {/* Job-Specific Recommendations Section */}
-                    {displayedAnalysis.jobSpecificFeedback && (
-                      <div>
-                        <h3 className="text-lg font-medium mb-3">Job-Specific Recommendations</h3>
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                          <p className="text-sm md:text-base text-blue-700 whitespace-pre-line">
-                            {displayedAnalysis.jobSpecificFeedback}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Updated General Feedback Section */}
-                    <GeneralFeedbackSection data={displayedAnalysis} />
-
-                    {/* Add new Job Analysis section */}
-                    {displayedAnalysis.jobAnalysis && (
-                      <div className="mt-6 pt-6 border-t border-gray-100">
-                        <h2 className="text-xl md:text-2xl font-semibold mb-6">
-                          Job Match Analysis
-                        </h2>
-                        <JobAnalysisSection data={displayedAnalysis} />
-                      </div>
-                    )}
-
-                    {/* Add CTA Section */}
-                    <div className="mt-8 pt-6 border-t border-gray-100">
-                      <Link href="/resume-editor" className="block">
-                        <div className="group bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl p-6 transition-all duration-300 border border-green-100 hover:border-green-200 cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-xl font-semibold text-green-700 mb-2">
-                                Ready to Improve Your Resume?
-                              </h3>
-                              <p className="text-green-600">
-                                Use our AI-powered resume editor to implement these suggestions and create a stronger resume
-                              </p>
-                            </div>
-                            <ArrowRight className="w-6 h-6 text-green-600 transform group-hover:translate-x-1 transition-transform duration-300" />
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
+                    <Button 
+                      className={getScoreColor(displayedAnalysis.score)}
+                      onClick={() => setIsPopupOpen(true)}
+                    >
+                      View Results <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -698,6 +455,14 @@ export default function ResumeAnalyzer() {
           )}
         </motion.div>
       </div>
+      
+      {/* Add the ResumeAnalysisPopup component */}
+      <ResumeAnalysisPopup 
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        analysisData={displayedAnalysis}
+        isLoading={analyzeMutation.isPending || isLoadingSavedAnalysis}
+      />
     </div>
   );
 }

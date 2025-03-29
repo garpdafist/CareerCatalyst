@@ -1,0 +1,85 @@
+import React, { useState } from 'react';
+import ResumeAnalysisPopup from './ResumeAnalysisPopup';
+
+const ResumeAnalyzer = () => {
+  const [resumeText, setResumeText] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [resumeId, setResumeId] = useState(null);
+
+  const handleAnalyzeResume = async () => {
+    if (!resumeText.trim()) return;
+    
+    setIsAnalyzing(true);
+    
+    try {
+      // Replace with your actual API call
+      const response = await fetch('/api/analyze-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resume: resumeText })
+      });
+      
+      const data = await response.json();
+      setAnalysisData(data);
+      setResumeId(data.id || '100'); // Use the ID from response or default
+      setShowResults(true);
+    } catch (error) {
+      console.error('Error analyzing resume:', error);
+      // Handle error state
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold text-center mb-2">Resume Analyzer</h1>
+      <p className="text-center text-gray-600 mb-8">Get instant AI-powered feedback on your resume</p>
+      
+      <div className="bg-cream-50 rounded-lg p-6 mb-6">
+        <div className="flex gap-4 mb-4">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white rounded border border-gray-300">
+            <span className="material-icons">description</span>
+            Paste Content
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-white rounded border border-gray-300">
+            <span className="material-icons">upload_file</span>
+            Upload File
+          </button>
+        </div>
+        
+        <textarea
+          className="w-full h-64 p-4 border border-gray-300 rounded-lg mb-4"
+          placeholder="Paste your resume here..."
+          value={resumeText}
+          onChange={(e) => setResumeText(e.target.value)}
+        />
+        
+        <div className="flex items-center mb-4">
+          <input type="checkbox" id="job-description" className="mr-2" />
+          <label htmlFor="job-description">Add Job Description</label>
+        </div>
+      </div>
+      
+      <button
+        className="w-full py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+        onClick={handleAnalyzeResume}
+        disabled={isAnalyzing || !resumeText.trim()}
+      >
+        {isAnalyzing ? 'Analyzing Resume...' : 'Analyze Resume'}
+      </button>
+      
+      {/* Popup for displaying results */}
+      <ResumeAnalysisPopup
+        isOpen={showResults}
+        onClose={() => setShowResults(false)}
+        analysisData={analysisData}
+        resumeId={resumeId}
+      />
+    </div>
+  );
+};
+
+export default ResumeAnalyzer;
