@@ -297,17 +297,18 @@ export default function ResumeAnalyzer() {
     setContent("");
   };
 
+  // State to hold the displayed analysis (either from mutation or from saved analysis)
+  const [displayedAnalysis, setDisplayedAnalysis] = useState<ResumeAnalysis | null>(null);
+
   // Effect to load saved analysis from URL parameter
   useEffect(() => {
-    // If we have a saved analysis, and no current analysis result, display the saved one
+    // If we have a saved analysis and no current mutation data, use the saved one
     if (savedAnalysis && !analyzeMutation.data && !isLoadingSavedAnalysis) {
-      // Use the Object.assign method to update the mutable state correctly
-      Object.defineProperty(analyzeMutation, 'data', {
-        value: savedAnalysis,
-        writable: true
-      });
+      setDisplayedAnalysis(savedAnalysis);
+    } else if (analyzeMutation.data) {
+      setDisplayedAnalysis(analyzeMutation.data);
     }
-  }, [savedAnalysis, isLoadingSavedAnalysis]);
+  }, [savedAnalysis, analyzeMutation.data, isLoadingSavedAnalysis]);
   
   const handleSubmit = () => {
     if (!content.trim() && !file) {
@@ -373,7 +374,7 @@ export default function ResumeAnalyzer() {
           )}
 
           {/* Saved Analyses - Show when not analyzing and not displaying results */}
-          {!analyzeMutation.isPending && !analyzeMutation.data && (
+          {!analyzeMutation.isPending && !displayedAnalysis && (
             <SavedAnalyses />
           )}
           
@@ -519,7 +520,7 @@ export default function ResumeAnalyzer() {
           )}
 
           {/* Results Section */}
-          {analyzeMutation.data && (
+          {displayedAnalysis && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -535,11 +536,11 @@ export default function ResumeAnalyzer() {
                       Analysis Results
                     </h2>
                     <span className={`text-2xl md:text-3xl font-bold ${
-                      analyzeMutation.data.score > 70 ? 'text-green-600' :
-                        analyzeMutation.data.score > 50 ? 'text-yellow-600' :
+                      displayedAnalysis.score > 70 ? 'text-green-600' :
+                        displayedAnalysis.score > 50 ? 'text-yellow-600' :
                           'text-red-600'
                     }`}>
-                      {analyzeMutation.data.score}/100
+                      {displayedAnalysis.score}/100
                     </span>
                   </div>
 
@@ -548,7 +549,7 @@ export default function ResumeAnalyzer() {
                     <div>
                       <h3 className="text-lg font-medium mb-3">Key Skills</h3>
                       <div className="flex flex-wrap gap-2">
-                        {limitArrayLength(analyzeMutation.data.identifiedSkills || []).map((skill, index) => (
+                        {limitArrayLength(displayedAnalysis.identifiedSkills || []).map((skill, index) => (
                           <Badge
                             key={index}
                             variant="secondary"
@@ -557,20 +558,20 @@ export default function ResumeAnalyzer() {
                             {skill}
                           </Badge>
                         ))}
-                        {(analyzeMutation.data.identifiedSkills || []).length === 0 && (
+                        {(displayedAnalysis.identifiedSkills || []).length === 0 && (
                           <p className="text-sm text-gray-500">No key skills identified</p>
                         )}
                       </div>
                     </div>
 
                     {/* Updated Keywords Section */}
-                    <KeywordsSection data={analyzeMutation.data} />
+                    <KeywordsSection data={displayedAnalysis} />
 
                     {/* Suggested Improvements */}
                     <div>
                       <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
                       <ul className="space-y-2 md:space-y-3">
-                        {limitArrayLength(analyzeMutation.data.suggestedImprovements || []).map((improvement, index) => {
+                        {limitArrayLength(displayedAnalysis.suggestedImprovements || []).map((improvement, index) => {
                           const colors = getFeedbackColor(improvement);
                           return (
                             <li
@@ -582,34 +583,34 @@ export default function ResumeAnalyzer() {
                             </li>
                           );
                         })}
-                        {(analyzeMutation.data.suggestedImprovements || []).length === 0 && (
+                        {(displayedAnalysis.suggestedImprovements || []).length === 0 && (
                           <li className="text-sm text-gray-500">No improvements suggested</li>
                         )}
                       </ul>
                     </div>
 
                     {/* Job-Specific Recommendations Section */}
-                    {analyzeMutation.data.jobSpecificFeedback && (
+                    {displayedAnalysis.jobSpecificFeedback && (
                       <div>
                         <h3 className="text-lg font-medium mb-3">Job-Specific Recommendations</h3>
                         <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                           <p className="text-sm md:text-base text-blue-700 whitespace-pre-line">
-                            {analyzeMutation.data.jobSpecificFeedback}
+                            {displayedAnalysis.jobSpecificFeedback}
                           </p>
                         </div>
                       </div>
                     )}
 
                     {/* Updated General Feedback Section */}
-                    <GeneralFeedbackSection data={analyzeMutation.data} />
+                    <GeneralFeedbackSection data={displayedAnalysis} />
 
                     {/* Add new Job Analysis section */}
-                    {analyzeMutation.data.jobAnalysis && (
+                    {displayedAnalysis.jobAnalysis && (
                       <div className="mt-6 pt-6 border-t border-gray-100">
                         <h2 className="text-xl md:text-2xl font-semibold mb-6">
                           Job Match Analysis
                         </h2>
-                        <JobAnalysisSection data={analyzeMutation.data} />
+                        <JobAnalysisSection data={displayedAnalysis} />
                       </div>
                     )}
 
