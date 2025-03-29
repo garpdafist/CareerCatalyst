@@ -288,7 +288,15 @@ export default function ResumeAnalyzer() {
 
           {/* Submit Form - Only show when not analyzing AND when there are no analysis results */}
           {!analyzeMutation.isPending && !isLoadingSavedAnalysis && !displayedAnalysis && (
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
+            <form 
+              onSubmit={(e) => { 
+                e.preventDefault(); 
+                // Only submit if it was the submit button that was clicked
+                if (e.nativeEvent.submitter && e.nativeEvent.submitter.type === "submit") {
+                  handleSubmit();
+                }
+              }} 
+              className="space-y-6">
               <Card>
                 <CardContent className="pt-6">
                   <Tabs defaultValue="paste" className="w-full">
@@ -317,7 +325,10 @@ export default function ResumeAnalyzer() {
                               type="checkbox"
                               id="job-description-toggle"
                               checked={isApplyingForJob}
-                              onChange={(e) => setIsApplyingForJob(e.target.checked)}
+                              onChange={(e) => {
+                                e.preventDefault();
+                                setIsApplyingForJob(e.target.checked);
+                              }}
                               className={iosSwitch}
                             />
                             <Label
@@ -378,7 +389,10 @@ export default function ResumeAnalyzer() {
                               type="checkbox"
                               id="job-description-toggle-upload"
                               checked={isApplyingForJob}
-                              onChange={(e) => setIsApplyingForJob(e.target.checked)}
+                              onChange={(e) => {
+                                e.preventDefault();
+                                setIsApplyingForJob(e.target.checked);
+                              }}
                               className={iosSwitch}
                             />
                             <Label
