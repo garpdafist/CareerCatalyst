@@ -189,11 +189,11 @@ export function ResumeAnalysisEnhanced({
       </div>
       
       {/* Analysis Results Container */}
-      <div className="bg-[#f8f5ee] p-6 sm:p-8 rounded-b-lg border border-t-0 border-gray-200 shadow-sm mb-6">
+      <div className="bg-[#f5f0e5] p-6 sm:p-8 rounded-b-lg border border-t-0 border-gray-200 shadow-sm mb-6">
         {/* Score Section */}
         <div className={`mb-8 ${expandedSections.score ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold flex items-center text-[#292929]">
+            <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <BarChart3 className="h-6 w-6 mr-2 text-gray-600" />
               Resume Score
             </h2>
@@ -327,7 +327,7 @@ export function ResumeAnalysisEnhanced({
         {/* General Feedback Section */}
         <div className={`mb-8 ${expandedSections.feedback ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold flex items-center text-[#292929]">
+            <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <FileText className="h-6 w-6 mr-2 text-gray-600" />
               Overall Feedback
             </h2>
@@ -340,7 +340,7 @@ export function ResumeAnalysisEnhanced({
           </div>
           
           {analysisData.generalFeedback ? (
-            <div className="p-6 bg-[#f8f5ee] rounded-lg border border-gray-200 backdrop-blur-sm">
+            <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
               <p className="text-gray-700 leading-relaxed">
                 {typeof analysisData.generalFeedback === 'object' 
                   ? analysisData.generalFeedback.overall 
@@ -348,7 +348,7 @@ export function ResumeAnalysisEnhanced({
               </p>
             </div>
           ) : (
-            <div className="p-5 bg-[#f8f5ee] border border-gray-200 rounded-lg">
+            <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="flex">
                 <Lightbulb className="h-5 w-5 text-gray-600 mr-2 flex-shrink-0 mt-0.5" />
                 <p className="text-gray-700">
@@ -363,7 +363,7 @@ export function ResumeAnalysisEnhanced({
         {/* Skills & Keywords Section */}
         <div className={`mb-8 ${expandedSections.skills ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold flex items-center text-[#292929]">
+            <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <Zap className="h-6 w-6 mr-2 text-gray-600" />
               Skills & Keywords
             </h2>
@@ -377,8 +377,8 @@ export function ResumeAnalysisEnhanced({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Key Skills */}
-            <div className="bg-[#f8f5ee] p-5 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
+            <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold mb-3 flex items-center text-[#1c170d]">
                 <CheckCircle2 className="h-5 w-5 mr-2 text-gray-600" />
                 Key Skills
               </h3>
@@ -402,7 +402,7 @@ export function ResumeAnalysisEnhanced({
                   })}
                 </div>
               ) : (
-                <div className="p-3 bg-[#f8f5ee] border border-gray-200 rounded-md">
+                <div className="p-3 bg-white border border-gray-200 rounded-md shadow-sm">
                   <p className="text-gray-700 text-sm">
                     No key skills were identified in your resume. This might indicate that your resume lacks industry-specific terminology
                     or that there was an issue with the analysis process.
@@ -412,8 +412,8 @@ export function ResumeAnalysisEnhanced({
             </div>
             
             {/* Primary Keywords */}
-            <div className="bg-[#f8f5ee] p-5 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
+            <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold mb-3 flex items-center text-[#1c170d]">
                 <FileCheck className="h-5 w-5 mr-2 text-gray-600" />
                 Primary Keywords
               </h3>
@@ -437,7 +437,7 @@ export function ResumeAnalysisEnhanced({
                   })}
                 </div>
               ) : (
-                <div className="p-3 bg-[#f8f5ee] border border-gray-200 rounded-md">
+                <div className="p-3 bg-white border border-gray-200 rounded-md shadow-sm">
                   <p className="text-gray-700 text-sm">
                     No primary keywords were identified in your resume. Consider revising your resume to clearly highlight your technical 
                     and soft skills using industry-standard terminology.
@@ -451,7 +451,7 @@ export function ResumeAnalysisEnhanced({
         {/* Suggested Improvements Section */}
         <div className={`mb-8 ${expandedSections.improvements ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold flex items-center text-[#292929]">
+            <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <Lightbulb className="h-6 w-6 mr-2 text-gray-600" />
               Suggested Improvements
             </h2>
@@ -466,7 +466,7 @@ export function ResumeAnalysisEnhanced({
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
             <div className="space-y-3">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="p-4 bg-[#f8f5ee] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div key={i} className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
                   <div className="flex items-start group">
                     <span className="text-[#2e7d32] mr-2 group-hover:text-[#1b5e20] transition-colors">→</span>
                     <p className="text-gray-700 group-hover:text-[#292929] transition-colors">{improvement}</p>
@@ -475,7 +475,7 @@ export function ResumeAnalysisEnhanced({
               ))}
             </div>
           ) : (
-            <div className="p-5 bg-[#f8f5ee] border border-gray-200 rounded-lg">
+            <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="flex">
                 <Lightbulb className="h-5 w-5 text-gray-600 mr-2 flex-shrink-0 mt-0.5" />
                 <p className="text-gray-700">
@@ -490,9 +490,8 @@ export function ResumeAnalysisEnhanced({
         {/* Job Analysis Section */}
         {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
           <div className={`mb-8 ${expandedSections.jobAnalysis ? '' : 'hidden'}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold flex items-center text-[#292929]">
-                <Briefcase className="h-6 w-6 mr-2 text-gray-600" />
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#1c170d]">
                 Job Match Analysis
               </h2>
               <button 
@@ -504,90 +503,105 @@ export function ResumeAnalysisEnhanced({
             </div>
             
             {analysisData.jobAnalysis && typeof analysisData.jobAnalysis === 'object' ? (
-              <div className="space-y-6">
-                {/* Overall Fit with progress indicator */}
-                {analysisData.jobAnalysis.overallFit && (
-                  <div className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-medium text-[#292929] mb-2 flex items-center">
-                      <Briefcase className="h-5 w-5 mr-2 text-[#2e7d32]" />
-                      Overall Job Fit
-                    </h3>
-                    <p className="text-gray-700 mb-4">{analysisData.jobAnalysis.overallFit}</p>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Strengths */}
-                  <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-medium text-[#292929] mb-3 flex items-center">
-                      <CheckCircle2 className="h-5 w-5 mr-2 text-[#2e7d32]" />
-                      Your Resume Strengths
-                    </h3>
-                    
-                    {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
-                    analysisData.jobAnalysis.alignmentAndStrengths.length > 0 ? (
-                      <ul className="space-y-2">
-                        {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
-                          <li key={i} className="flex items-start">
-                            <span className="text-[#2e7d32] mr-2 font-bold">✓</span>
-                            <span className="text-gray-700">{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-500 italic">No specific strengths were identified for this job</p>
-                    )}
-                  </div>
-                  
-                  {/* Gaps */}
-                  <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-medium text-[#292929] mb-3 flex items-center">
-                      <span className="h-5 w-5 mr-2 text-red-600 flex items-center justify-center">⚠</span>
-                      Gaps to Address
-                    </h3>
-                    
-                    {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
-                    analysisData.jobAnalysis.gapsAndConcerns.length > 0 ? (
-                      <ul className="space-y-2">
-                        {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
-                          <li key={i} className="flex items-start">
-                            <span className="text-red-600 mr-2 font-bold">✕</span>
-                            <span className="text-gray-700">{gap}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-500 italic">No specific gaps were identified for this job</p>
-                    )}
+              <div className="space-y-8">
+                {/* Alignment & Strengths */}
+                {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
+                analysisData.jobAnalysis.alignmentAndStrengths.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                    Alignment & Strengths
+                  </h3>
+                  <div className="space-y-2">
+                    {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
+                      <div key={i} className="p-4 bg-[#e8f5e9] rounded-lg">
+                        <div className="flex items-start">
+                          <span className="text-[#2e7d32] mr-3 font-bold text-xl">✓</span>
+                          <span className="text-gray-800">{strength}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
+                )}
                 
-                {/* Recommendations */}
+                {/* Gaps & Concerns */}
+                {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
+                analysisData.jobAnalysis.gapsAndConcerns.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                    Gaps & Concerns
+                  </h3>
+                  <div className="space-y-2">
+                    {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
+                      <div key={i} className="p-4 bg-[#ffebee] rounded-lg">
+                        <div className="flex items-start">
+                          <span className="text-red-600 mr-3 font-bold text-xl">✕</span>
+                          <span className="text-gray-800">{gap}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                )}
+                
+                {/* How to Tailor Your Resume */}
                 {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
                 analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
-                  <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm mt-6">
-                    <h3 className="text-lg font-medium text-[#292929] mb-3 flex items-center">
-                      <Lightbulb className="h-5 w-5 mr-2 text-[#2e7d32]" />
-                      Tailoring Recommendations
-                    </h3>
-                    
-                    <ul className="space-y-2">
-                      {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
-                        <li key={i} className="flex items-start">
-                          <span className="text-[#2e7d32] mr-2 font-bold">→</span>
-                          <span className="text-gray-700">{rec}</span>
-                        </li>
-                      ))}
-                    </ul>
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                    How to Tailor Your Resume
+                  </h3>
+                  <div className="space-y-2">
+                    {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
+                      <div key={i} className="p-4 bg-[#e3f2fd] rounded-lg">
+                        <div className="flex items-start">
+                          <span className="text-blue-600 mr-3 font-bold text-xl">→</span>
+                          <span className="text-gray-800">{rec}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </div>
                 )}
+                
+                {/* Overall Fit Assessment */}
+                {analysisData.jobAnalysis.overallFit && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                    Overall Fit Assessment
+                  </h3>
+                  <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex items-start">
+                      <span className="text-gray-500 mr-3 text-xl flex-shrink-0">ⓘ</span>
+                      <span className="text-gray-800">{analysisData.jobAnalysis.overallFit}</span>
+                    </div>
+                  </div>
+                </div>
+                )}
+                
+                {/* Ready to Improve CTA */}
+                <div className="p-6 bg-[#e8f5e9] rounded-lg mt-8">
+                  <h3 className="text-xl font-semibold mb-2 text-[#1c170d]">
+                    Ready to Improve Your Resume?
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    Use our AI-powered resume editor to implement these suggestions and create a stronger resume
+                  </p>
+                  <button 
+                    onClick={onImproveResume}
+                    className="flex items-center text-[#2e7d32] font-medium hover:text-[#1b5e20] transition-colors"
+                  >
+                    <span>Improve my resume</span>
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex">
-                  <Briefcase className="h-5 w-5 text-[#2e7d32] mr-2 flex-shrink-0 mt-0.5" />
+                  <Briefcase className="h-5 w-5 text-[#1c170d] mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[#292929] font-medium mb-2">
+                    <p className="text-[#1c170d] font-medium mb-2">
                       Job Analysis Information
                     </p>
                     <p className="text-gray-700">
@@ -609,8 +623,8 @@ export function ResumeAnalysisEnhanced({
       {/* Action Buttons - Enhanced styling */}
       <div className="mt-8">
         {/* Primary CTA Container with modern styling */}
-        <div className="bg-[#f8f5ee] p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
-          <h3 className="text-xl font-bold text-[#292929] mb-4 text-center">Ready to Improve Your Resume?</h3>
+        <div className="bg-[#f5f0e5] p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+          <h3 className="text-xl font-bold text-[#1c170d] mb-4 text-center">Ready to Improve Your Resume?</h3>
           
           {/* Button Group: Primary and Secondary CTAs side by side on desktop, stacked on mobile */}
           <div className="flex flex-col sm:flex-row gap-4">
