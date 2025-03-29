@@ -201,9 +201,8 @@ export default function ResumeAnalyzer() {
 
     handleAnalysisDisplay();
   }, [savedAnalysis, analyzeMutation.data, analysisId]); // Simplified dependencies
-        setIsPopupOpen(true); // Automatically open popup for cached analyses
-      }
-    }
+        }
+  }, [savedAnalysis, analyzeMutation.data, analysisId]);
   }, [
     savedAnalysis, 
     analyzeMutation.data, 
