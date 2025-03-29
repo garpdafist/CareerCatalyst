@@ -464,7 +464,11 @@ export default function ResumeAnalyzer() {
       </div>
       
       {/* Add the ResumeAnalysisPopup component */}
-      <ResumeAnalysisPopup 
+      <ResumeAnalysisPopup
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        analysisData={displayedAnalysis}
+        isLoading={isLoadingSavedAnalysis} 
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         analysisData={displayedAnalysis}
