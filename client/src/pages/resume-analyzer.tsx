@@ -257,7 +257,7 @@ export default function ResumeAnalyzer() {
                   <Switch
                     checked={isApplyingForJob}
                     onCheckedChange={setIsApplyingForJob}
-                    className="data-[state=checked]:bg-green-500"
+                    className="data-[state=checked]:bg-green-500 h-6 w-11"
                   />
                   <Label htmlFor="job-description" className="ml-3 cursor-pointer">
                     Add Job Description
