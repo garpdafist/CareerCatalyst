@@ -271,30 +271,6 @@ export default function ResumeAnalyzer() {
             </Card>
           )}
 
-          {/* "View All Analyses" CTA - Show when not analyzing and not displaying results */}
-          {!analyzeMutation.isPending && !displayedAnalysis && (
-            <Card className="mb-6">
-              <CardContent className="pt-6 pb-6">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <History className="h-12 w-12 text-primary/80" />
-                  <div>
-                    <h3 className="text-xl font-medium mb-2">Previous Resume Analyses</h3>
-                    <p className="text-muted-foreground mb-4">
-                      View and compare all your previous resume analyses
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => navigate('/all-analyses')}
-                    className="px-6"
-                    size="lg"
-                  >
-                    View All Analyses <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
           {/* Submit Form - Only show when not analyzing */}
           {!analyzeMutation.isPending && (
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
@@ -433,6 +409,17 @@ export default function ResumeAnalyzer() {
                   "Analyze Resume"
                 )}
               </Button>
+              
+              {/* Less prominent "View All Analyses" link below the submit button */}
+              <div className="text-center mt-6">
+                <div 
+                  className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  onClick={() => navigate('/all-analyses')}
+                >
+                  <History className="h-4 w-4 mr-1" />
+                  View your previous resume analyses
+                </div>
+              </div>
             </form>
           )}
 
