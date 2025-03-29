@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { FileText, Upload, History, Clock } from "lucide-react";
+import { FileText, Upload, History, Clock, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { ResumeAnalysisSkeleton } from "@/components/ui/resume-analysis-skeleton";
@@ -197,17 +197,19 @@ export default function ResumeAnalyzer() {
           <form 
             onSubmit={(e) => { 
               console.log("Form submission event triggered");
+              // Always prevent default submission
               e.preventDefault();
-              // Only process form submission from actual submit button clicks
-              const target = e.target as HTMLFormElement;
-              const submitter = (e as any).nativeEvent?.submitter;
-              console.log("Form submitter:", submitter?.type);
               
-              if (submitter && submitter.type === "submit") {
-                console.log("Processing form submission from submit button");
+              // Only process submission if it came from the submit button
+              const submitter = (e as any).nativeEvent?.submitter;
+              console.log("Form submitter:", submitter?.type, submitter?.className);
+              
+              // Ensure the submitter is the actual submit button
+              if (submitter && submitter.type === "submit" && submitter.className.includes("bg-green-600")) {
+                console.log("Processing form submission from the Analyze Resume button");
                 handleSubmit();
               } else {
-                console.log("Ignoring form submission not from submit button");
+                console.log("Ignoring form submission not from Analyze Resume button");
               }
             }} 
             className="space-y-6 bg-[#FAF9F4] rounded-lg p-6"
@@ -269,7 +271,8 @@ export default function ResumeAnalyzer() {
 
               <div className="flex items-center mt-4">
                 {/* Custom toggle switch that won't trigger form submission */}
-                <div 
+                <button 
+                  type="button" // Explicitly set as button type to prevent form submission
                   className="relative inline-block w-12 h-6 mr-2"
                   onClick={(e) => {
                     console.log("Toggle container clicked");
@@ -280,17 +283,20 @@ export default function ResumeAnalyzer() {
                       console.log("Toggling job description from", prev, "to", !prev);
                       return !prev;
                     });
-                    // Return false to prevent any default behavior
-                    return false;
                   }}
                 >
-                  {/* Hidden input for accessibility - no onChange handler to prevent duplicate events */}
+                  {/* Hidden input for accessibility - purely visual, not functional */}
                   <input
                     type="checkbox"
                     id="job-description-toggle"
                     checked={isApplyingForJob}
                     readOnly
                     className="peer sr-only"
+                    // Prevent any possible click events by stopping propagation
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
                   />
                   {/* Styled label that works as the visible toggle */}
                   <div
@@ -298,20 +304,20 @@ export default function ResumeAnalyzer() {
                   >
                     <span className="block w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 translate-x-0.5 translate-y-0.5 peer-checked:translate-x-6"></span>
                   </div>
-                </div>
-                {/* Text label that also toggles state but doesn't use htmlFor to prevent duplicate events */}
-                <div
+                </button>
+                {/* Text label that also toggles state - converted to button to prevent form submission */}
+                <button
+                  type="button" // Explicitly set as button type
                   className="text-sm font-medium cursor-pointer"
                   onClick={(e) => {
                     console.log("Text label clicked");
                     e.preventDefault();
                     e.stopPropagation();
                     setIsApplyingForJob(prev => !prev);
-                    return false;
                   }}
                 >
                   Add Job Description
-                </div>
+                </button>
               </div>
 
               <AnimatePresence mode="wait">
@@ -332,13 +338,24 @@ export default function ResumeAnalyzer() {
                 )}
               </AnimatePresence>
 
+              {/* Primary CTA - Analyze Resume Button */}
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-green-600 hover:bg-green-700 text-white mt-4"
+                className="w-full bg-green-600 hover:bg-green-700 text-white mt-6 py-6 text-lg font-semibold shadow-lg"
                 disabled={analyzeMutation.isPending}
+                onClick={(e) => {
+                  // Extra logging to track button click events
+                  console.log("Analyze Resume button clicked");
+                }}
               >
-                {analyzeMutation.isPending ? "Analyzing..." : "Analyze Resume"}
+                {analyzeMutation.isPending ? 
+                  <span className="flex items-center">
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Analyzing...
+                  </span> : 
+                  "Analyze Resume"
+                }
               </Button>
             </div>
 
