@@ -36,7 +36,8 @@ import {
   authLimiter,
   coverLetterLimiter,
   linkedInLimiter,
-  getAnalysesLimiter
+  getAnalysesLimiter,
+  skipRateLimitForStatic
 } from './middleware/rate-limit';
 
 // Import validation middleware
@@ -488,7 +489,10 @@ export function registerRoutes(app: Express): Server {
   // Add Content Security Policy violation reporter
   app.post('/api/csp-report', cspViolationReporter);
   
-  // Add general rate limiting for all routes
+  // Add rate limiting middleware with static asset exclusion
+  app.use(skipRateLimitForStatic);
+  
+  // Apply general rate limiting only to routes that pass through skipRateLimitForStatic
   app.use(generalLimiter);
 
   // Add a simple ping route for testing
