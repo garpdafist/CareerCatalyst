@@ -179,7 +179,7 @@ export function ResumeAnalysisInline({
         </div>
 
         {/* Job Analysis Section - Check if job description exists */}
-        {/* Add explicit debug display */}
+        {/* Debug display - Hidden in production */}
         <div className="mb-1 hidden">
           <pre className="text-xs">
             Has job description: {JSON.stringify(!!analysisData.jobDescription)}
@@ -188,12 +188,13 @@ export function ResumeAnalysisInline({
           </pre>
         </div>
 
-        {/* Show job analysis if EITHER job description OR job analysis data exists */}
+        {/* Always show job analysis section if EITHER job description OR job analysis exists */}
         {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-2">Job Match Analysis</h3>
             
-            {analysisData.jobAnalysis ? (
+            {/* Show job analysis content if it exists */}
+            {analysisData.jobAnalysis && typeof analysisData.jobAnalysis === 'object' ? (
               <div className="p-4 bg-blue-50 rounded-lg">
                 {/* Strengths */}
                 {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
@@ -265,12 +266,12 @@ export function ResumeAnalysisInline({
             ) : (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
                 <p className="text-amber-700">
-                  <strong>Job Analysis Failed:</strong> We weren't able to generate a job-specific analysis for your resume with the provided job description. 
-                  This might be due to an analysis issue or insufficient data in the job description.
+                  <strong>Job Analysis Information:</strong> We detected a job description in your submission, but we weren't able to generate 
+                  a complete job-specific analysis for your resume.
                 </p>
                 <p className="text-amber-700 mt-2">
-                  Try providing a more detailed job description with clear requirements and responsibilities, 
-                  or try analyzing again with the existing job description.
+                  This might be due to an analysis processing issue or insufficient details in the job description.
+                  Try providing a more detailed job description with clear requirements and responsibilities for better matching results.
                 </p>
               </div>
             )}
@@ -278,17 +279,18 @@ export function ResumeAnalysisInline({
         ) : null}
       </div>
 
-      {/* Action Buttons - Revamped layout */}
+      {/* Action Buttons - Streamlined layout */}
       <div className="mt-6">
         {/* Primary CTA Container with heading */}
-        <div className="bg-green-50 p-6 rounded-lg border border-green-100 mb-6">
-          <h3 className="text-lg font-medium text-green-700 mb-4">Ready to Improve Your Resume?</h3>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-100 shadow-sm mb-6">
+          <h3 className="text-lg font-medium text-green-700 mb-4 text-center sm:text-left">Ready to Improve Your Resume?</h3>
           
-          {/* Button Group: Primary and Secondary CTAs side by side */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Primary CTA - More prominent styling */}
+          {/* Button Group: Primary and Secondary CTAs side by side on desktop, stacked on mobile */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Primary CTA - More prominent styling with gradient background */}
             <Button 
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center"
+              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white 
+                         flex items-center justify-center shadow-sm transition-all duration-200"
               onClick={onImproveResume}
               size="lg"
             >
@@ -296,28 +298,36 @@ export function ResumeAnalysisInline({
               <span>Improve My Resume</span>
             </Button>
             
-            {/* Secondary CTA - Less prominent but visually balanced */}
+            {/* Secondary CTA - Complementary but less prominent styling */}
             <Button 
               variant="outline"
               onClick={onGenerateCoverLetter}
               size="lg"
-              className="flex-1 border-green-200 text-green-700 hover:bg-green-50 flex items-center justify-center"
+              className="flex-1 border-green-200 text-green-700 hover:bg-green-50 flex items-center justify-center
+                         transition-all duration-200"
             >
               <span>Generate Cover Letter</span>
             </Button>
           </div>
         </div>
         
-        {/* Lower CTAs: Additional Options */}
-        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-2">
-          {/* Navigation Links */}
-          <Link href="/resume-analyzer" className="text-sm flex items-center text-muted-foreground hover:text-primary transition-colors">
-            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+        {/* Lower CTAs: Additional Options - More balanced layout */}
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-3">
+          {/* Do Another Analysis Link */}
+          <Link 
+            href="/resume-analyzer" 
+            className="text-sm flex items-center text-muted-foreground hover:text-primary transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Do another analysis
           </Link>
           
-          <Link href="/all-analyses" className="text-sm flex items-center text-muted-foreground hover:text-primary transition-colors">
-            <FileText className="h-3.5 w-3.5 mr-1" />
+          {/* View Previous Analyses Link */}
+          <Link 
+            href="/all-analyses" 
+            className="text-sm flex items-center text-muted-foreground hover:text-primary transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5 mr-1.5" />
             View your previous analyses
           </Link>
         </div>
