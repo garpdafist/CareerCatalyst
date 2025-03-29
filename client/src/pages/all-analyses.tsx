@@ -10,26 +10,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { ResumeAnalysisPopup } from "@/components/ui/resume-analysis-popup";
 
 // Same type definitions and helpers used in saved-analyses.tsx
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
 type FilterOption = 'all' | 'withJob' | 'withoutJob';
 
 export default function AllAnalyses() {
-  const { userAnalyses, isLoadingUserAnalyses, setAnalysisId } = useSavedAnalysis();
+  const { 
+    userAnalyses, 
+    isLoadingUserAnalyses, 
+    setAnalysisId, 
+    savedAnalysis, 
+    isLoadingSavedAnalysis 
+  } = useSavedAnalysis();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>('newest');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-  // Handle analysis click - open in a popup/modal instead of navigating
+  // Handle analysis click - open in a popup directly without navigating away
   const handleAnalysisClick = (id: number) => {
     setAnalysisId(id);
-    // Using URL parameters for deep linking
-    window.history.pushState({}, '', `/resume-analyzer?id=${id}`);
-    // Return to the analyzer page with the ID
-    window.location.href = `/resume-analyzer?id=${id}`;
+    // Using URL parameters for deep linking without redirecting
+    window.history.pushState({}, '', `?id=${id}`);
+    // Open the popup
+    setIsPopupOpen(true);
   };
+
+  // Effect to handle popup opening when an analysis is loaded
+  React.useEffect(() => {
+    if (savedAnalysis) {
+      setIsPopupOpen(true);
+    }
+  }, [savedAnalysis]);
 
   // Filter and sort analyses
   const filteredAnalyses = React.useMemo(() => {
@@ -293,6 +308,14 @@ export default function AllAnalyses() {
           </div>
         </motion.div>
       </div>
+      
+      {/* Add the ResumeAnalysisPopup component */}
+      <ResumeAnalysisPopup 
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        analysisData={savedAnalysis}
+        isLoading={isLoadingSavedAnalysis}
+      />
     </div>
   );
 }
