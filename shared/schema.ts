@@ -151,24 +151,32 @@ export const userAuthSchema = createInsertSchema(users).pick({
   email: true,
 });
 
-export const resumeContentSchema = z.object({
-  professionalSummary: z.string(),
-  workExperience: z.array(z.object({
-    company: z.string(),
-    position: z.string(),
-    duration: z.string(),
-    achievements: z.array(z.string())
-  })),
-  technicalSkills: z.array(z.string()),
-  education: z.array(z.object({
-    institution: z.string(),
-    degree: z.string(),
-    year: z.string()
-  })),
-  certifications: z.array(z.string()).optional(),
-  projects: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    technologies: z.array(z.string())
-  })).optional()
-});
+export const resumeContentSchema = z.union([
+  // Option 1: Simple content string for direct text or file uploads
+  z.object({
+    content: z.string().min(1, "Resume content is required")
+  }),
+  
+  // Option 2: Structured format for frontend form submissions
+  z.object({
+    professionalSummary: z.string(),
+    workExperience: z.array(z.object({
+      company: z.string(),
+      position: z.string(),
+      duration: z.string(),
+      achievements: z.array(z.string())
+    })),
+    technicalSkills: z.array(z.string()),
+    education: z.array(z.object({
+      institution: z.string(),
+      degree: z.string(),
+      year: z.string()
+    })),
+    certifications: z.array(z.string()).optional(),
+    projects: z.array(z.object({
+      name: z.string(),
+      description: z.string(),
+      technologies: z.array(z.string())
+    })).optional()
+  })
+]);
