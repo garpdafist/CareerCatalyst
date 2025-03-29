@@ -486,6 +486,7 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
         console.error(`[${new Date().toISOString()}] Error parsing OpenAI response:`, error);
         
         // Fallback to a simplified response if parsing fails
+        // Make sure to include the jobAnalysis property (set to null) even when it's not present
         return {
           score: 65, // Default middle score
           identifiedSkills: [...(initialAnalysis.technicalSkills || []), ...(initialAnalysis.softSkills || [])],
@@ -500,7 +501,14 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
             structureReadability: { score: 7, maxScore: 10, feedback: "Good structure" },
             summaryClarity: { score: 6, maxScore: 10, feedback: "Adequate summary" },
             overallPolish: { score: 7, maxScore: 10, feedback: "Reasonably polished" }
-          }
+          },
+          // Always include jobAnalysis (null for no job description)
+          jobAnalysis: jobDescription ? {
+            alignmentAndStrengths: [],
+            gapsAndConcerns: [],
+            recommendationsToTailor: [],
+            overallFit: "No job analysis could be generated."
+          } : null
         };
       }
     });
@@ -524,6 +532,38 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
       status: error.status,
       stack: error.stack
     });
+    
+    // If it's an error we want to show to the user (like an OpenAI API issue), 
+    // create a safe fallback response instead of throwing
+    if (error.statusCode === 429 || error.statusCode === 503 || error.statusCode === 500) {
+      console.log(`[${new Date().toISOString()}] Creating emergency fallback analysis response`);
+      // Return minimal viable analysis with safe fallback values
+      return {
+        score: 50,
+        scores: {
+          keywordsRelevance: { score: 5, maxScore: 10, feedback: "Analysis encountered an error", keywords: [] },
+          achievementsMetrics: { score: 5, maxScore: 10, feedback: "Analysis encountered an error", highlights: [] },
+          structureReadability: { score: 5, maxScore: 10, feedback: "Analysis encountered an error" },
+          summaryClarity: { score: 5, maxScore: 10, feedback: "Analysis encountered an error" },
+          overallPolish: { score: 5, maxScore: 10, feedback: "Analysis encountered an error" }
+        },
+        identifiedSkills: [],
+        primaryKeywords: [],
+        suggestedImprovements: ["Try analyzing your resume again", "Check that your resume is formatted properly"],
+        generalFeedback: {
+          overall: "We encountered an error analyzing your resume. This might be due to temporary service limitations or issues with the resume format."
+        },
+        // Always include jobAnalysis property (null if no job description)
+        jobAnalysis: jobDescription ? {
+          alignmentAndStrengths: [],
+          gapsAndConcerns: [],
+          recommendationsToTailor: ["Try analyzing again with the job description"],
+          overallFit: "Unable to analyze job fit due to a service error."
+        } : null
+      };
+    }
+    
+    // For other errors, rethrow
     throw error;
   }
 }
