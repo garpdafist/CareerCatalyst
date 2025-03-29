@@ -43,10 +43,23 @@ function generateCacheKey(resumeText: string, jobDescription?: JobDescription): 
     return createMD5Hash(resumeText);
   }
   
-  // Include job description details in the cache key
-  const jobKey = jobDescription ? 
-    `${jobDescription.roleTitle || ''}-${jobDescription.companyName || ''}-${(jobDescription.skills || []).join(',')}` : 
-    '';
+  // If job description is a string, use it directly
+  if (typeof jobDescription === 'string') {
+    // Take first 100 chars of job description for cache key to avoid excessive key length
+    const jobPreview = jobDescription.length > 100 ? 
+      jobDescription.substring(0, 100) : jobDescription;
+    return createMD5Hash(`${resumeText}-job:${jobPreview}`);
+  }
+  
+  // If it's an object, include job description details in the cache key
+  const typedJobDesc = jobDescription as {
+    roleTitle?: string;
+    companyName?: string;
+    skills?: string[];
+  };
+  
+  const jobKey = 
+    `${typedJobDesc.roleTitle || ''}-${typedJobDesc.companyName || ''}-${(typedJobDesc.skills || []).join(',')}`;
   
   return createMD5Hash(`${resumeText}-${jobKey}`);
 }
@@ -404,7 +417,20 @@ ${JSON.stringify(initialAnalysis, null, 2)}
 
     // Add job description details if available
     if (jobDescription) {
-      enhancedPrompt += `
+      // If job description is a string, use it directly
+      if (typeof jobDescription === 'string') {
+        console.log(`[${new Date().toISOString()}] Job description is a string of length: ${jobDescription.length}`);
+        enhancedPrompt += `
+Job Description:
+${jobDescription}
+
+Compare this resume with the job description and provide a comprehensive evaluation.
+`;
+      } 
+      // If it's an object, format it nicely
+      else {
+        console.log(`[${new Date().toISOString()}] Job description is an object with properties: ${Object.keys(jobDescription).join(', ')}`);
+        enhancedPrompt += `
 Job Details:
 Role: ${jobDescription.roleTitle || 'Not specified'}
 Experience Required: ${jobDescription.yearsOfExperience || 'Not specified'}
@@ -417,6 +443,7 @@ ${jobDescription.requirements?.join('\n') || 'None specified'}
 
 Compare this resume with the job description and provide a comprehensive evaluation.
 `;
+      }
     } else {
       enhancedPrompt += `
 Provide a comprehensive evaluation of this resume based on the initial analysis and full content.

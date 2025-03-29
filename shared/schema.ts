@@ -3,17 +3,22 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Job description schema with structured fields
-export const jobDescriptionSchema = z.object({
-  roleTitle: z.string().optional(),
-  yearsOfExperience: z.string().optional(),
-  industry: z.string().optional(),
-  companyName: z.string().optional(),
-  primaryKeywords: z.array(z.string()).optional(),
-  summary: z.string().optional(),
-  requirements: z.array(z.string()).optional(),
-  skills: z.array(z.string()).optional(),
-});
+// Job description schema with support for both structured and plain text formats
+export const jobDescriptionSchema = z.union([
+  // Structured format
+  z.object({
+    roleTitle: z.string().optional(),
+    yearsOfExperience: z.string().optional(),
+    industry: z.string().optional(),
+    companyName: z.string().optional(),
+    primaryKeywords: z.array(z.string()).optional(),
+    summary: z.string().optional(),
+    requirements: z.array(z.string()).optional(),
+    skills: z.array(z.string()).optional(),
+  }),
+  // Plain text format (simple string)
+  z.string()
+]);
 
 // Keep existing scoring criteria schema
 export const scoringCriteriaSchema = z.object({

@@ -82,18 +82,23 @@ export default function ResumeAnalyzer() {
 
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string; jobDescription?: string } | FormData) => {
+      console.log("analyzeMutation called with data:", 
+                  data instanceof FormData ? "FormData object" : data);
+      
       setAnalysisProgress(0);
       const progressInterval = setInterval(() => {
         setAnalysisProgress(prev => Math.min(prev + 5, 90));
       }, 500);
 
       try {
-        if (data instanceof FormData && isApplyingForJob && jobDescription) {
-          data.append('jobDescription', jobDescription);
-        } else if (!(data instanceof FormData) && isApplyingForJob && jobDescription) {
-          data = { ...data, jobDescription };
-        }
-
+        // We no longer need to modify the data here since we're handling it in handleSubmit
+        // This avoids potential double-appending of jobDescription
+        
+        console.log("Making API request with data:", 
+                    data instanceof FormData ? 
+                    `FormData (has jobDescription: ${data.has('jobDescription')})` : 
+                    JSON.stringify(data));
+                    
         const res = await apiRequest(
           "POST", 
           "/api/resume-analyze", 
@@ -102,9 +107,13 @@ export default function ResumeAnalyzer() {
         );
         clearInterval(progressInterval);
         setAnalysisProgress(100);
-        return await res.json() as ResumeAnalysis;
+        
+        const jsonResponse = await res.json() as ResumeAnalysis;
+        console.log("API response received:", jsonResponse);
+        return jsonResponse;
       } catch (error) {
         clearInterval(progressInterval);
+        console.error("API request failed:", error);
         throw error;
       }
     },
@@ -151,6 +160,8 @@ export default function ResumeAnalyzer() {
   }, [savedAnalysis, analyzeMutation.data, analysisId, findAnalysisInCache]);
 
   const handleSubmit = () => {
+    console.log("handleSubmit called with isApplyingForJob:", isApplyingForJob, "jobDescription:", jobDescription);
+    
     if (!content.trim() && !file) {
       toast({
         title: "Error",
@@ -163,9 +174,25 @@ export default function ResumeAnalyzer() {
     if (file) {
       const formData = new FormData();
       formData.append('file', file);
+      
+      // Always append jobDescription if the toggle is on, even if it's empty
+      if (isApplyingForJob) {
+        console.log("Adding job description to FormData:", jobDescription);
+        formData.append('jobDescription', jobDescription);
+      }
+      
       analyzeMutation.mutate(formData);
     } else {
-      analyzeMutation.mutate({ content });
+      // For text content, include job description in the payload if toggle is on
+      if (isApplyingForJob) {
+        console.log("Adding job description to content payload:", jobDescription);
+        analyzeMutation.mutate({ 
+          content,
+          jobDescription
+        });
+      } else {
+        analyzeMutation.mutate({ content });
+      }
     }
   };
 

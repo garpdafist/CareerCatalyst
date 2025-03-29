@@ -400,7 +400,16 @@ const handleAnalysis = async (req: any, res: any) => {
       console.log(`[${new Date().toISOString()}] [${requestId}] Content sample: "${contentSample}"`);
       
       // Get job description from request if available
+      // Extract and log job description information
       const jobDescription = req.body?.jobDescription;
+      console.log(`[${new Date().toISOString()}] [${requestId}] Job description info:`, {
+        exists: !!jobDescription,
+        type: typeof jobDescription,
+        length: jobDescription ? (typeof jobDescription === 'string' ? jobDescription.length : JSON.stringify(jobDescription).length) : 0,
+        preview: jobDescription ? (typeof jobDescription === 'string' ? 
+          (jobDescription.length > 100 ? jobDescription.substring(0, 100) + '...' : jobDescription) :
+          JSON.stringify(jobDescription).substring(0, 100) + '...') : 'undefined'
+      });
       
       // Set a timeout specifically for the AI analysis
       const analysisPromise = analyzeResume(content, jobDescription);
@@ -574,10 +583,27 @@ export function registerRoutes(app: Express): Server {
     (req: any, res: any, next: any) => {
       // If a file was uploaded, adapt the request body to match our schema
       if (req.file) {
-        console.log('Adapting request with file upload to match schema');
+        console.log('Adapting request with file upload to match schema:', {
+          filePresent: !!req.file,
+          bodyExists: !!req.body,
+          bodyKeys: req.body ? Object.keys(req.body) : [],
+          hasJobDesc: req.body && 'jobDescription' in req.body,
+          jobDescType: req.body?.jobDescription ? typeof req.body.jobDescription : 'undefined'
+        });
+        
         // Create a content field if it doesn't exist
         req.body = req.body || {};
         req.body.content = 'File uploaded, content will be extracted';
+        
+        // Log job description if present
+        if (req.body.jobDescription) {
+          console.log('Job description included with file upload:', {
+            length: typeof req.body.jobDescription === 'string' ? req.body.jobDescription.length : 0,
+            preview: typeof req.body.jobDescription === 'string' ? 
+              (req.body.jobDescription.substring(0, 100) + (req.body.jobDescription.length > 100 ? '...' : '')) : 
+              'Not a string'
+          });
+        }
       }
       next();
     },
