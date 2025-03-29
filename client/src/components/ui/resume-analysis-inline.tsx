@@ -1,7 +1,25 @@
-import { ArrowRight, FileText, RefreshCw } from 'lucide-react';
+import { 
+  ArrowRight, 
+  FileText, 
+  RefreshCw, 
+  CheckCircle2, 
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  BarChart3,
+  Award,
+  Briefcase,
+  Star,
+  Sparkles,
+  Zap,
+  PenLine,
+  FileCheck
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResumeAnalysis } from '@shared/schema';
 import { Link, useLocation } from 'wouter';
+import { useState, useRef, useEffect } from 'react';
+import { Progress } from '@/components/ui/progress';
 
 interface ResumeAnalysisInlineProps {
   analysisData: ResumeAnalysis | null | undefined;
@@ -16,17 +34,52 @@ export function ResumeAnalysisInline({
   onImproveResume,
   onGenerateCoverLetter
 }: ResumeAnalysisInlineProps) {
-  // Debug data
+  // State for accordion sections
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    score: true,
+    feedback: true,
+    skills: true,
+    keywords: true,
+    improvements: true,
+    jobAnalysis: false
+  });
+  
+  // Ref for sticky navigation
+  const navRef = useRef<HTMLDivElement>(null);
+  const [isSticky, setIsSticky] = useState(false);
+  
+  // Handle scroll for sticky nav
+  useEffect(() => {
+    const handleScroll = () => {
+      if (navRef.current) {
+        const { top } = navRef.current.getBoundingClientRect();
+        setIsSticky(top <= 0);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Toggle accordion sections
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+  
+  // Debug data (console.log in a production environment isn't ideal, consider removing)
   console.log("Analysis Data:", analysisData);
 
   if (isLoading) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-t-primary rounded-full animate-spin mb-4"></div>
-        <p className="text-lg font-medium text-center">
-          Analyzing your resume for strengths and opportunities...
+      <div className="p-8 flex flex-col items-center justify-center animate-fade-in">
+        <div className="w-16 h-16 border-4 border-t-primary rounded-full animate-spin mb-6"></div>
+        <p className="text-xl font-medium text-center mb-2">
+          Analyzing your resume...
         </p>
-        <p className="text-muted-foreground text-center mt-2">
+        <p className="text-muted-foreground text-center max-w-md">
           This typically takes 10-15 seconds. We're extracting your skills, achievements, and providing targeted feedback.
         </p>
       </div>
@@ -35,8 +88,12 @@ export function ResumeAnalysisInline({
 
   if (!analysisData) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-muted-foreground">No analysis data available</p>
+      <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+        <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <p className="text-lg font-medium mb-2">No Analysis Data Available</p>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Please upload your resume to get a detailed analysis of your skills, experience, and opportunities for improvement.
+        </p>
       </div>
     );
   }
@@ -75,29 +132,145 @@ export function ResumeAnalysisInline({
   });
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Analysis Results Section */}
-      <div className="mb-6 bg-white p-6 rounded-lg border shadow-sm">
-        {/* Overall Score */}
-        <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">Resume Score</h3>
-          <div className="flex items-center mb-2">
-            <div className="w-full bg-gray-200 rounded-full h-4 mr-2">
-              <div 
-                className={`h-4 rounded-full ${
-                  analysisData.score >= 80 ? 'bg-green-500' : 
-                  analysisData.score >= 60 ? 'bg-yellow-500' : 
-                  'bg-red-500'
-                }`}
-                style={{ width: `${analysisData.score}%` }}
-              ></div>
+    <div className="max-w-4xl mx-auto">
+      {/* Sticky Navigation Header */}
+      <div 
+        ref={navRef}
+        className={`${isSticky ? 'sticky top-0 z-10 shadow-md' : ''} 
+                   transition-all duration-300 ease-in-out`}
+      >
+        <div className={`bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-200 py-3 px-4 
+                       ${isSticky ? 'rounded-b-lg' : 'rounded-t-lg border-t border-x'}`}>
+          {/* Quick Navigation */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center">
+              <div className="mr-4">
+                <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1">Score</div>
+                <div className="flex items-center">
+                  <div className="w-16 h-16 rounded-full border-4 flex items-center justify-center relative mr-3">
+                    <svg className="w-full h-full absolute top-0 left-0" viewBox="0 0 36 36">
+                      <path
+                        d="M18 2.0845
+                          a 15.9155 15.9155 0 0 1 0 31.831
+                          a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        stroke={analysisData.score >= 80 ? '#10B981' : analysisData.score >= 60 ? '#FBBF24' : '#EF4444'}
+                        strokeWidth="3"
+                        strokeDasharray={`${analysisData.score}, 100`}
+                      />
+                    </svg>
+                    <span className="text-lg font-bold">{analysisData.score}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">Resume Score</div>
+                    <div className="text-xs text-gray-500">out of 100</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <span className="text-lg font-bold">{analysisData.score}/100</span>
+            
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-gray-700 border-gray-300 hover:bg-gray-50"
+                onClick={() => toggleSection('score')}
+              >
+                <BarChart3 className="h-4 w-4 mr-1" />
+                <span>Score Details</span>
+              </Button>
+              
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-amber-700 border-amber-200 hover:bg-amber-50"
+                onClick={() => toggleSection('improvements')}
+              >
+                <Lightbulb className="h-4 w-4 mr-1" />
+                <span>Improvements</span>
+              </Button>
+              
+              {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                  onClick={() => toggleSection('jobAnalysis')}
+                >
+                  <Briefcase className="h-4 w-4 mr-1" />
+                  <span>Job Match</span>
+                </Button>
+              ) : null}
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            This score reflects how well your resume meets industry standards and best practices.
-          </p>
         </div>
+      </div>
+      
+      {/* Analysis Results Container */}
+      <div className="bg-white p-6 sm:p-8 rounded-b-lg border border-t-0 border-gray-200 shadow-sm mb-6">
+        {/* Score Section */}
+        <div className={`mb-8 ${expandedSections.score ? '' : 'hidden'}`}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold flex items-center text-gray-800">
+              <BarChart3 className="h-6 w-6 mr-2 text-gray-600" />
+              Resume Score
+            </h2>
+            <button 
+              onClick={() => toggleSection('score')}
+              className="text-gray-500 hover:text-gray-700 p-1"
+            >
+              {expandedSections.score ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            </button>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Overall Score with circular indicator */}
+            <div className="flex flex-col md:flex-row md:items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
+                <div className="relative w-24 h-24 mx-auto">
+                  <svg className="w-full h-full" viewBox="0 0 36 36">
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="#E5E7EB"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke={analysisData.score >= 80 ? '#10B981' : analysisData.score >= 60 ? '#FBBF24' : '#EF4444'}
+                      strokeWidth="3"
+                      strokeDasharray={`${analysisData.score}, 100`}
+                    />
+                  </svg>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                    <span className="text-2xl font-bold">{analysisData.score}</span>
+                    <span className="text-xs block text-gray-500">out of 100</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex-grow">
+                <h3 className="text-lg font-semibold mb-2">Resume Quality Score</h3>
+                <p className="text-gray-600 mb-3">
+                  This score reflects how well your resume meets industry standards and best practices.
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-1000 ease-out ${
+                      analysisData.score >= 80 ? 'bg-green-500' : 
+                      analysisData.score >= 60 ? 'bg-amber-500' : 
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${analysisData.score}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
 
         {/* General Feedback - Always show section with appropriate fallback content */}
         <div className="mb-8">

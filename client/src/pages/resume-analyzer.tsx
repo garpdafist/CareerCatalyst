@@ -7,16 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { FileText, Upload, History, Clock, Loader2 } from "lucide-react";
+import { FileText, Upload, History, Clock, Loader2, ArrowUpRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { ResumeAnalysisSkeleton } from "@/components/ui/resume-analysis-skeleton";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
-import ResumeAnalysisInline from "@/components/ui/resume-analysis-inline";
-import ResumeAnalysisPopup from "@/components/ui/resume-analysis-popup";
-import { Switch } from "@/components/ui/switch"; // Added import
+import { ResumeAnalysisEnhanced } from "@/components/ui/resume-analysis-enhanced";
+import { Switch } from "@/components/ui/switch";
 
 
 // Animation variants for the textarea with spring effect
@@ -351,7 +350,7 @@ export default function ResumeAnalyzer() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <ResumeAnalysisInline 
+            <ResumeAnalysisEnhanced 
               analysisData={displayedAnalysis}
               isLoading={false}
               onImproveResume={() => {
