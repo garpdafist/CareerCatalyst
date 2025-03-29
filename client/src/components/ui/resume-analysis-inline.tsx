@@ -41,39 +41,37 @@ export function ResumeAnalysisInline({
     );
   }
 
-  // Enhanced detailed debug logging for job description flow
-  console.log("Analysis Fields (Enhanced Debug):", {
-    score: analysisData.score,
+  // Enhanced debugging for job description and analysis
+  console.log("Critical Job Data Debug:", {
+    // Basic resume data check
+    hasScore: !!analysisData.score,
     hasPrimaryKeywords: Array.isArray(analysisData.primaryKeywords) && analysisData.primaryKeywords.length > 0,
-    primaryKeywordsCount: Array.isArray(analysisData.primaryKeywords) ? analysisData.primaryKeywords.length : 0,
     hasGeneralFeedback: !!analysisData.generalFeedback,
-    generalFeedbackType: typeof analysisData.generalFeedback,
-    // Critical debugging for job description flow
-    hasJobDescField: 'jobDescription' in analysisData,
-    jobDescriptionValue: analysisData.jobDescription,
+    
+    // Job description debug
+    hasJobDescProperty: 'jobDescription' in analysisData,
+    jobDescriptionExists: !!analysisData.jobDescription,
     jobDescriptionType: typeof analysisData.jobDescription,
     jobDescriptionIsNull: analysisData.jobDescription === null,
-    jobDescriptionIsUndefined: analysisData.jobDescription === undefined,
-    jobDescriptionIsEmptyString: analysisData.jobDescription === '',
-    // Critical debugging for job analysis flow
-    hasJobAnalysisField: 'jobAnalysis' in analysisData,
-    jobAnalysisValue: analysisData.jobAnalysis,
+    jobDescriptionIsEmpty: analysisData.jobDescription === '',
+    
+    // Job analysis debug
+    hasJobAnalysisProperty: 'jobAnalysis' in analysisData,
+    jobAnalysisExists: !!analysisData.jobAnalysis,
     jobAnalysisType: typeof analysisData.jobAnalysis,
     jobAnalysisIsNull: analysisData.jobAnalysis === null,
-    jobAnalysisIsUndefined: analysisData.jobAnalysis === undefined,
-    jobAnalysisKeys: analysisData.jobAnalysis ? Object.keys(analysisData.jobAnalysis) : []
-  });
-  
-  // Debug message for job analysis section - enhanced logging
-  console.log("Job Analysis Section Debug:", {
-    shouldShowJobSection: !!analysisData.jobDescription || !!analysisData.jobAnalysis,
-    jobDescriptionValue: analysisData.jobDescription,
-    jobDescriptionType: typeof analysisData.jobDescription,
-    jobDescriptionJson: analysisData.jobDescription ? JSON.stringify(analysisData.jobDescription).substring(0, 100) : null,
-    jobAnalysisValue: analysisData.jobAnalysis,
-    jobAnalysisType: typeof analysisData.jobAnalysis,
     jobAnalysisKeys: analysisData.jobAnalysis ? Object.keys(analysisData.jobAnalysis) : [],
-    jobAnalysisJson: analysisData.jobAnalysis ? JSON.stringify(analysisData.jobAnalysis).substring(0, 100) : null
+    
+    // Job section display logic
+    shouldShowJobSection: !!analysisData.jobDescription || !!analysisData.jobAnalysis,
+    jobDescriptionPreview: analysisData.jobDescription ? 
+      (typeof analysisData.jobDescription === 'string' ? 
+        analysisData.jobDescription.substring(0, 50) + '...' : 
+        JSON.stringify(analysisData.jobDescription).substring(0, 50) + '...') : 
+      'null/undefined',
+    jobAnalysisPreview: analysisData.jobAnalysis ? 
+      JSON.stringify(analysisData.jobAnalysis).substring(0, 50) + '...' : 
+      'null/undefined'
   });
 
   return (
