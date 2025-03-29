@@ -271,6 +271,8 @@ export function ResumeAnalysisInline({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
         {/* General Feedback - Always show section with appropriate fallback content */}
         <div className="mb-8">
@@ -482,6 +484,7 @@ export function ResumeAnalysisInline({
                     <p className="text-gray-700 italic">No overall job fit analysis was generated</p>
                   </div>
                 )}
+              </div>
               </div>
             ) : (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
