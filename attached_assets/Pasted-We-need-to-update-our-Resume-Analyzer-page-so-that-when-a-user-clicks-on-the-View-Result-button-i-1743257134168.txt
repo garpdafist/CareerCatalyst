@@ -1,0 +1,33 @@
+We need to update our Resume Analyzer page so that when a user clicks on the "View Result" button, instead of navigating to a new URL (like /resume-analyzer?id=100) and displaying the entire page, a modal popup appears that shows the analysis results. The design should be inspired by Apple’s clean, transparent, 3D layer aesthetics.
+
+Please implement the following:
+
+1. **Modal Popup for Analysis Results:**
+   - Create a modal component that overlays the current page when "View Result" is clicked.
+   - The modal should have a transparent background with a subtle 3D effect (using shadows and rounded corners) to mimic an Apple-style popup.
+   - The modal content should display the analysis results (score, keywords, suggestions, etc.) in a clean, organized layout.
+   - Add a close button (an “X” icon or similar) to dismiss the popup.
+   - Ensure that the modal is responsive and works well on both desktop and mobile devices.
+
+2. **Remove Route-Based Navigation:**
+   - Remove the existing behavior that navigates to a separate URL with an analysis ID.
+   - Instead, when a user clicks "View Result," the modal should fetch and display the analysis data (using React Query or our current data fetching method) without reloading the page.
+
+3. **Transition & Animations:**
+   - Implement smooth fade-in and scale animations for the modal popup (for example, using Tailwind's transition utilities like `transition`, `duration-300`, and appropriate transform classes).
+   - Ensure the popup appears as an overlay, dimming the background slightly to focus attention on the analysis results.
+
+4. **Design Aesthetics:**
+   - Use a transparent or semi-transparent background for the modal overlay.
+   - Apply subtle box-shadow and rounded corners to create a 3D “floating” effect.
+   - Follow our existing Tailwind theme for colors, spacing, and fonts.
+
+5. **Fix Syntax Errors:**
+   - There is a syntax error in `client/src/pages/resume-analyzer.tsx` at line 205: "Unexpected token }". Please locate and fix this error so that the code compiles correctly.
+   - Ensure that all ambiguous Tailwind class warnings (like `ease-[cubic-bezier(0.34,1.56,0.64,1)]`) are resolved by using the correct escape syntax (e.g., replace with `ease-&lsqb;cubic-bezier(0.34,1.56,0.64,1)&rsqb;`) as needed.
+
+6. **Documentation & Comments:**
+   - Add inline comments to explain the modal component structure and the transitions/animations used.
+   - Document the changes made to remove the route-based navigation for analysis results and replace it with the modal approach.
+
+Please implement these changes and confirm once complete so we can test the new modal popup experience for the "View Result" functionality.

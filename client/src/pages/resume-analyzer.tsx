@@ -42,7 +42,7 @@ const textAreaVariants = {
     height: 0,
     transition: {
       duration: 0.3,
-      ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
+      ease: "cubic-bezier(0.34, 1.56, 0.64, 1)" // Custom spring effect
     }
   },
   visible: { 
@@ -51,7 +51,7 @@ const textAreaVariants = {
     height: "auto",
     transition: {
       duration: 0.3,
-      ease: [0.34, 1.56, 0.64, 1] // Custom spring effect
+      ease: "cubic-bezier(0.34, 1.56, 0.64, 1)" // Custom spring effect
     }
   }
 };
@@ -200,9 +200,6 @@ export default function ResumeAnalyzer() {
     };
 
     handleAnalysisDisplay();
-  }, [savedAnalysis, analyzeMutation.data, analysisId]); // Simplified dependencies
-        }
-  }, [savedAnalysis, analyzeMutation.data, analysisId]);
   }, [
     savedAnalysis, 
     analyzeMutation.data, 
