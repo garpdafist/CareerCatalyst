@@ -8,7 +8,7 @@ import { ResumeAnalysis } from '@shared/schema';
 interface ResumeAnalysisPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  analysisData: ResumeAnalysis | null;
+  analysisData: ResumeAnalysis | null | undefined;
   isLoading?: boolean;
 }
 

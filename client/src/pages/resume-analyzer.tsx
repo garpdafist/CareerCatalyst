@@ -169,6 +169,12 @@ export default function ResumeAnalyzer() {
     console.log('- isLoadingSavedAnalysis:', isLoadingSavedAnalysis);
     console.log('- displayedAnalysis:', displayedAnalysis);
     console.log('- analysisStatus:', analysisStatus);
+    console.log('- analysisId:', analysisId);
+    
+    // Always open the popup when an analysis ID is set (this enables clicking from SavedAnalyses)
+    if (analysisId && !isPopupOpen) {
+      setIsPopupOpen(true);
+    }
     
     if (analyzeMutation.data) {
       // New analysis results have priority
@@ -198,7 +204,8 @@ export default function ResumeAnalyzer() {
     analysisId, 
     findAnalysisInCache,
     analysisStatus,
-    displayedAnalysis
+    displayedAnalysis,
+    isPopupOpen
   ]);
   
   const handleSubmit = () => {

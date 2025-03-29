@@ -313,7 +313,7 @@ export default function AllAnalyses() {
       <ResumeAnalysisPopup 
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
-        analysisData={savedAnalysis}
+        analysisData={savedAnalysis || null}
         isLoading={isLoadingSavedAnalysis}
       />
     </div>
