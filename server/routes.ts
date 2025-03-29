@@ -45,7 +45,9 @@ import {
   validateJobDescription,
   validateUserAuth,
   validateLinkedInProfile,
-  validateParamId
+  validateParamId,
+  validateCoverLetter,
+  validateAnalysisId
 } from './middleware/validation';
 
 // Import logging middleware

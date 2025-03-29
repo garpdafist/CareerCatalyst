@@ -65,6 +65,13 @@ export const securityLogger = {
   },
   
   /**
+   * Log data access events for privacy compliance
+   */
+  logDataAccess: (req: Request & { id?: string }, dataType: string, userId: string) => {
+    console.log(`[${new Date().toISOString()}] [INFO] [DATA] [${req.id}] User ${userId} accessed ${dataType} data from ${req.ip}`);
+  },
+  
+  /**
    * Log suspicious activity for security monitoring
    */
   logSuspiciousActivity: (req: Request & { id?: string }, activity: string, details: any) => {

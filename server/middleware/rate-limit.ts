@@ -23,7 +23,7 @@ const createLimiter = (options: {
     max: options.max,
     standardHeaders: options.standardHeaders ?? true,
     legacyHeaders: options.legacyHeaders ?? false,
-    keyGenerator: options.keyGenerator ?? ((req) => req.ip),
+    keyGenerator: options.keyGenerator ?? ((req) => req.ip || 'unknown'),
     handler: (req: Request, res: Response) => {
       // Log rate limit violation
       securityLogger.logSuspiciousActivity(req, 'Rate limit exceeded', {
