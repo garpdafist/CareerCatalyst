@@ -181,13 +181,12 @@ export class DatabaseStorage implements IStorage {
         content: data.content,
         score: data.score,
         scores: data.analysis.scores,
-        // CRITICAL FIX: Ensure job description is properly stored when available
-        // Don't convert undefined/null job descriptions to empty strings as this breaks the UI logic
-        // Only process the job description if it actually exists
-        ...(data.jobDescription !== undefined && data.jobDescription !== null ? {
-          jobDescription: typeof data.jobDescription === 'object' ? 
-            JSON.stringify(data.jobDescription) : String(data.jobDescription)
-        } : {}),
+        // CRITICAL FIX: Always include the jobDescription field
+        // Set it to null when no job description is provided to ensure consistent behavior
+        jobDescription: data.jobDescription !== undefined && data.jobDescription !== null ? 
+          (typeof data.jobDescription === 'object' ? 
+            JSON.stringify(data.jobDescription) : String(data.jobDescription)) 
+          : null,
         resumeSections: resumeSectionsSchema.parse({ 
           professionalSummary: "",
           workExperience: "",
@@ -201,9 +200,9 @@ export class DatabaseStorage implements IStorage {
         generalFeedback: typeof data.analysis.generalFeedback === 'object'
           ? data.analysis.generalFeedback.overall || ''
           : data.analysis.generalFeedback || '',
-        // Include job analysis in the stored JSON
-        // Use type assertion to handle the schema evolution
-        ...(data.analysis.jobAnalysis ? { jobAnalysis: data.analysis.jobAnalysis } : {}),
+        // CRITICAL FIX: Always include the jobAnalysis field
+        // Set it to null when no job analysis is available to ensure consistent behavior
+        jobAnalysis: data.analysis.jobAnalysis || null,
         createdAt: new Date(),
         updatedAt: new Date()
       };

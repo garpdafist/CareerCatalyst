@@ -1,0 +1,30 @@
+Based on the logs, we see that when a job description is provided with a resume upload, it is correctly included initially (e.g., length: 3238, proper preview) but later in the processing pipeline the job description information is lost—resulting in "hasJobDescription: false", "jobDescriptionType: 'none'", and a length of 0 in the final saved analysis.
+
+Please perform the following steps to diagnose and fix the issue:
+
+1. **Trace the Job Description Data Flow:**
+   - Log the job description immediately after it is extracted from the incoming request (before schema validation) to confirm it is present.
+   - After schema validation, log the processed job description data to ensure it remains unchanged.
+   - In the AI analysis function (both for GPT-3.5 initial analysis and GPT-4 comprehensive analysis), log the job description that is being incorporated into the prompt. Verify that the job description is correctly passed to the function.
+   - Immediately before saving the analysis in the saveResumeAnalysis function, log the job description values and flags (e.g., hasJobDescription, jobDescriptionType, jobDescriptionLength, etc.) to determine if the data has been overwritten or reset.
+
+2. **Identify the Discrepancy:**
+   - Compare the logged job description data from each step to identify where it changes from valid data to undefined/none.
+   - Check if there is any fallback logic or conditional block that mistakenly resets or ignores the job description if certain conditions aren’t met.
+
+3. **Fix the Pipeline:**
+   - Adjust the processing logic so that, if a job description is provided:
+     • It remains intact through schema validation and is correctly inserted into the AI prompt.
+     • The analysis functions properly use the job description (e.g., setting hasJobDescription to true, preserving its length and sample).
+     • The final saved analysis object reflects the job description data (i.e., jobDescriptionType is 'string', jobDescriptionLength > 0, etc.).
+
+4. **Testing and Verification:**
+   - After implementing the changes, test by submitting a resume with a job description.
+   - Confirm via logs that the job description data is consistently present from extraction through to the final save.
+   - Verify that the final analysis result shows hasJobDescription: true and includes the relevant job description details.
+
+5. **Documentation & Inline Comments:**
+   - Add inline comments at each critical stage (extraction, validation, AI prompt construction, saving) to explain the expected job description data flow.
+   - Document any changes made to ensure future maintainability.
+
+Please implement these debugging steps and necessary fixes, then confirm once the job description data flows properly through the entire pipeline.

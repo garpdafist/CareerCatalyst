@@ -420,6 +420,7 @@ const handleAnalysis = async (req: any, res: any) => {
         type: typeof jobDescription,
         isNull: jobDescription === null,
         isUndefined: jobDescription === undefined,
+        isEmpty: jobDescription === '',
         length: jobDescription ? (typeof jobDescription === 'string' ? jobDescription.length : JSON.stringify(jobDescription).length) : 0,
         preview: jobDescription ? (typeof jobDescription === 'string' ? 
           (jobDescription.length > 100 ? jobDescription.substring(0, 100) + '...' : jobDescription) :
@@ -717,10 +718,11 @@ export function registerRoutes(app: Express): Server {
         primaryKeywords: analysis.primaryKeywords || [],
         suggestedImprovements: analysis.suggestedImprovements || [],
         generalFeedback: analysis.generalFeedback || '',
-        // Keep job-related fields exactly as they are - don't set defaults
-        // Use conditional spreading to only include them if they exist
-        ...(analysis.jobDescription !== undefined ? {jobDescription: analysis.jobDescription} : {}),
-        ...(analysis.jobAnalysis !== undefined ? {jobAnalysis: analysis.jobAnalysis} : {})
+        // CRITICAL FIX: Always include jobDescription and jobAnalysis fields in the response
+        // When they're not present, explicitly set them to null (not undefined)
+        // This ensures the UI can reliably check for these fields without undefined errors
+        jobDescription: analysis.jobDescription ?? null,
+        jobAnalysis: analysis.jobAnalysis ?? null
       };
 
       res.json(sanitizedAnalysis);
