@@ -166,9 +166,13 @@ export class DatabaseStorage implements IStorage {
         score: data.score,
         scores: data.analysis.scores,
         // Add job description if available
-        jobDescription: data.jobDescription ? { 
-          text: data.jobDescription 
-        } : null,
+        jobDescription: data.jobDescription ? (
+          // If it's already an object, use it as is
+          typeof data.jobDescription === 'object' ? 
+            data.jobDescription : 
+            // Otherwise, keep it as a string
+            data.jobDescription
+        ) : null,
         resumeSections: resumeSectionsSchema.parse({ 
           professionalSummary: "",
           workExperience: "",
@@ -204,6 +208,10 @@ export class DatabaseStorage implements IStorage {
         primaryKeywords: analysis.primaryKeywords,
         hasGeneralFeedback: !!analysis.generalFeedback,
         generalFeedbackContent: analysis.generalFeedback,
+        hasJobDescription: !!analysis.jobDescription,
+        jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
+        hasJobAnalysis: !!analysis.jobAnalysis,
+        jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : [],
         timestamp: new Date().toISOString()
       });
 
@@ -243,6 +251,13 @@ export class DatabaseStorage implements IStorage {
         id: analysis.id,
         userId: analysis.userId,
         score: analysis.score,
+        hasJobDescription: !!analysis.jobDescription,
+        jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
+        hasJobAnalysis: !!analysis.jobAnalysis,
+        jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : [],
+        hasPrimaryKeywords: !!analysis.primaryKeywords,
+        primaryKeywordsCount: analysis.primaryKeywords?.length,
+        hasGeneralFeedback: !!analysis.generalFeedback,
         timestamp: new Date().toISOString()
       });
 
@@ -273,6 +288,9 @@ export class DatabaseStorage implements IStorage {
         primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
         suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
         generalFeedback: analysis.generalFeedback || '',
+        // Include job description and job analysis in returned object
+        jobDescription: analysis.jobDescription || null,
+        jobAnalysis: analysis.jobAnalysis || null,
         createdAt: createdDate,
         updatedAt: updatedDate
       } as ResumeAnalysis;
@@ -304,6 +322,9 @@ export class DatabaseStorage implements IStorage {
           primaryKeywords: resumeAnalyses.primaryKeywords,
           suggestedImprovements: resumeAnalyses.suggestedImprovements,
           generalFeedback: resumeAnalyses.generalFeedback,
+          // Include job-related fields
+          jobDescription: resumeAnalyses.jobDescription,
+          jobAnalysis: resumeAnalyses.jobAnalysis,
           createdAt: resumeAnalyses.createdAt,
           updatedAt: resumeAnalyses.updatedAt
         })
@@ -351,6 +372,9 @@ export class DatabaseStorage implements IStorage {
           primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
           suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
           generalFeedback: analysis.generalFeedback || '',
+          // Include job-related fields
+          jobDescription: analysis.jobDescription || null,
+          jobAnalysis: analysis.jobAnalysis || null,
           createdAt: createdDate,
           updatedAt: updatedDate
         } as ResumeAnalysis);

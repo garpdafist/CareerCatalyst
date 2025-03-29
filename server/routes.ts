@@ -245,13 +245,23 @@ const handleAnalysis = async (req: any, res: any) => {
   const startTime = Date.now();
   const requestId = Math.random().toString(36).substring(2, 15);
   
+  // Enhanced logging for debugging job description issues
   console.log(`[${new Date().toISOString()}] [${requestId}] Resume analysis request received`, {
     method: req.method,
     path: req.path,
     headers: req.headers['content-type'],
     hasBody: !!req.body,
     hasFile: !!req.file,
-    bodySize: req.body ? JSON.stringify(req.body).length : 0
+    bodySize: req.body ? JSON.stringify(req.body).length : 0,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+    jobDescriptionPresent: !!req.body?.jobDescription,
+    jobDescriptionType: req.body?.jobDescription ? typeof req.body.jobDescription : 'none',
+    jobDescriptionLength: req.body?.jobDescription ? (typeof req.body.jobDescription === 'string' ? 
+                        req.body.jobDescription.length : 
+                        JSON.stringify(req.body.jobDescription).length) : 0,
+    jobDescriptionSample: req.body?.jobDescription ? (typeof req.body.jobDescription === 'string' ? 
+                         req.body.jobDescription.substring(0, 100) + '...' : 
+                         JSON.stringify(req.body.jobDescription).substring(0, 100) + '...') : 'none'
   });
   
   // Log detailed information about the request body for debugging
@@ -428,6 +438,22 @@ const handleAnalysis = async (req: any, res: any) => {
       const typedAnalysis = analysis as ResumeAnalysis;
       
       // Format the response object
+      // Log the full analysis for debugging
+      console.log(`[${new Date().toISOString()}] [${requestId}] Analysis result:`, {
+        score: typedAnalysis.score,
+        hasScores: !!typedAnalysis.scores,
+        scoresKeys: typedAnalysis.scores ? Object.keys(typedAnalysis.scores) : [],
+        hasIdentifiedSkills: Array.isArray(typedAnalysis.identifiedSkills) && typedAnalysis.identifiedSkills.length > 0,
+        identifiedSkillsCount: Array.isArray(typedAnalysis.identifiedSkills) ? typedAnalysis.identifiedSkills.length : 0,
+        hasPrimaryKeywords: Array.isArray(typedAnalysis.primaryKeywords) && typedAnalysis.primaryKeywords.length > 0, 
+        primaryKeywordsCount: Array.isArray(typedAnalysis.primaryKeywords) ? typedAnalysis.primaryKeywords.length : 0,
+        hasSuggestedImprovements: Array.isArray(typedAnalysis.suggestedImprovements) && typedAnalysis.suggestedImprovements.length > 0,
+        hasGeneralFeedback: !!typedAnalysis.generalFeedback,
+        generalFeedbackType: typedAnalysis.generalFeedback ? typeof typedAnalysis.generalFeedback : 'none',
+        hasJobAnalysis: !!typedAnalysis.jobAnalysis,
+        jobAnalysisKeys: typedAnalysis.jobAnalysis ? Object.keys(typedAnalysis.jobAnalysis) : []
+      });
+      
       const response = {
         ...typedAnalysis,
         primaryKeywords: typedAnalysis.primaryKeywords || [],
@@ -437,7 +463,9 @@ const handleAnalysis = async (req: any, res: any) => {
               ? (typedAnalysis.generalFeedback as any).overall || ''
               : String(typedAnalysis.generalFeedback || ''))
             : ''
-        }
+        },
+        // Make sure the job analysis is included in the response
+        jobAnalysis: typedAnalysis.jobAnalysis || null
       };
 
       // Persist the analysis to the database
@@ -638,13 +666,24 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Ensure all required fields are present
+      // Log detailed analysis info for debugging
+      console.log(`Retrieved detailed analysis for ID ${id}:`, {
+        hasJobDescription: !!analysis.jobDescription,
+        jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
+        hasJobAnalysis: !!analysis.jobAnalysis,
+        jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : []
+      });
+      
       const sanitizedAnalysis = {
         ...analysis,
         scores: analysis.scores || {},
         identifiedSkills: analysis.identifiedSkills || [],
         primaryKeywords: analysis.primaryKeywords || [],
         suggestedImprovements: analysis.suggestedImprovements || [],
-        generalFeedback: analysis.generalFeedback || ''
+        generalFeedback: analysis.generalFeedback || '',
+        // Make sure to include job-related fields
+        jobDescription: analysis.jobDescription || null,
+        jobAnalysis: analysis.jobAnalysis || null
       };
 
       res.json(sanitizedAnalysis);
