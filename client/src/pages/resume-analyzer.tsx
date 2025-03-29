@@ -163,37 +163,44 @@ export default function ResumeAnalyzer() {
 
   // Enhanced effect to load saved analysis with optimized loading
   useEffect(() => {
-    console.log('Resume Analyzer useEffect:');
-    console.log('- savedAnalysis:', savedAnalysis);
-    console.log('- analyzeMutation.data:', analyzeMutation.data);
-    console.log('- isLoadingSavedAnalysis:', isLoadingSavedAnalysis);
-    console.log('- displayedAnalysis:', displayedAnalysis);
-    console.log('- analysisStatus:', analysisStatus);
-    console.log('- analysisId:', analysisId);
-    
-    // Always open the popup when an analysis ID is set (this enables clicking from SavedAnalyses)
-    if (analysisId && !isPopupOpen) {
-      setIsPopupOpen(true);
-    }
-    
-    if (analyzeMutation.data) {
-      // New analysis results have priority
-      console.log('Setting displayed analysis to analyzeMutation.data');
-      setDisplayedAnalysis(analyzeMutation.data);
-      setIsPopupOpen(true); // Automatically open popup for new analyses
-    } 
-    else if (savedAnalysis) {
-      // We have data from the API
-      console.log('Setting displayed analysis to savedAnalysis from API');
-      setDisplayedAnalysis(savedAnalysis);
-      setIsPopupOpen(true); // Automatically open popup for saved analyses
-    } 
-    else if (analysisId) {
-      // Try to find in cache for immediate display while API loads
-      const cachedAnalysis = findAnalysisInCache(analysisId);
-      if (cachedAnalysis && !displayedAnalysis) {
-        console.log('Setting displayed analysis from cache');
-        setDisplayedAnalysis(cachedAnalysis);
+    console.log('Resume Analyzer useEffect:', {
+      savedAnalysis,
+      analyzeMutation: analyzeMutation.data,
+      isLoadingSavedAnalysis,
+      displayedAnalysis,
+      analysisStatus,
+      analysisId,
+      isPopupOpen
+    });
+
+    const handleAnalysisDisplay = () => {
+      if (analyzeMutation.data) {
+        console.log('Setting analysis from mutation');
+        setDisplayedAnalysis(analyzeMutation.data);
+        setIsPopupOpen(true);
+        return;
+      }
+
+      if (savedAnalysis) {
+        console.log('Setting analysis from API');
+        setDisplayedAnalysis(savedAnalysis);
+        setIsPopupOpen(true);
+        return;
+      }
+
+      if (analysisId) {
+        const cachedAnalysis = findAnalysisInCache(analysisId);
+        if (cachedAnalysis) {
+          console.log('Setting analysis from cache');
+          setDisplayedAnalysis(cachedAnalysis);
+          setIsPopupOpen(true);
+          return;
+        }
+      }
+    };
+
+    handleAnalysisDisplay();
+  }, [savedAnalysis, analyzeMutation.data, analysisId]); // Simplified dependencies
         setIsPopupOpen(true); // Automatically open popup for cached analyses
       }
     }
@@ -451,7 +458,14 @@ export default function ResumeAnalyzer() {
                     </div>
                     <Button 
                       className={getScoreColor(displayedAnalysis.score)}
-                      onClick={() => setIsPopupOpen(true)}
+                      onClick={() => {
+                        console.log('View Results clicked');
+                        setIsPopupOpen(true);
+                        // Ensure we have the latest analysis data
+                        if (displayedAnalysis?.id) {
+                          setAnalysisId(displayedAnalysis.id);
+                        }
+                      }}
                     >
                       View Results <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
