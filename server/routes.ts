@@ -3,12 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { randomBytes } from "crypto";
+import { ResumeAnalysis } from "@shared/schema";
 import session from "express-session";
 import nodemailer from 'nodemailer';
 import multer from 'multer';
-import { analyzeResumeWithAI } from "./services/openai";
 import OpenAI from "openai";
 import { parsePdf } from "./services/pdf-parser";
+import { analyzeResume } from "./services/resume-analyzer";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -278,8 +279,11 @@ const handleAnalysis = async (req: any, res: any) => {
       const contentSample = content.length > 200 ? content.substring(0, 200) + '...' : content;
       console.log(`[${new Date().toISOString()}] [${requestId}] Content sample: "${contentSample}"`);
       
+      // Get job description from request if available
+      const jobDescription = req.body?.jobDescription;
+      
       // Set a timeout specifically for the AI analysis
-      const analysisPromise = analyzeResumeWithAI(content);
+      const analysisPromise = analyzeResume(content, jobDescription);
       
       // Create a race between the analysis and a timeout
       const timeoutPromise = new Promise((_, reject) => {
@@ -292,13 +296,17 @@ const handleAnalysis = async (req: any, res: any) => {
       console.log(`[${new Date().toISOString()}] [${requestId}] AI analysis completed successfully`);
 
       // Ensure critical fields exist in response
+      const typedAnalysis = analysis as ResumeAnalysis;
+      
       const response = {
-        ...analysis,
-        primaryKeywords: analysis.primaryKeywords || [],
+        ...typedAnalysis,
+        primaryKeywords: typedAnalysis.primaryKeywords || [],
         generalFeedback: {
-          overall: typeof analysis.generalFeedback === 'object'
-            ? analysis.generalFeedback.overall
-            : analysis.generalFeedback || ''
+          overall: typedAnalysis?.generalFeedback 
+            ? (typeof typedAnalysis.generalFeedback === 'object'
+              ? (typedAnalysis.generalFeedback as any).overall || ''
+              : String(typedAnalysis.generalFeedback || ''))
+            : ''
         }
       };
 

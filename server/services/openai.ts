@@ -1,4 +1,13 @@
-import { JobDescription } from "@shared/schema";
+/**
+ * OpenAI Service
+ * 
+ * This service handles all interactions with the OpenAI API:
+ * - Provides a unified interface for making API calls
+ * - Implements rate limiting and retry logic
+ * - Handles error scenarios gracefully
+ * - Supports response validation with Zod schemas
+ */
+
 import OpenAI from "openai";
 import { z } from "zod";
 import crypto from "crypto";
@@ -6,28 +15,28 @@ import crypto from "crypto";
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Enhanced retry configuration
-const MAX_RETRIES = 3;  // Reduced from 5
-const INITIAL_RETRY_DELAY = 1000; // Reduced from 2000ms to 1000ms
-const MAX_RETRY_DELAY = 10000; // Reduced from 30s to 10s
+// Constants for API requests
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000;
+const MAX_RETRY_DELAY = 10000;
 
-// Maximum text length before chunking
-const MAX_TEXT_LENGTH = 7000; // About 1750 tokens, reduced from 12000
-
-// Constants for text processing
-const CHUNK_SIZE = 3500; // Optimal size for GPT-3.5-turbo processing
-
-// Simplified request queue implementation
+/**
+ * Request queue for rate limiting OpenAI API calls
+ */
 class RequestQueue {
   private queue: Array<() => Promise<any>> = [];
   private processing = false;
   private lastRequestTime = 0;
-  private readonly minRequestInterval = 500; // Reduced from 1000ms to 500ms
+  private readonly minRequestInterval = 500; // ms between requests
 
+  /**
+   * Add an operation to the queue and process it in order
+   */
   async add<T>(operation: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this.queue.push(async () => {
         try {
+          // Rate limiting with minimum interval between requests
           const now = Date.now();
           const timeSinceLastRequest = now - this.lastRequestTime;
           if (timeSinceLastRequest < this.minRequestInterval) {
@@ -48,551 +57,148 @@ class RequestQueue {
     });
   }
 
+  /**
+   * Process queued operations in order
+   */
   private async processQueue() {
-    if (this.processing || this.queue.length === 0) return;
-    this.processing = true;
+    if (this.queue.length === 0) {
+      this.processing = false;
+      return;
+    }
 
-    while (this.queue.length > 0) {
-      const nextOperation = this.queue.shift();
-      if (nextOperation) {
-        await nextOperation();
+    this.processing = true;
+    const operation = this.queue.shift();
+    if (operation) {
+      try {
+        await operation();
+      } catch (error) {
+        console.error("Error in queue processing:", error);
       }
     }
-    this.processing = false;
+
+    await this.processQueue();
   }
 }
 
+// Create a shared request queue for all OpenAI calls
 const requestQueue = new RequestQueue();
 
-// Improved text preprocessing with smart chunking and parallel processing
-async function preprocessText(text: string): Promise<string> {
-  console.log(`[${new Date().toISOString()}] Preprocessing text of length: ${text.length}`);
-  
-  // If text is short enough, return it as is
-  if (text.length <= MAX_TEXT_LENGTH) {
-    console.log(`[${new Date().toISOString()}] Text under threshold, skipping preprocessing`);
-    return text;
-  }
-
-  try {
-    // Split text into paragraphs first to maintain semantic coherence
-    const paragraphs = text.split(/\n\n+/);
-    const chunks: string[] = [];
-    
-    // Group paragraphs into chunks without breaking paragraphs
-    let currentChunk = '';
-    for (const paragraph of paragraphs) {
-      // If adding this paragraph exceeds chunk size and we already have content, 
-      // finalize the current chunk and start a new one
-      if (currentChunk.length + paragraph.length > CHUNK_SIZE && currentChunk.length > 0) {
-        chunks.push(currentChunk);
-        currentChunk = paragraph;
-      } else {
-        // Otherwise add to the current chunk
-        currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
-      }
-    }
-    
-    // Add the last chunk if it has content
-    if (currentChunk) {
-      chunks.push(currentChunk);
-    }
-    
-    console.log(`[${new Date().toISOString()}] Split text into ${chunks.length} chunks for summarization`);
-    
-    // Process chunks with GPT-3.5 in parallel with timeouts and retries
-    const summaries = await Promise.all(chunks.map(async (chunk, index) => {
-      return await withExponentialBackoff(async () => {
-        console.log(`[${new Date().toISOString()}] Summarizing chunk ${index+1}/${chunks.length}, size: ${chunk.length}`);
-        
-        // Use GPT-3.5 for summarization to save time and costs
-        const response = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo", // Use 3.5 for summarization instead of 4
-          messages: [
-            {
-              role: "system",
-              content: "You are a resume preprocessing assistant. Extract and preserve key information including skills, job titles, employment dates, education, and quantifiable achievements. Maintain all relevant keywords, technical skills, and metrics."
-            },
-            { role: "user", content: chunk }
-          ],
-          temperature: 0
-        });
-        
-        console.log(`[${new Date().toISOString()}] Completed summarizing chunk ${index+1}`);
-        return response.choices[0].message.content || '';
-      }, 2, 500, 30000); // 2 retries, 500ms initial delay, 30s timeout
-    }));
-
-    const combinedSummary = summaries.join('\n\n');
-    console.log(`[${new Date().toISOString()}] Successfully summarized all chunks. Final size: ${combinedSummary.length}`);
-    
-    return combinedSummary;
-  } catch (error: any) {
-    console.error(`[${new Date().toISOString()}] Text preprocessing error:`, {
-      message: error.message,
-      type: error.constructor.name
-    });
-    // Fallback: if full preprocessing fails, try a simpler chunking strategy
-    try {
-      console.log(`[${new Date().toISOString()}] Attempting fallback preprocessing strategy`);
-      // Simple chunking by splitting the text into smaller pieces (5000 char chunks)
-      const simpleChunks = [];
-      for (let i = 0; i < text.length; i += 5000) {
-        simpleChunks.push(text.substring(i, i + 5000));
-      }
-      
-      let simpleSummary = '';
-      // Process one chunk at a time to avoid overwhelming the API
-      for (let i = 0; i < simpleChunks.length; i++) {
-        const chunk = simpleChunks[i];
-        console.log(`[${new Date().toISOString()}] Processing fallback chunk ${i+1}/${simpleChunks.length}`);
-        
-        try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo", 
-            messages: [
-              {
-                role: "system", 
-                content: "Extract only the most important information from this resume text."
-              },
-              { role: "user", content: chunk }
-            ],
-            temperature: 0
-          });
-          
-          const content = response.choices[0].message.content || '';
-          simpleSummary += (simpleSummary ? '\n\n' : '') + content;
-        } catch (chunkError) {
-          console.warn(`[${new Date().toISOString()}] Failed to process fallback chunk ${i+1}, skipping`);
-          // Include a portion of the raw chunk if processing fails
-          simpleSummary += (simpleSummary ? '\n\n' : '') + 
-            `[Resume content section ${i+1}]: ` + chunk.substring(0, 1000) + '...';
-        }
-      }
-      
-      console.log(`[${new Date().toISOString()}] Fallback preprocessing completed. Final size: ${simpleSummary.length}`);
-      return simpleSummary;
-    } catch (fallbackError) {
-      console.error(`[${new Date().toISOString()}] Fallback preprocessing failed:`, fallbackError);
-      // Final fallback: return a truncated version of the original text
-      console.warn(`[${new Date().toISOString()}] Using truncated original text`);
-      return text.substring(0, MAX_TEXT_LENGTH) + 
-        '\n\n[Note: The resume was truncated due to its length. Some information may be missing.]';
-    }
-  }
-}
-
-// Enhanced API request with improved error handling and timeouts
-async function makeOpenAIRequest<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES,
-  timeout: number = 60000 // Default timeout of 60 seconds
-): Promise<T> {
-  // Simply delegate to our improved withExponentialBackoff function
-  return withExponentialBackoff(operation, maxRetries, INITIAL_RETRY_DELAY, timeout);
-}
-
-// Cache for resume analyses to avoid redundant processing
-const analysisCache = new Map<string, { timestamp: number, result: any }>();
-const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hour cache TTL
-
-// Create MD5 hash for caching using ES modules
+// Create MD5 hash for caching purposes
 function createMD5Hash(str: string): string {
   return crypto.createHash('md5').update(str).digest('hex');
 }
 
-// Optimized system prompt with more concise instructions
-const OPTIMIZED_SYSTEM_PROMPT = `You are an expert resume analyzer. Provide a complete analysis in JSON format containing these fields:
-{
-  "score": (overall score 0-100),
-  "scores": {
-    "keywordsRelevance": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of keyword usage",
-      "keywords": ["all relevant keywords"]
-    },
-    "achievementsMetrics": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of achievements",
-      "highlights": ["key achievements"]
-    },
-    "structureReadability": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of resume structure"
-    },
-    "summaryClarity": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of professional summary"
-    },
-    "overallPolish": {
-      "score": (1-10),
-      "maxScore": 10,
-      "feedback": "analysis of overall presentation"
-    }
-  },
-  "identifiedSkills": ["technical and soft skills"],
-  "primaryKeywords": ["important keywords and terms"],
-  "suggestedImprovements": ["specific improvements needed"],
-  "generalFeedback": {
-    "overall": "analysis of strengths and weaknesses"
-  }
-}
-
-Requirements: Extract all relevant keywords, provide detailed feedback, include actual content from resume, no empty arrays, return valid JSON only.`;
-
-// Legacy system prompt kept for reference
-const SYSTEM_PROMPT = OPTIMIZED_SYSTEM_PROMPT;
-
-// Optimized two-stage analysis process using GPT-3.5 and GPT-4
-export async function analyzeResumeWithAI(
-  content: string,
-  jobDescription?: string
-): Promise<any> {
-  // Add start timestamp for debugging
-  const startTime = Date.now();
-  console.log(`[${new Date().toISOString()}] Starting resume analysis for content of length ${content.length}`);
-  
-  // Generate a cache key based on content
-  const cacheKey = createMD5Hash(content);
-  
-  // Check if we have a recent cached result
-  const cachedResult = analysisCache.get(cacheKey);
-  if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_TTL) {
-    console.log(`[${new Date().toISOString()}] Using cached analysis from ${new Date(cachedResult.timestamp).toISOString()}`);
-    return cachedResult.result;
-  }
-  
-  try {
-    // Stage 1: Preprocessing and Initial Analysis
-    console.log(`[${new Date().toISOString()}] Preprocessing text...`);
-    const processedContent = await preprocessText(content);
-    console.log(`[${new Date().toISOString()}] Text preprocessing complete. Processing length: ${processedContent.length}`);
-
-    // Use GPT-3.5-turbo for initial extraction of skills, experience and keywords
-    console.log(`[${new Date().toISOString()}] Performing initial analysis with GPT-3.5...`);
-    const initialAnalysis = await withExponentialBackoff(async () => {
-      const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo", // Use 3.5 for faster initial extraction
-        messages: [
-          {
-            role: "system",
-            content: `Extract the following information from this resume:
-1. A list of technical skills
-2. A list of soft skills
-3. A list of all important keywords
-4. Key achievements with metrics
-5. Educational qualifications
-6. Employment history summary
-
-Format as JSON with these exact fields:
-{
-  "technicalSkills": [],
-  "softSkills": [],
-  "keywords": [],
-  "achievements": [],
-  "education": [],
-  "experience": []
-}`
-          },
-          { role: "user", content: processedContent }
-        ],
-        temperature: 0,
-        response_format: { type: "json_object" }
-      });
-      
-      console.log(`[${new Date().toISOString()}] Initial analysis received. Parsing...`);
-      return JSON.parse(response.choices[0].message.content || '{}');
-    }, 2, 1000, 45000);
-
-    // Stage 2: In-depth Analysis and Scoring with GPT-4
-    console.log(`[${new Date().toISOString()}] Performing comprehensive analysis with GPT-4...`);
-    const finalResult = await makeOpenAIRequest(async () => {
-      // Prepare a more focused prompt with the extracted data
-      const enhancedPrompt = `
-Resume Content:
-${processedContent}
-
-Initial Analysis:
-${JSON.stringify(initialAnalysis, null, 2)}
-
-Provide a comprehensive evaluation of this resume based on the initial analysis and full content.`;
-
-      console.log(`[${new Date().toISOString()}] Creating GPT-4 chat completion for final evaluation...`);
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Use GPT-4 for final in-depth analysis and scoring
-        messages: [
-          {
-            role: "system",
-            content: OPTIMIZED_SYSTEM_PROMPT
-          },
-          { role: "user", content: enhancedPrompt }
-        ],
-        temperature: 0.1,
-        response_format: { type: "json_object" }
-      });
-      
-      console.log(`[${new Date().toISOString()}] Final analysis received. Content length: ${response.choices[0].message.content?.length || 0}`);
-      
-      try {
-        // Parse and validate the response
-        const parsedResponse = JSON.parse(response.choices[0].message.content || '{}');
-        
-        // Enhance response with any data from initial analysis that might be missing
-        if (!parsedResponse.identifiedSkills || parsedResponse.identifiedSkills.length === 0) {
-          parsedResponse.identifiedSkills = [
-            ...(initialAnalysis.technicalSkills || []),
-            ...(initialAnalysis.softSkills || [])
-          ];
-        }
-        
-        if (!parsedResponse.primaryKeywords || parsedResponse.primaryKeywords.length === 0) {
-          parsedResponse.primaryKeywords = initialAnalysis.keywords || [];
-        }
-        
-        console.log(`[${new Date().toISOString()}] Response parsed and enhanced successfully`);
-        return parsedResponse;
-      } catch (error: any) {
-        console.error(`[${new Date().toISOString()}] Error parsing OpenAI response:`, error);
-        
-        // Fallback to a simplified response if parsing fails
-        return {
-          score: 65, // Default middle score
-          identifiedSkills: [...(initialAnalysis.technicalSkills || []), ...(initialAnalysis.softSkills || [])],
-          primaryKeywords: initialAnalysis.keywords || [],
-          suggestedImprovements: ["Add more quantifiable achievements", "Update skills section"],
-          generalFeedback: { 
-            overall: "Unable to generate detailed feedback. Please try again with a more structured resume format." 
-          },
-          scores: {
-            keywordsRelevance: { score: 6, maxScore: 10, feedback: "Moderate keyword usage", keywords: initialAnalysis.keywords || [] },
-            achievementsMetrics: { score: 5, maxScore: 10, feedback: "Limited metrics", highlights: initialAnalysis.achievements || [] },
-            structureReadability: { score: 7, maxScore: 10, feedback: "Good structure" },
-            summaryClarity: { score: 6, maxScore: 10, feedback: "Adequate summary" },
-            overallPolish: { score: 7, maxScore: 10, feedback: "Reasonably polished" }
-          }
-        };
-      }
-    });
-    
-    // Cache the result
-    analysisCache.set(cacheKey, {
-      timestamp: Date.now(),
-      result: finalResult
-    });
-    
-    // Log completion
-    const duration = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] Resume analysis completed in ${duration}ms`);
-    
-    return finalResult;
-  } catch (error: any) {
-    const duration = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] Resume analysis failed after ${duration}ms:`, {
-      message: error.message,
-      type: error.constructor.name,
-      status: error.status,
-      stack: error.stack
-    });
-    throw error;
-  }
-}
-
-const resumeAnalysisResponseSchema = z.object({
-  score: z.number().min(0).max(100),
-  scores: z.object({
-    keywordsRelevance: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string(),
-      keywords: z.array(z.string())
-    }),
-    achievementsMetrics: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string(),
-      highlights: z.array(z.string())
-    }),
-    structureReadability: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string()
-    }),
-    summaryClarity: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string()
-    }),
-    overallPolish: z.object({
-      score: z.number().min(1).max(10),
-      maxScore: z.literal(10),
-      feedback: z.string()
-    })
-  }),
-  identifiedSkills: z.array(z.string()),
-  primaryKeywords: z.array(z.string()),
-  suggestedImprovements: z.array(z.string()),
-  generalFeedback: z.object({
-    overall: z.string()
-  }),
-  jobAnalysis: z.object({
-    alignmentAndStrengths: z.array(z.string()),
-    gapsAndConcerns: z.array(z.string()),
-    recommendationsToTailor: z.array(z.string()),
-    overallFit: z.string()
-  }).optional()
-});
-
-type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
-
-
-export async function analyzeResumeWithJobDescription(
-  resumeText: string,
-  jobDescription: JobDescription
-): Promise<string> {
-  try {
-    const prompt = `
-Resume Content:
-${resumeText}
-
-Job Details:
-Role: ${jobDescription.roleTitle || 'Not specified'}
-Experience Required: ${jobDescription.yearsOfExperience || 'Not specified'}
-Industry: ${jobDescription.industry || 'Not specified'}
-Required Skills: ${jobDescription.skills?.join(', ') || 'Not specified'}
-
-Key Requirements:
-${jobDescription.requirements?.join('\n') || 'None specified'}
-
-Provide a detailed analysis of how this resume aligns with the job requirements. Focus on:
-1. Required skills present and missing
-2. Experience level alignment
-3. Industry relevance
-4. Specific improvements needed for this role
-5. Keywords and terminology optimization`;
-
-    return await withExponentialBackoff(async () => {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "Provide a detailed analysis of how well the resume matches the job description. Focus on skill matches, experience alignment, and areas for improvement."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-      });
-
-      return response.choices[0].message.content || 'No analysis generated';
-    });
-  } catch (error: any) {
-    console.error('Resume-job analysis error:', error);
-    throw new Error(`Failed to analyze resume against job description: ${error.message}`);
-  }
-}
-
-async function withExponentialBackoff<T>(
+/**
+ * Enhanced API request with retry logic and exponential backoff
+ * 
+ * @param operation The async operation to perform
+ * @param maxRetries Maximum number of retry attempts
+ * @param initialDelay Initial delay in milliseconds before retrying
+ * @param timeout Maximum time to wait for operation completion
+ * @returns Result of the operation
+ */
+export async function withExponentialBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = MAX_RETRIES,
   initialDelay: number = INITIAL_RETRY_DELAY,
-  timeout: number = 60000 // 1 minute default timeout - reduced from 2 minutes
+  timeout: number = 60000
 ): Promise<T> {
-  return requestQueue.add(async () => {
-    let finalError: Error | null = null;
+  return new Promise((resolve, reject) => {
+    let canceled = false;
     
-    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
-      const attemptStartTime = Date.now();
-      const requestId = Math.random().toString(36).substring(2, 8);
-      
-      console.log(`[${new Date().toISOString()}] [${requestId}] Starting operation attempt ${attempt}/${maxRetries + 1} with timeout ${timeout}ms`);
+    // Set timeout for the whole operation
+    const timeoutId = setTimeout(() => {
+      canceled = true;
+      reject(new Error("Analysis timeout exceeded"));
+    }, timeout);
+    
+    // Execute operation with retries
+    const executeWithRetry = async (retryCount: number = 0, delay: number = initialDelay) => {
+      if (canceled) return;
       
       try {
-        // Create a promise that rejects in <timeout> milliseconds
-        const timeoutPromise = new Promise<T>((_, reject) => {
-          const id = setTimeout(() => {
-            clearTimeout(id);
-            reject(new Error(`Operation timed out after ${timeout}ms`));
-          }, timeout);
-        });
-
-        // Returns a race between our operation and the timeout
-        const result = await Promise.race([
-          operation().then(res => {
-            console.log(`[${new Date().toISOString()}] [${requestId}] Operation completed successfully in ${Date.now() - attemptStartTime}ms`);
-            return res;
-          }),
-          timeoutPromise
-        ]);
-        
-        return result;
+        // Add to request queue to manage rate limits
+        const result = await requestQueue.add(operation);
+        clearTimeout(timeoutId);
+        resolve(result);
       } catch (error: any) {
-        finalError = error;
-        const isRateLimit = error?.status === 429;
-        const isServerError = error?.status >= 500;
-        const isTimeout = error?.message?.includes('timed out');
-        const isNetworkError = error?.code === 'ECONNRESET' || error?.code === 'ETIMEDOUT';
-        
-        // Special handling for the final attempt
-        if (attempt > maxRetries) {
-          console.error(`[${new Date().toISOString()}] [${requestId}] All retry attempts exhausted:`, {
-            status: error?.status,
-            message: error?.message,
-            code: error?.code,
-            type: error?.constructor?.name,
-            duration: Date.now() - attemptStartTime
-          });
-          throw error;
-        }
-
-        // Retry on rate limits, server errors, timeouts, or network errors
-        if (isRateLimit || isServerError || isTimeout || isNetworkError) {
-          // Exponential backoff with jitter
-          const baseDelay = Math.min(
-            initialDelay * Math.pow(2, attempt - 1),
-            MAX_RETRY_DELAY
-          );
-          // Add jitter - randomize delay by +/- 20%
-          const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
-          const delay = Math.max(100, Math.floor(baseDelay + jitter));
-
-          console.warn(`[${new Date().toISOString()}] [${requestId}] API error (attempt ${attempt}/${maxRetries}):`, {
-            status: error?.status,
-            message: error?.message,
-            code: error?.code,
-            retryIn: delay,
-            isTimeout: isTimeout,
-            isRateLimit: isRateLimit,
-            isServerError: isServerError,
-            isNetworkError: isNetworkError,
-            duration: Date.now() - attemptStartTime
-          });
-
-          // Increase timeout for next attempt
-          timeout = Math.min(timeout * 1.5, 120000); // Max 2 minutes
+        // Handle rate limit errors specifically
+        if (error?.status === 429) {
+          const retryAfter = parseInt(error.response?.headers?.['retry-after'] || '1', 10);
+          const retryMs = (retryAfter || 1) * 1000;
           
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        } else {
-          // Non-retryable error
-          console.error(`[${new Date().toISOString()}] [${requestId}] Non-retryable error:`, {
-            status: error?.status,
-            message: error?.message,
-            code: error?.code,
-            type: error?.constructor?.name,
-            duration: Date.now() - attemptStartTime
-          });
-          throw error;
+          console.warn(`Rate limit hit, retry after ${retryMs}ms`);
+          
+          if (retryCount < maxRetries) {
+            await new Promise(r => setTimeout(r, retryMs)); 
+            return executeWithRetry(retryCount + 1, Math.min(retryMs * 2, MAX_RETRY_DELAY));
+          }
         }
+        
+        // If exceeded retries or non-retryable error
+        if (retryCount >= maxRetries) {
+          clearTimeout(timeoutId);
+          reject(error);
+          return;
+        }
+        
+        console.warn(`API error (attempt ${retryCount + 1}/${maxRetries}): ${error.message}`);
+        // Exponential backoff
+        await new Promise(r => setTimeout(r, delay));
+        return executeWithRetry(retryCount + 1, Math.min(delay * 2, MAX_RETRY_DELAY));
       }
-    }
+    };
     
-    // This should never happen as we either return or throw above
-    throw finalError || new Error(`Failed after ${maxRetries} attempts for unknown reason`);
+    executeWithRetry();
   });
 }
+
+/**
+ * Resume analysis response type
+ */
+export type ResumeAnalysisResponse = {
+  score: number;
+  scores: {
+    keywordsRelevance: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+      keywords: string[];
+    };
+    achievementsMetrics: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+      highlights: string[];
+    };
+    structureReadability: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+    };
+    summaryClarity: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+    };
+    overallPolish: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+    };
+  };
+  identifiedSkills: string[];
+  primaryKeywords: string[];
+  suggestedImprovements: string[];
+  generalFeedback: {
+    overall: string;
+  };
+  jobAnalysis?: {
+    alignmentAndStrengths: string[];
+    gapsAndConcerns: string[];
+    recommendationsToTailor: string[];
+    overallFit: string;
+  };
+};
+
+export { openai, requestQueue };

@@ -1,7 +1,13 @@
-import { type ResumeAnalysis, type InsertResumeAnalysis, type User, type InsertUser } from "@shared/schema";
-import { analyzeResumeWithAI } from "./services/openai";
+import { 
+  type ResumeAnalysis, 
+  type InsertResumeAnalysis, 
+  type User, 
+  type InsertUser,
+  type ResumeSections
+} from "@shared/schema";
+import { analyzeResume } from "./services/resume-analyzer";
 import { db } from "./db";
-import { users, resumeAnalyses } from "@shared/schema";
+import { users, resumeAnalyses, resumeSectionsSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { Store } from "express-session";
@@ -92,7 +98,7 @@ export class DatabaseStorage implements IStorage {
 
     try {
       // Get the AI analysis
-      const aiAnalysis = await analyzeResumeWithAI(content);
+      const aiAnalysis = await analyzeResume(content);
 
       console.log('Received AI analysis:', {
         score: aiAnalysis.score,
@@ -151,22 +157,33 @@ export class DatabaseStorage implements IStorage {
     });
 
     try {
+      // Create valid insert object using type safety
+      const insertData: InsertResumeAnalysis = {
+        userId: data.userId,
+        content: data.content,
+        score: data.score,
+        scores: data.analysis.scores,
+        resumeSections: resumeSectionsSchema.parse({ 
+          professionalSummary: "",
+          workExperience: "",
+          technicalSkills: "",
+          education: "",
+          keyAchievements: ""
+        }),
+        identifiedSkills: data.analysis.identifiedSkills,
+        primaryKeywords: data.analysis.primaryKeywords,
+        suggestedImprovements: data.analysis.suggestedImprovements,
+        generalFeedback: typeof data.analysis.generalFeedback === 'object'
+          ? data.analysis.generalFeedback.overall
+          : data.analysis.generalFeedback || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Now insert with the validated data
       const [analysis] = await db
         .insert(resumeAnalyses)
-        .values({
-          userId: data.userId,
-          content: data.content,
-          score: data.score,
-          scores: data.analysis.scores,
-          identifiedSkills: data.analysis.identifiedSkills,
-          primaryKeywords: data.analysis.primaryKeywords, // Use primaryKeywords directly
-          suggestedImprovements: data.analysis.suggestedImprovements,
-          generalFeedback: typeof data.analysis.generalFeedback === 'object'
-            ? data.analysis.generalFeedback.overall
-            : data.analysis.generalFeedback || '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
+        .values(insertData)
         .returning();
 
       console.log('Successfully saved analysis:', {
