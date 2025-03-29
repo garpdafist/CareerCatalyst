@@ -16,25 +16,25 @@ import { useLocation } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
 import ResumeAnalysisInline from "@/components/ui/resume-analysis-inline";
 import ResumeAnalysisPopup from "@/components/ui/resume-analysis-popup";
+import { Switch } from "@/components/ui/switch"; // Added import
+
 
 // Animation variants for the textarea with spring effect
 const textAreaVariants = {
   hidden: { 
     opacity: 0, 
-    y: -10, 
     height: 0,
     transition: {
-      duration: 0.3,
-      ease: "cubic-bezier(0.34, 1.56, 0.64, 1)" // Custom spring effect
+      duration: 0.2, // Adjusted duration
+      ease: "easeInOut" // Simplified easing
     }
   },
   visible: { 
     opacity: 1, 
-    y: 0, 
     height: "auto",
     transition: {
-      duration: 0.3,
-      ease: "cubic-bezier(0.34, 1.56, 0.64, 1)" // Custom spring effect
+      duration: 0.2, // Adjusted duration
+      ease: "easeInOut" // Simplified easing
     }
   }
 };
@@ -251,59 +251,39 @@ export default function ResumeAnalyzer() {
                 </p>
               )}
 
-              <div className="flex items-center mt-6 mb-2">
-                {/* iOS-style toggle switch */}
+              {/* Replaced toggle with Switch component */}
+              <div className="flex flex-col space-y-4 mt-6">
                 <div className="flex items-center">
-                  <button 
-                    type="button"
-                    aria-pressed={isApplyingForJob}
-                    className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none"
-                    style={{ backgroundColor: isApplyingForJob ? '#34C759' : '#E5E7EB' }}
-                    onClick={(e) => {
-                      e.preventDefault(); // Prevent default actions
-                      setIsApplyingForJob(prev => !prev);
-                    }}
-                  >
-                    <span 
-                      className="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                      style={{ 
-                        transform: isApplyingForJob ? 'translateX(100%)' : 'translateX(0%)',
-                        margin: '0.5px' 
-                      }}
-                    />
-                  </button>
-
-                  {/* Text label with proper spacing */}
-                  <button
-                    type="button"
-                    className="text-sm font-medium cursor-pointer ml-3"
-                    onClick={(e) => {
-                      e.preventDefault(); //Prevent default actions
-                      setIsApplyingForJob(prev => !prev);
-                    }}
-                  >
+                  <Switch
+                    checked={isApplyingForJob}
+                    onCheckedChange={setIsApplyingForJob}
+                    className="data-[state=checked]:bg-green-500"
+                  />
+                  <Label htmlFor="job-description" className="ml-3 cursor-pointer">
                     Add Job Description
-                  </button>
+                  </Label>
                 </div>
+
+                <AnimatePresence mode="wait">
+                  {isApplyingForJob && (
+                    <motion.div
+                      variants={textAreaVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                    >
+                      <Textarea
+                        id="job-description"
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        placeholder="Paste the job description here to get tailored suggestions..."
+                        className="min-h-[100px] w-full bg-white resize-none"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              <AnimatePresence mode="wait">
-                {isApplyingForJob && (
-                  <motion.div
-                    variants={textAreaVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                  >
-                    <Textarea
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      placeholder="Paste the job description here to get tailored suggestions..."
-                      className="mt-4 bg-white min-h-[100px] resize-none"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Primary CTA - Analyze Resume Button */}
               <Button
