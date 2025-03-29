@@ -14,10 +14,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ResumeAnalysisSkeleton } from "@/components/ui/resume-analysis-skeleton";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
 import { SavedAnalyses } from "@/components/saved-analyses";
-import { ResumeAnalysisPopup } from "@/components/ui/resume-analysis-popup";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
@@ -84,8 +83,9 @@ export default function ResumeAnalyzer() {
   const [jobDescription, setJobDescription] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const { toast } = useToast();
+  const [, navigate] = useLocation(); // For navigation to all-analyses page
   
-  // Use saved analysis hook to support deep linking and persistent analyses
+  // Use saved analysis hook to support persistent analyses
   const { 
     savedAnalysis, 
     isLoadingSavedAnalysis,
@@ -97,14 +97,8 @@ export default function ResumeAnalyzer() {
   // State to hold the displayed analysis (either from mutation or from saved analysis)
   const [displayedAnalysis, setDisplayedAnalysis] = useState<ResumeAnalysis | null>(null);
   
-  // State to control the visibility of the analysis popup
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  
-  // Import additional functions
-  const { 
-    findAnalysisInCache, 
-    analysisStatus 
-  } = useSavedAnalysis();
+  // Import additional functions for data retrieval
+  const { findAnalysisInCache } = useSavedAnalysis();
   
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string; jobDescription?: string } | FormData) => {
@@ -138,7 +132,7 @@ export default function ResumeAnalyzer() {
       }
     },
     onSuccess: (result) => {
-      // If the analysis has an ID, update state for popup display
+      // If the analysis has an ID, update state
       if (result.id) {
         setAnalysisId(result.id);
         // Refresh user analyses list to include the new one
@@ -161,30 +155,26 @@ export default function ResumeAnalyzer() {
     setContent("");
   };
 
-  // Enhanced effect to load saved analysis with optimized loading
+  // Effect to load saved analysis and set displayed analysis state
   useEffect(() => {
     console.log('Resume Analyzer useEffect:', {
       savedAnalysis,
       analyzeMutation: analyzeMutation.data,
       isLoadingSavedAnalysis,
       displayedAnalysis,
-      analysisStatus,
-      analysisId,
-      isPopupOpen
+      analysisId
     });
 
     const handleAnalysisDisplay = () => {
       if (analyzeMutation.data) {
         console.log('Setting analysis from mutation');
         setDisplayedAnalysis(analyzeMutation.data);
-        setIsPopupOpen(true);
         return;
       }
 
       if (savedAnalysis) {
         console.log('Setting analysis from API');
         setDisplayedAnalysis(savedAnalysis);
-        setIsPopupOpen(true);
         return;
       }
 
@@ -193,7 +183,6 @@ export default function ResumeAnalyzer() {
         if (cachedAnalysis) {
           console.log('Setting analysis from cache');
           setDisplayedAnalysis(cachedAnalysis);
-          setIsPopupOpen(true);
           return;
         }
       }
@@ -205,10 +194,7 @@ export default function ResumeAnalyzer() {
     analyzeMutation.data, 
     isLoadingSavedAnalysis, 
     analysisId, 
-    findAnalysisInCache,
-    analysisStatus,
-    displayedAnalysis,
-    isPopupOpen
+    findAnalysisInCache
   ]);
   
   const handleSubmit = () => {
@@ -432,7 +418,7 @@ export default function ResumeAnalyzer() {
             </form>
           )}
 
-          {/* Results Section - Just display a button to show the popup */}
+          {/* Results Section - Display button to navigate to all analyses page */}
           {displayedAnalysis && !analyzeMutation.isPending && !isLoadingSavedAnalysis && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -455,12 +441,13 @@ export default function ResumeAnalyzer() {
                     <Button 
                       className={getScoreColor(displayedAnalysis.score)}
                       onClick={() => {
-                        console.log('View Results clicked');
-                        setIsPopupOpen(true);
-                        // Ensure we have the latest analysis data
+                        console.log('View Results clicked - redirecting to all-analyses page');
+                        // Store the analysis ID but don't show popup
                         if (displayedAnalysis?.id) {
                           setAnalysisId(displayedAnalysis.id);
                         }
+                        // Navigate to all-analyses page instead of showing popup
+                        navigate('/all-analyses');
                       }}
                     >
                       View Results <ArrowRight className="ml-2 h-4 w-4" />
@@ -473,13 +460,7 @@ export default function ResumeAnalyzer() {
         </motion.div>
       </div>
       
-      {/* Add the ResumeAnalysisPopup component */}
-      <ResumeAnalysisPopup
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)}
-        analysisData={displayedAnalysis}
-        isLoading={analyzeMutation.isPending || isLoadingSavedAnalysis}
-      />
+      {/* Removed popup component - now using page navigation instead */}
     </div>
   );
 }
