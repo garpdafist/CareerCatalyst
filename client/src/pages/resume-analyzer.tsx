@@ -260,9 +260,7 @@ export default function ResumeAnalyzer() {
                     className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none"
                     style={{ backgroundColor: isApplyingForJob ? '#34C759' : '#E5E7EB' }}
                     onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log("Toggle clicked - iOS style");
+                      e.preventDefault(); // Prevent default actions
                       setIsApplyingForJob(prev => !prev);
                     }}
                   >
@@ -274,15 +272,13 @@ export default function ResumeAnalyzer() {
                       }}
                     />
                   </button>
-                  
+
                   {/* Text label with proper spacing */}
                   <button
                     type="button"
                     className="text-sm font-medium cursor-pointer ml-3"
                     onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log("Text label clicked - iOS style");
+                      e.preventDefault(); //Prevent default actions
                       setIsApplyingForJob(prev => !prev);
                     }}
                   >
