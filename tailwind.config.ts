@@ -3,6 +3,16 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  safelist: [
+    // Add any complex class patterns that Tailwind might purge
+    // Cubic bezier and other complex animations
+    'after:ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+    'before:ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+    'ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+    // Add other specific complex classes that might be purged
+    'after:transition-all',
+    'before:transition-all',
+  ],
   theme: {
     extend: {
       colors: {

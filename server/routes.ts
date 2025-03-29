@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import multer from 'multer';
 import { analyzeResumeWithAI } from "./services/openai";
 import OpenAI from "openai";
+import { parsePdf } from "./services/pdf-parser";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -184,7 +185,26 @@ const handleAnalysis = async (req: any, res: any) => {
   const startTime = Date.now();
   const requestId = Math.random().toString(36).substring(2, 15);
   
-  console.log(`[${new Date().toISOString()}] [${requestId}] Resume analysis request received`);
+  console.log(`[${new Date().toISOString()}] [${requestId}] Resume analysis request received`, {
+    method: req.method,
+    path: req.path,
+    headers: req.headers['content-type'],
+    hasBody: !!req.body,
+    hasFile: !!req.file,
+    bodySize: req.body ? JSON.stringify(req.body).length : 0
+  });
+  
+  // Set timeout for the request - 180 seconds (3 minutes)
+  const TIMEOUT = 180000;
+  const timeoutTimer = setTimeout(() => {
+    console.error(`[${new Date().toISOString()}] [${requestId}] Request manually timed out after ${TIMEOUT}ms`);
+    if (!res.headersSent) {
+      return res.status(408).json({
+        message: "Analysis timed out",
+        details: "The operation took too long to complete. Please try with a smaller document or try again later."
+      });
+    }
+  }, TIMEOUT);
   
   try {
     let content = req.body?.content || '';
@@ -192,13 +212,40 @@ const handleAnalysis = async (req: any, res: any) => {
 
     // Handle file upload
     if (req.file) {
-      console.log(`[${new Date().toISOString()}] [${requestId}] Processing uploaded file: ${req.file.originalname}, size: ${req.file.size} bytes`);
-      content = req.file.buffer.toString('utf-8');
+      console.log(`[${new Date().toISOString()}] [${requestId}] Processing uploaded file: ${req.file.originalname}, size: ${req.file.size} bytes, mimetype: ${req.file.mimetype}`);
+      
+      // Detect file type and extract content accordingly
+      const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase();
+      
+      if (fileExtension === 'pdf') {
+        // Use our specialized PDF parser for PDF files
+        try {
+          console.log(`[${new Date().toISOString()}] [${requestId}] Parsing PDF file`);
+          content = await parsePdf(req.file.buffer, { 
+            cleanText: true
+          });
+          console.log(`[${new Date().toISOString()}] [${requestId}] PDF parsed successfully: ${content.length} chars extracted`);
+        } catch (pdfError: any) {
+          console.error(`[${new Date().toISOString()}] [${requestId}] PDF parsing error:`, pdfError);
+          clearTimeout(timeoutTimer);
+          return res.status(400).json({
+            message: "Failed to parse PDF file",
+            details: pdfError.message,
+            solution: "Please ensure your PDF is not corrupted and try again."
+          });
+        }
+      } else {
+        // For text files, use simple UTF-8 encoding
+        content = req.file.buffer.toString('utf-8');
+        console.log(`[${new Date().toISOString()}] [${requestId}] Text file parsed: ${content.length} chars extracted`);
+      }
+      
       contentSource = 'file';
     }
 
     if (!content?.trim()) {
       console.warn(`[${new Date().toISOString()}] [${requestId}] Missing resume content`);
+      clearTimeout(timeoutTimer);
       return res.status(400).json({
         message: "Resume content is required",
         details: "Please provide either a file upload or text content"
@@ -213,13 +260,36 @@ const handleAnalysis = async (req: any, res: any) => {
     
     // Send a periodic data event to keep the connection alive
     const keepAliveInterval = setInterval(() => {
-      res.write(':keepalive\n\n');
+      if (!res.headersSent) {
+        console.log(`[${new Date().toISOString()}] [${requestId}] Sending keepalive ping`);
+        res.write(':keepalive\n\n');
+      }
     }, 30000); // Send keepalive every 30 seconds
     
     try {
       console.log(`[${new Date().toISOString()}] [${requestId}] Starting AI analysis`);
-      const analysis = await analyzeResumeWithAI(content);
-      console.log(`[${new Date().toISOString()}] [${requestId}] AI analysis completed`);
+      
+      // For debugging, check if OpenAI API key is valid (don't log the actual key)
+      const keyFirstChars = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 3) : 'undefined';
+      const keyLastChars = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(process.env.OPENAI_API_KEY.length - 3) : 'undefined';
+      console.log(`[${new Date().toISOString()}] [${requestId}] Using OpenAI API key: ${keyFirstChars}...${keyLastChars}`);
+      
+      // Capture small sample of text being sent (for debugging)
+      const contentSample = content.length > 200 ? content.substring(0, 200) + '...' : content;
+      console.log(`[${new Date().toISOString()}] [${requestId}] Content sample: "${contentSample}"`);
+      
+      // Set a timeout specifically for the AI analysis
+      const analysisPromise = analyzeResumeWithAI(content);
+      
+      // Create a race between the analysis and a timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Analysis timeout (inner)')), TIMEOUT - 10000); // 10s less than outer timeout
+      });
+      
+      // Wait for either the analysis to complete or the timeout to occur
+      const analysis = await Promise.race([analysisPromise, timeoutPromise]);
+      
+      console.log(`[${new Date().toISOString()}] [${requestId}] AI analysis completed successfully`);
 
       // Ensure critical fields exist in response
       const response = {
@@ -233,6 +303,8 @@ const handleAnalysis = async (req: any, res: any) => {
       };
 
       clearInterval(keepAliveInterval);
+      clearTimeout(timeoutTimer);
+      
       const duration = Date.now() - startTime;
       console.log(`[${new Date().toISOString()}] [${requestId}] Resume analysis completed in ${duration}ms`);
       
@@ -240,6 +312,7 @@ const handleAnalysis = async (req: any, res: any) => {
 
     } catch (analysisError: any) {
       clearInterval(keepAliveInterval);
+      clearTimeout(timeoutTimer);
       
       // Enhanced error handling for rate limits
       if (analysisError?.status === 429) {
@@ -258,7 +331,7 @@ const handleAnalysis = async (req: any, res: any) => {
       }
 
       // Handle timeout errors
-      if (analysisError.message?.includes('timeout') || analysisError.code === 'ETIMEDOUT') {
+      if (analysisError.message?.includes('timeout') || analysisError.code === 'ETIMEDOUT' || analysisError.message?.includes('Analysis timeout')) {
         console.error(`[${new Date().toISOString()}] [${requestId}] Analysis timed out:`, {
           error: analysisError.message,
           code: analysisError.code,
@@ -281,6 +354,7 @@ const handleAnalysis = async (req: any, res: any) => {
       throw analysisError;
     }
   } catch (error: any) {
+    clearTimeout(timeoutTimer);
     const duration = Date.now() - startTime;
     console.error(`[${new Date().toISOString()}] [${requestId}] Resume analysis error after ${duration}ms:`, {
       message: error.message,

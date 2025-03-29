@@ -182,31 +182,14 @@ async function preprocessText(text: string): Promise<string> {
   }
 }
 
-// Streamlined API request with retries
+// Enhanced API request with improved error handling and timeouts
 async function makeOpenAIRequest<T>(
   operation: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES
+  maxRetries: number = MAX_RETRIES,
+  timeout: number = 60000 // Default timeout of 60 seconds
 ): Promise<T> {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await requestQueue.add(operation);
-    } catch (error: any) {
-      lastError = error;
-
-      if (error?.status === 429 && attempt < maxRetries) {
-        const delay = Math.min(
-          INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1),
-          MAX_RETRY_DELAY
-        );
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      throw error;
-    }
-  }
-  throw lastError;
+  // Simply delegate to our improved withExponentialBackoff function
+  return withExponentialBackoff(operation, maxRetries, INITIAL_RETRY_DELAY, timeout);
 }
 
 // Cache for resume analyses to avoid redundant processing
@@ -518,51 +501,98 @@ async function withExponentialBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = MAX_RETRIES,
   initialDelay: number = INITIAL_RETRY_DELAY,
-  timeout: number = 120000 // 2 minute default timeout
+  timeout: number = 60000 // 1 minute default timeout - reduced from 2 minutes
 ): Promise<T> {
   return requestQueue.add(async () => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let finalError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      const attemptStartTime = Date.now();
+      const requestId = Math.random().toString(36).substring(2, 8);
+      
+      console.log(`[${new Date().toISOString()}] [${requestId}] Starting operation attempt ${attempt}/${maxRetries + 1} with timeout ${timeout}ms`);
+      
       try {
         // Create a promise that rejects in <timeout> milliseconds
         const timeoutPromise = new Promise<T>((_, reject) => {
           const id = setTimeout(() => {
             clearTimeout(id);
-            reject(new Error('Operation timed out'));
+            reject(new Error(`Operation timed out after ${timeout}ms`));
           }, timeout);
         });
 
         // Returns a race between our operation and the timeout
-        return await Promise.race([
-          operation(),
+        const result = await Promise.race([
+          operation().then(res => {
+            console.log(`[${new Date().toISOString()}] [${requestId}] Operation completed successfully in ${Date.now() - attemptStartTime}ms`);
+            return res;
+          }),
           timeoutPromise
         ]);
+        
+        return result;
       } catch (error: any) {
+        finalError = error;
         const isRateLimit = error?.status === 429;
         const isServerError = error?.status >= 500;
-        const isTimeout = error?.message === 'Operation timed out';
+        const isTimeout = error?.message?.includes('timed out');
+        const isNetworkError = error?.code === 'ECONNRESET' || error?.code === 'ETIMEDOUT';
+        
+        // Special handling for the final attempt
+        if (attempt > maxRetries) {
+          console.error(`[${new Date().toISOString()}] [${requestId}] All retry attempts exhausted:`, {
+            status: error?.status,
+            message: error?.message,
+            code: error?.code,
+            type: error?.constructor?.name,
+            duration: Date.now() - attemptStartTime
+          });
+          throw error;
+        }
 
-        // Retry on rate limits, server errors, or timeouts
-        if ((isRateLimit || isServerError || isTimeout) && attempt < maxRetries) {
+        // Retry on rate limits, server errors, timeouts, or network errors
+        if (isRateLimit || isServerError || isTimeout || isNetworkError) {
+          // Exponential backoff with jitter
           const baseDelay = Math.min(
             initialDelay * Math.pow(2, attempt - 1),
             MAX_RETRY_DELAY
           );
-          const delay = baseDelay;
+          // Add jitter - randomize delay by +/- 20%
+          const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
+          const delay = Math.max(100, Math.floor(baseDelay + jitter));
 
-          console.log(`API error (attempt ${attempt}/${maxRetries}):`, {
+          console.warn(`[${new Date().toISOString()}] [${requestId}] API error (attempt ${attempt}/${maxRetries}):`, {
             status: error?.status,
             message: error?.message,
+            code: error?.code,
             retryIn: delay,
             isTimeout: isTimeout,
-            timestamp: new Date().toISOString()
+            isRateLimit: isRateLimit,
+            isServerError: isServerError,
+            isNetworkError: isNetworkError,
+            duration: Date.now() - attemptStartTime
           });
 
+          // Increase timeout for next attempt
+          timeout = Math.min(timeout * 1.5, 120000); // Max 2 minutes
+          
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
+        } else {
+          // Non-retryable error
+          console.error(`[${new Date().toISOString()}] [${requestId}] Non-retryable error:`, {
+            status: error?.status,
+            message: error?.message,
+            code: error?.code,
+            type: error?.constructor?.name,
+            duration: Date.now() - attemptStartTime
+          });
+          throw error;
         }
-        throw error;
       }
     }
-    throw new Error(`Failed after ${maxRetries} attempts`);
+    
+    // This should never happen as we either return or throw above
+    throw finalError || new Error(`Failed after ${maxRetries} attempts for unknown reason`);
   });
 }
