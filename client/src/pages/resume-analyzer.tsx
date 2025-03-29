@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
+import ResumeAnalysisInline from "@/components/ui/resume-analysis-inline";
 import ResumeAnalysisPopup from "@/components/ui/resume-analysis-popup";
 
 // Create a proper iOS-style toggle with accurate styling and animations
@@ -82,7 +83,7 @@ export default function ResumeAnalyzer() {
   const [isApplyingForJob, setIsApplyingForJob] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false); // State for popup visibility (will be removed)
   const { toast } = useToast();
   const [, navigate] = useLocation(); // For navigation to all-analyses page
   
@@ -138,7 +139,8 @@ export default function ResumeAnalyzer() {
         setAnalysisId(result.id);
         // Refresh user analyses list to include the new one
         refetchUserAnalyses();
-        // Open the popup to show results immediately
+        // Open the popup to show results immediately - this is just to keep the code compiling,
+        // in reality we're using inline display so we don't need to show a popup
         setIsPopupOpen(true);
       }
     },
@@ -284,8 +286,8 @@ export default function ResumeAnalyzer() {
             </Card>
           )}
 
-          {/* Submit Form - Only show when not analyzing */}
-          {!analyzeMutation.isPending && (
+          {/* Submit Form - Only show when not analyzing AND when there are no analysis results */}
+          {!analyzeMutation.isPending && !isLoadingSavedAnalysis && !displayedAnalysis && (
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
               <Card>
                 <CardContent className="pt-6">
@@ -436,7 +438,7 @@ export default function ResumeAnalyzer() {
             </form>
           )}
 
-          {/* Results Section - Display button to navigate to all analyses page */}
+          {/* Analysis Results Section - Show inline results when analysis is available */}
           {displayedAnalysis && !analyzeMutation.isPending && !isLoadingSavedAnalysis && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -446,45 +448,30 @@ export default function ResumeAnalyzer() {
             >
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-xl font-semibold flex items-center gap-2 mb-1">
-                        <Brain className="h-5 w-5 text-green-600" />
-                        Analysis Complete
-                      </h2>
-                      <p className="text-muted-foreground text-sm">
-                        Your resume analysis is ready to view
-                      </p>
-                    </div>
-                    <Button 
-                      className={getScoreColor(displayedAnalysis.score)}
-                      onClick={() => {
-                        console.log('View Results clicked - showing popup');
-                        // Store the analysis ID
-                        if (displayedAnalysis?.id) {
-                          setAnalysisId(displayedAnalysis.id);
-                        }
-                        // Show popup on the same page
-                        setIsPopupOpen(true);
-                      }}
-                    >
-                      View Results <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
+                  <ResumeAnalysisInline 
+                    analysisData={displayedAnalysis}
+                    isLoading={false}
+                    onImproveResume={() => {
+                      // Navigate to the resume editor (this would be implemented in a future update)
+                      toast({
+                        title: "Coming Soon",
+                        description: "The resume editor feature will be available soon.",
+                      });
+                    }}
+                    onGenerateCoverLetter={() => {
+                      // Navigate to the cover letter generator (this would be implemented in a future update)
+                      toast({
+                        title: "Coming Soon",
+                        description: "The cover letter generator feature will be available soon.",
+                      });
+                    }}
+                  />
                 </CardContent>
               </Card>
             </motion.div>
           )}
         </motion.div>
       </div>
-      
-      {/* Add the ResumeAnalysisPopup component */}
-      <ResumeAnalysisPopup 
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)}
-        analysisData={displayedAnalysis}
-        isLoading={isLoadingSavedAnalysis}
-      />
     </div>
   );
 }
