@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
+import ResumeAnalysisPopup from "@/components/ui/resume-analysis-popup";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
@@ -81,6 +82,7 @@ export default function ResumeAnalyzer() {
   const [isApplyingForJob, setIsApplyingForJob] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation(); // For navigation to all-analyses page
   
@@ -136,6 +138,8 @@ export default function ResumeAnalyzer() {
         setAnalysisId(result.id);
         // Refresh user analyses list to include the new one
         refetchUserAnalyses();
+        // Open the popup to show results immediately
+        setIsPopupOpen(true);
       }
     },
     onError: (error: Error) => {
@@ -174,6 +178,10 @@ export default function ResumeAnalyzer() {
       if (savedAnalysis) {
         console.log('Setting analysis from API');
         setDisplayedAnalysis(savedAnalysis);
+        // If we received a saved analysis by API, open the popup
+        if (!isPopupOpen && analysisId) {
+          setIsPopupOpen(true);
+        }
         return;
       }
 
@@ -182,6 +190,10 @@ export default function ResumeAnalyzer() {
         if (cachedAnalysis) {
           console.log('Setting analysis from cache');
           setDisplayedAnalysis(cachedAnalysis);
+          // If we received a cached analysis, open the popup
+          if (!isPopupOpen) {
+            setIsPopupOpen(true);
+          }
           return;
         }
       }
@@ -193,7 +205,8 @@ export default function ResumeAnalyzer() {
     analyzeMutation.data, 
     isLoadingSavedAnalysis, 
     analysisId, 
-    findAnalysisInCache
+    findAnalysisInCache,
+    isPopupOpen
   ]);
   
   const handleSubmit = () => {
@@ -446,13 +459,13 @@ export default function ResumeAnalyzer() {
                     <Button 
                       className={getScoreColor(displayedAnalysis.score)}
                       onClick={() => {
-                        console.log('View Results clicked - redirecting to all-analyses page');
+                        console.log('View Results clicked - showing popup');
                         // Store the analysis ID
                         if (displayedAnalysis?.id) {
                           setAnalysisId(displayedAnalysis.id);
                         }
-                        // Navigate to all-analyses page instead of showing popup
-                        navigate('/all-analyses');
+                        // Show popup on the same page
+                        setIsPopupOpen(true);
                       }}
                     >
                       View Results <ArrowRight className="ml-2 h-4 w-4" />
@@ -464,6 +477,14 @@ export default function ResumeAnalyzer() {
           )}
         </motion.div>
       </div>
+      
+      {/* Add the ResumeAnalysisPopup component */}
+      <ResumeAnalysisPopup 
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        analysisData={displayedAnalysis}
+        isLoading={isLoadingSavedAnalysis}
+      />
     </div>
   );
 }
