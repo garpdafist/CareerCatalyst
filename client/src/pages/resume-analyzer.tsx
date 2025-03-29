@@ -314,23 +314,48 @@ export default function ResumeAnalyzer() {
     updatedAt: null,
   };
 
-  // Effect to load saved analysis from URL parameter
+  // Import additional functions
+  const { 
+    findAnalysisInCache, 
+    analysisStatus 
+  } = useSavedAnalysis();
+
+  // Enhanced effect to load saved analysis with optimized loading
   useEffect(() => {
     console.log('Resume Analyzer useEffect:');
     console.log('- savedAnalysis:', savedAnalysis);
     console.log('- analyzeMutation.data:', analyzeMutation.data);
     console.log('- isLoadingSavedAnalysis:', isLoadingSavedAnalysis);
     console.log('- displayedAnalysis:', displayedAnalysis);
+    console.log('- analysisStatus:', analysisStatus);
     
-    // If we have a saved analysis and no current mutation data, use the saved one
-    if (savedAnalysis && !analyzeMutation.data && !isLoadingSavedAnalysis) {
-      console.log('Setting displayed analysis to savedAnalysis');
-      setDisplayedAnalysis(savedAnalysis);
-    } else if (analyzeMutation.data) {
+    if (analyzeMutation.data) {
+      // New analysis results have priority
       console.log('Setting displayed analysis to analyzeMutation.data');
       setDisplayedAnalysis(analyzeMutation.data);
+    } 
+    else if (savedAnalysis) {
+      // We have data from the API
+      console.log('Setting displayed analysis to savedAnalysis from API');
+      setDisplayedAnalysis(savedAnalysis);
+    } 
+    else if (analysisId) {
+      // Try to find in cache for immediate display while API loads
+      const cachedAnalysis = findAnalysisInCache(analysisId);
+      if (cachedAnalysis && !displayedAnalysis) {
+        console.log('Setting displayed analysis from cache');
+        setDisplayedAnalysis(cachedAnalysis);
+      }
     }
-  }, [savedAnalysis, analyzeMutation.data, isLoadingSavedAnalysis]);
+  }, [
+    savedAnalysis, 
+    analyzeMutation.data, 
+    isLoadingSavedAnalysis, 
+    analysisId, 
+    findAnalysisInCache,
+    analysisStatus,
+    displayedAnalysis
+  ]);
   
   const handleSubmit = () => {
     if (!content.trim() && !file) {
@@ -375,22 +400,34 @@ export default function ResumeAnalyzer() {
           transition={{ delay: 0.2 }}
           className="space-y-4 md:space-y-6"
         >
-          {/* Loading State */}
-          {analyzeMutation.isPending && (
+          {/* Loading States - Either for a new analysis or loading a saved one */}
+          {(analyzeMutation.isPending || isLoadingSavedAnalysis) && (
             <Card>
               <CardContent className="pt-6">
-                {/* Single, unified skeleton-based loading state */}
-                <ResumeAnalysisSkeleton
-                  progress={analysisProgress}
-                  status={
-                    analysisProgress < 30 ? "Analyzing resume content..." :
-                    analysisProgress < 60 ? "Processing skills and experience..." :
-                    analysisProgress < 90 ? "Generating recommendations..." :
-                    "Finalizing analysis..."
-                  }
-                  includesJobDescription={isApplyingForJob}
-                  expectedTime={isApplyingForJob ? "15-20 seconds" : "10-15 seconds"}
-                />
+                {/* Show different skeletons based on what's loading */}
+                {analyzeMutation.isPending ? (
+                  // Loading state for new analysis
+                  <ResumeAnalysisSkeleton
+                    progress={analysisProgress}
+                    status={
+                      analysisProgress < 30 ? "Analyzing resume content..." :
+                      analysisProgress < 60 ? "Processing skills and experience..." :
+                      analysisProgress < 90 ? "Generating recommendations..." :
+                      "Finalizing analysis..."
+                    }
+                    includesJobDescription={isApplyingForJob}
+                    expectedTime={isApplyingForJob ? "15-20 seconds" : "10-15 seconds"}
+                  />
+                ) : (
+                  // Loading state for viewing saved analysis
+                  <ResumeAnalysisSkeleton
+                    progress={95} // High progress to indicate we're almost done
+                    status="Loading your saved analysis..."
+                    funMessage="Just a moment while we retrieve your saved analysis."
+                    includesJobDescription={false}
+                    expectedTime="just a moment"
+                  />
+                )}
               </CardContent>
             </Card>
           )}

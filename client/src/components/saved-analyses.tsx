@@ -145,16 +145,15 @@ export function SavedAnalyses() {
   const [sortOption, setSortOption] = useState<SortOption>('newest');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   
-  // Handle view results click
+  // Handle view results click - optimized to avoid full page reload when possible
   const handleViewResults = (analysisId: number) => {
     console.log('Clicked analysis card, setting analysisId to:', analysisId);
     
-    // Set the analysis ID in the state
+    // Update state and URL parameters (which will trigger query)
     setAnalysisId(analysisId);
     
-    // Add URL parameter and reload page to trigger proper data loading
-    // This is more reliable than just updating the state
-    window.location.href = `${window.location.pathname}?id=${analysisId}`;
+    // Scroll to top for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Process analyses based on current sort and filter options
@@ -199,10 +198,10 @@ export function SavedAnalyses() {
     });
   }, [userAnalyses, sortOption, filterOption]);
   
-  // Display only a limited number of analyses unless expanded
+  // Display only the 2 most recent analyses unless expanded (decreased from 6)
   const displayedAnalyses = expanded 
     ? processedAnalyses 
-    : processedAnalyses.slice(0, 6);
+    : processedAnalyses.slice(0, 2);
 
   // Loading state
   if (isLoadingUserAnalyses) {
@@ -264,10 +263,36 @@ export function SavedAnalyses() {
           size="sm" 
           className="shrink-0"
           onClick={() => {
-            // Clear any existing analysis ID and reset form
+            // Clear any existing analysis ID 
             setAnalysisId(null);
-            // Remove ID from URL and reload to reset the form
-            window.location.href = window.location.pathname;
+            
+            // Remove ID from URL without a page reload
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('id');
+              window.history.pushState({}, '', url);
+            }
+            
+            // Scroll to the form section
+            const formElement = document.querySelector('form');
+            if (formElement) {
+              formElement.scrollIntoView({ behavior: 'smooth' });
+              
+              // Reset form fields programmatically (if needed)
+              // This assumes we can access the form's reset functionality
+              setTimeout(() => {
+                const textArea = document.querySelector('textarea');
+                if (textArea) {
+                  (textArea as HTMLTextAreaElement).value = '';
+                }
+                
+                // Reset job toggle if it exists
+                const jobToggle = document.querySelector('input[type="checkbox"]');
+                if (jobToggle) {
+                  (jobToggle as HTMLInputElement).checked = false;
+                }
+              }, 100);
+            }
           }}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
@@ -331,7 +356,7 @@ export function SavedAnalyses() {
       </div>
       
       {/* Show more/less button when necessary */}
-      {processedAnalyses.length > 6 && (
+      {processedAnalyses.length > 2 && (
         <Button
           variant="outline"
           onClick={() => setExpanded(!expanded)}
@@ -339,7 +364,7 @@ export function SavedAnalyses() {
         >
           {expanded 
             ? "Show Less" 
-            : `Show ${processedAnalyses.length - 6} More Analyses`}
+            : `View All ${processedAnalyses.length} Analyses`}
         </Button>
       )}
     </div>
