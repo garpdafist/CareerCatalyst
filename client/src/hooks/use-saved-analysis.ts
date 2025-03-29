@@ -66,27 +66,15 @@ export function useSavedAnalysis() {
            userAnalyses?.find(analysis => analysis.id === id);
   }, [queryClient, userAnalyses]);
 
-  // Update URL with analysis ID for deep linking
-  const setAnalysisIdWithUrlUpdate = useCallback((id: number | null) => {
-    if (typeof window !== 'undefined') {
-      if (id) {
-        // Update URL without page reload
-        const url = new URL(window.location.href);
-        url.searchParams.set('id', id.toString());
-        window.history.pushState({}, '', url);
-        
-        // Prefetch this analysis
-        prefetchAnalysis(id);
-      } else {
-        // Remove ID from URL
-        const url = new URL(window.location.href);
-        url.searchParams.delete('id');
-        window.history.pushState({}, '', url);
-      }
-    }
-    
-    // Update state
+  // Set analysis ID without updating URL (for popup modal approach)
+  const setAnalysisIdWithoutUrlUpdate = useCallback((id: number | null) => {
+    // Simply update state - no URL changes needed for popup approach
     setAnalysisId(id);
+    
+    // Still prefetch the analysis for better performance
+    if (id) {
+      prefetchAnalysis(id);
+    }
   }, [prefetchAnalysis]);
 
   // Load analysis from URL parameters on mount
@@ -116,7 +104,7 @@ export function useSavedAnalysis() {
     isLoadingUserAnalyses,
     userAnalysesError,
     analysisId,
-    setAnalysisId: setAnalysisIdWithUrlUpdate,
+    setAnalysisId: setAnalysisIdWithoutUrlUpdate,
     refetchUserAnalyses,
     // New functions for improved UX
     prefetchAnalysis,

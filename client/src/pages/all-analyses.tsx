@@ -30,12 +30,10 @@ export default function AllAnalyses() {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-  // Handle analysis click - open in a popup directly without navigating away
+  // Handle analysis click - open in a popup directly without updating URL
   const handleAnalysisClick = (id: number) => {
     setAnalysisId(id);
-    // Using URL parameters for deep linking without redirecting
-    window.history.pushState({}, '', `?id=${id}`);
-    // Open the popup
+    // Open the popup immediately
     setIsPopupOpen(true);
   };
 

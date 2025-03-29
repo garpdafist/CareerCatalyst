@@ -138,7 +138,7 @@ export default function ResumeAnalyzer() {
       }
     },
     onSuccess: (result) => {
-      // If the analysis has an ID, update the URL for deep linking
+      // If the analysis has an ID, update state for popup display
       if (result.id) {
         setAnalysisId(result.id);
         // Refresh user analyses list to include the new one

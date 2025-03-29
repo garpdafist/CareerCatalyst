@@ -146,15 +146,14 @@ export function SavedAnalyses() {
   const [sortOption, setSortOption] = useState<SortOption>('newest');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   
-  // Handle view results click - optimized to avoid full page reload when possible
+  // Handle view results click - opens the popup modal instead of changing URL
   const handleViewResults = (analysisId: number) => {
     console.log('Clicked analysis card, setting analysisId to:', analysisId);
     
-    // Update state and URL parameters (which will trigger query)
+    // Update state (will trigger popup via useEffect in resume-analyzer.tsx)
     setAnalysisId(analysisId);
     
-    // Scroll to top for better UX
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // No need to modify URL or scroll - popup will appear as an overlay
   };
 
   // Process analyses based on current sort and filter options
@@ -264,15 +263,8 @@ export function SavedAnalyses() {
           size="sm" 
           className="shrink-0"
           onClick={() => {
-            // Clear any existing analysis ID 
+            // Simply clear any existing analysis ID 
             setAnalysisId(null);
-            
-            // Remove ID from URL without a page reload
-            if (typeof window !== 'undefined') {
-              const url = new URL(window.location.href);
-              url.searchParams.delete('id');
-              window.history.pushState({}, '', url);
-            }
             
             // Scroll to the form section
             const formElement = document.querySelector('form');
@@ -280,7 +272,6 @@ export function SavedAnalyses() {
               formElement.scrollIntoView({ behavior: 'smooth' });
               
               // Reset form fields programmatically (if needed)
-              // This assumes we can access the form's reset functionality
               setTimeout(() => {
                 const textArea = document.querySelector('textarea');
                 if (textArea) {
