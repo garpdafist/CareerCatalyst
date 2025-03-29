@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
-import { SavedAnalyses } from "@/components/saved-analyses";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
@@ -272,9 +271,28 @@ export default function ResumeAnalyzer() {
             </Card>
           )}
 
-          {/* Saved Analyses - Show when not analyzing and not displaying results */}
+          {/* "View All Analyses" CTA - Show when not analyzing and not displaying results */}
           {!analyzeMutation.isPending && !displayedAnalysis && (
-            <SavedAnalyses />
+            <Card className="mb-6">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <History className="h-12 w-12 text-primary/80" />
+                  <div>
+                    <h3 className="text-xl font-medium mb-2">Previous Resume Analyses</h3>
+                    <p className="text-muted-foreground mb-4">
+                      View and compare all your previous resume analyses
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => navigate('/all-analyses')}
+                    className="px-6"
+                    size="lg"
+                  >
+                    View All Analyses <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
           
           {/* Submit Form - Only show when not analyzing */}
@@ -442,7 +460,7 @@ export default function ResumeAnalyzer() {
                       className={getScoreColor(displayedAnalysis.score)}
                       onClick={() => {
                         console.log('View Results clicked - redirecting to all-analyses page');
-                        // Store the analysis ID but don't show popup
+                        // Store the analysis ID
                         if (displayedAnalysis?.id) {
                           setAnalysisId(displayedAnalysis.id);
                         }
@@ -459,8 +477,6 @@ export default function ResumeAnalyzer() {
           )}
         </motion.div>
       </div>
-      
-      {/* Removed popup component - now using page navigation instead */}
     </div>
   );
 }
