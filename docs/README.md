@@ -53,4 +53,4 @@ Planned improvements for the application are documented in the [Project Overview
 
 ---
 
-Last updated: March 29, 2025
+Last updated: March 29, 2025 - Updated to reflect Phase 2 architectural improvements

@@ -12,7 +12,7 @@ import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircl
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedProgressPath } from "@/components/ui/animated-progress-path";
+import { AnalysisLoadingState } from "@/components/ui/analysis-loading-state";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
@@ -326,7 +326,7 @@ export default function ResumeAnalyzer() {
           {analyzeMutation.isPending && (
             <Card>
               <CardContent className="pt-6">
-                <AnimatedProgressPath
+                <AnalysisLoadingState
                   progress={analysisProgress}
                   status={
                     analysisProgress < 30 ? "Analyzing resume content..." :
@@ -334,6 +334,8 @@ export default function ResumeAnalyzer() {
                         analysisProgress < 90 ? "Generating recommendations..." :
                           "Finalizing analysis..."
                   }
+                  style="timeline"
+                  allowStyleSelection={true}
                 />
               </CardContent>
             </Card>

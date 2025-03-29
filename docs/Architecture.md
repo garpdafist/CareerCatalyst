@@ -99,8 +99,9 @@ CareerAI is built with a modern stack featuring a React frontend and Express.js 
    - Error handling
 
 2. **Services Layer**: Core business logic
-   - `openai.ts`: AI analysis and generation
-   - `pdf-parser.ts`: PDF parsing and text extraction
+   - `openai.ts`: Centralized OpenAI API interaction with retry logic and request queueing
+   - `pdf-parser.ts`: Enhanced PDF parsing with multiple fallback mechanisms
+   - `resume-analyzer.ts`: Unified resume analysis with preprocessing and caching
    - `job-description.ts`: Job posting analysis
 
 3. **Storage Layer**: Data persistence

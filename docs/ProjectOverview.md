@@ -51,8 +51,9 @@ The application uses a React frontend with Tailwind CSS for styling and an Expre
 **Description**: AI-powered analysis of resumes to provide scores, feedback, and improvement suggestions.
 
 **Components**:
-- `server/services/openai.ts`: Core AI analysis logic
-- `server/services/pdf-parser.ts`: Resume PDF parsing with fallback mechanisms
+- `server/services/openai.ts`: Centralized OpenAI API integration with error handling
+- `server/services/resume-analyzer.ts`: Unified resume analysis with preprocessing and caching
+- `server/services/pdf-parser.ts`: Enhanced PDF parsing with fallback mechanisms
 - `server/routes.ts`: API endpoints for resume analysis
 - `client/src/pages/resume-analyzer.tsx`: Frontend page for resume analysis
 
@@ -66,9 +67,11 @@ The application uses a React frontend with Tailwind CSS for styling and an Expre
 - **With Job**: Tailored resume analysis comparing against a job description
 
 **Key Functions**:
-- `analyzeResumeWithAI()`: Main function for AI analysis
+- `analyzeResume()`: Unified resume analysis with optional job description matching
+- `withExponentialBackoff()`: OpenAI API request with retry logic and exponential backoff
 - `parsePdf()`: Enhanced PDF parsing with multiple fallbacks
-- `preprocessText()`: Optimizes large resumes by chunking and summarizing
+- `preprocessText()`: Optimizes large resumes by chunking and summarizing 
+- `storage.saveResumeAnalysis()`: Data persistence with Zod schema validation
 
 ### 2. Cover Letter Generation
 
@@ -142,13 +145,14 @@ client/src/
 ```
 server/
 ├── services/         # Service modules
-│   ├── openai.ts     # OpenAI integration
-│   ├── pdf-parser.ts # PDF parsing
+│   ├── openai.ts     # Centralized OpenAI API integration with error handling
+│   ├── pdf-parser.ts # Enhanced PDF parsing with fallback mechanisms
+│   ├── resume-analyzer.ts # Unified resume analysis service
 │   └── job-description.ts # Job description parsing
 ├── db.ts             # Database connection
 ├── index.ts          # Server entry point
 ├── routes.ts         # API route definitions
-├── storage.ts        # Data storage interface
+├── storage.ts        # Data storage interface with Zod validation
 └── vite.ts           # Vite server configuration
 ```
 
@@ -265,8 +269,10 @@ The application uses multiple PDF parsing libraries for resilience, which create
 
 4. **Technical Debt**:
    - Multiple PDF parsing libraries create maintenance overhead
-   - Inconsistent error handling approaches across services
-   - Some hardcoded timeout values
+   - Some hardcoded timeout values 
+   - ✓ Improved error handling approaches across services with centralized OpenAI service
+   - ✓ Added proper schema validation for database operations
+   - ✓ Enhanced type safety with Zod throughout the application flow
 
 ## Security Checklist
 
