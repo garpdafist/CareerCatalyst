@@ -298,6 +298,7 @@ const handleAnalysis = async (req: any, res: any) => {
       // Ensure critical fields exist in response
       const typedAnalysis = analysis as ResumeAnalysis;
       
+      // Format the response object
       const response = {
         ...typedAnalysis,
         primaryKeywords: typedAnalysis.primaryKeywords || [],
@@ -309,6 +310,38 @@ const handleAnalysis = async (req: any, res: any) => {
             : ''
         }
       };
+
+      // Persist the analysis to the database
+      console.log(`[${new Date().toISOString()}] [${requestId}] Saving analysis to database for user ${req.session.userId}`);
+      try {
+        // Format data for storage
+        const savedAnalysis = await storage.saveResumeAnalysis({
+          userId: req.session.userId,
+          content: content,
+          score: typedAnalysis.score,
+          jobDescription: req.body?.jobDescription, // Save job description if provided
+          analysis: {
+            scores: typedAnalysis.scores,
+            identifiedSkills: typedAnalysis.identifiedSkills || [],
+            primaryKeywords: typedAnalysis.primaryKeywords || [],
+            suggestedImprovements: typedAnalysis.suggestedImprovements || [],
+            generalFeedback: typedAnalysis.generalFeedback 
+              ? (typeof typedAnalysis.generalFeedback === 'object' 
+                  ? (typedAnalysis.generalFeedback as any).overall || '' 
+                  : String(typedAnalysis.generalFeedback)) 
+              : '',
+            jobAnalysis: typedAnalysis.jobAnalysis // Include job analysis if available
+          }
+        });
+        
+        // Add the ID to the response
+        response.id = savedAnalysis.id;
+        
+        console.log(`[${new Date().toISOString()}] [${requestId}] Analysis saved to database with ID: ${savedAnalysis.id}`);
+      } catch (saveError: any) {
+        console.error(`[${new Date().toISOString()}] [${requestId}] Error saving analysis:`, saveError);
+        // We still want to return the analysis even if saving fails
+      }
 
       clearInterval(keepAliveInterval);
       clearTimeout(timeoutTimer);

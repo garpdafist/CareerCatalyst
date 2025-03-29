@@ -135,12 +135,14 @@ export class DatabaseStorage implements IStorage {
     userId: string;
     content: string;
     score: number;
+    jobDescription?: string; // Add job description parameter
     analysis: {
       scores: any;
       identifiedSkills: string[];
       primaryKeywords: string[];
       suggestedImprovements: string[];
       generalFeedback: { overall: string } | string;
+      jobAnalysis?: any; // Add job analysis data
     };
   }): Promise<ResumeAnalysis> {
     console.log('Saving resume analysis:', {
@@ -163,6 +165,10 @@ export class DatabaseStorage implements IStorage {
         content: data.content,
         score: data.score,
         scores: data.analysis.scores,
+        // Add job description if available
+        jobDescription: data.jobDescription ? { 
+          text: data.jobDescription 
+        } : null,
         resumeSections: resumeSectionsSchema.parse({ 
           professionalSummary: "",
           workExperience: "",
@@ -174,8 +180,11 @@ export class DatabaseStorage implements IStorage {
         primaryKeywords: data.analysis.primaryKeywords,
         suggestedImprovements: data.analysis.suggestedImprovements,
         generalFeedback: typeof data.analysis.generalFeedback === 'object'
-          ? data.analysis.generalFeedback.overall
+          ? data.analysis.generalFeedback.overall || ''
           : data.analysis.generalFeedback || '',
+        // Include job analysis in the stored JSON
+        // Use type assertion to handle the schema evolution
+        ...(data.analysis.jobAnalysis ? { jobAnalysis: data.analysis.jobAnalysis } : {}),
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -198,7 +207,8 @@ export class DatabaseStorage implements IStorage {
         timestamp: new Date().toISOString()
       });
 
-      return analysis;
+      // Cast to expected type - this is safe since we know the DB structure matches our type
+      return analysis as unknown as ResumeAnalysis;
     } catch (error: any) {
       console.error('Error saving resume analysis:', {
         error: error.message,
@@ -214,15 +224,16 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(resumeAnalyses)
       .where(eq(resumeAnalyses.id, id));
-    return analysis;
+    return analysis as unknown as ResumeAnalysis | undefined;
   }
 
   async getUserAnalyses(userId: string): Promise<ResumeAnalysis[]> {
-    return db
+    const results = await db
       .select()
       .from(resumeAnalyses)
       .where(eq(resumeAnalyses.userId, userId))
       .orderBy(resumeAnalyses.createdAt);
+    return results as unknown as ResumeAnalysis[];
   }
 }
 

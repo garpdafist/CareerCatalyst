@@ -1,0 +1,26 @@
+We need to ensure that when a user clicks on a CTA or navigates away, their resume analysis remains available. Since users are required to sign in, we want to persist the analysis by tying it to their account and implementing deep linking. Please do the following:
+
+1. **Persist Analysis Data in the Backend:**
+   - Modify the resume analysis endpoint so that once an analysis is completed, the results (including all details such as general feedback, job-specific feedback, scores, keywords, etc.) are immediately stored in the database. Ensure the analysis record includes a unique analysis ID and the associated user ID.
+   - Create or update API endpoints:
+     • GET /api/resume-analysis/:id – to fetch a specific analysis by its unique ID.
+     • GET /api/user/analyses – to fetch all analyses for the signed-in user.
+
+2. **Implement Deep Linking:**
+   - After a successful analysis, update the URL on the frontend to include the unique analysis ID (e.g., /resume-analysis/123). This allows users to bookmark or share the URL and return directly to that analysis.
+   - Ensure the routing logic detects the analysis ID and loads the corresponding analysis data from the backend. If no data is found, display a friendly “Analysis not found” message.
+
+3. **Persisting Frontend State:**
+   - Use a state management solution such as React Query (or an equivalent library) with caching enabled. Configure it to retain analysis data even if the user navigates away.
+   - Optionally, use localStorage or sessionStorage as a backup to persist key analysis data between sessions.
+
+4. **Navigation & User Feedback:**
+   - Add UI elements (such as a “View My Analyses” link or a persistent header/sidebar) that lets the user access a dashboard of their saved analyses.
+   - Provide clear notifications (e.g., a toast message “Analysis saved successfully”) when an analysis is stored.
+   - Include a “Back to Analysis” option on pages like “Edit Resume” or “Generate Cover Letter” so that the user can easily return to the analysis screen.
+
+5. **Robust Error Handling:**
+   - Implement error handling so that if the analysis data fails to load (e.g., due to network issues or an expired session), the user receives a clear message and is prompted to re-run the analysis or check their saved results.
+   - Ensure any transient state is handled gracefully, so that partial results are not lost if a navigation event occurs.
+
+Please implement these changes in our Express.js and React/TypeScript + Tailwind codebase, and provide brief inline comments or documentation on the key changes. This will help maintain the user’s analysis across navigations and enhance the overall UX.

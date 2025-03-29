@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ResumeAnalysis } from "@shared/schema";
-import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Brain, FileText, Upload, ChevronRight, CheckCircle, XCircle, AlertCircle, Clock, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,9 @@ import { ResumeAnalysisSkeleton } from "@/components/ui/resume-analysis-skeleton
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
+import { formatDistanceToNow } from "date-fns";
+import { SavedAnalyses } from "@/components/saved-analyses";
 
 // Create a proper iOS-style toggle with accurate styling and animations
 const iosSwitch = `
@@ -229,7 +232,16 @@ export default function ResumeAnalyzer() {
   const [jobDescription, setJobDescription] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const { toast } = useToast();
-
+  
+  // Use saved analysis hook to support deep linking and persistent analyses
+  const { 
+    savedAnalysis, 
+    isLoadingSavedAnalysis,
+    analysisId,
+    setAnalysisId,
+    refetchUserAnalyses
+  } = useSavedAnalysis();
+  
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string; jobDescription?: string } | FormData) => {
       setAnalysisProgress(0);
@@ -261,6 +273,14 @@ export default function ResumeAnalyzer() {
         throw error;
       }
     },
+    onSuccess: (result) => {
+      // If the analysis has an ID, update the URL for deep linking
+      if (result.id) {
+        setAnalysisId(result.id);
+        // Refresh user analyses list to include the new one
+        refetchUserAnalyses();
+      }
+    },
     onError: (error: Error) => {
       setAnalysisProgress(0);
       toast({
@@ -277,6 +297,18 @@ export default function ResumeAnalyzer() {
     setContent("");
   };
 
+  // Effect to load saved analysis from URL parameter
+  useEffect(() => {
+    // If we have a saved analysis, and no current analysis result, display the saved one
+    if (savedAnalysis && !analyzeMutation.data && !isLoadingSavedAnalysis) {
+      // Use the Object.assign method to update the mutable state correctly
+      Object.defineProperty(analyzeMutation, 'data', {
+        value: savedAnalysis,
+        writable: true
+      });
+    }
+  }, [savedAnalysis, isLoadingSavedAnalysis]);
+  
   const handleSubmit = () => {
     if (!content.trim() && !file) {
       toast({
@@ -340,6 +372,11 @@ export default function ResumeAnalyzer() {
             </Card>
           )}
 
+          {/* Saved Analyses - Show when not analyzing and not displaying results */}
+          {!analyzeMutation.isPending && !analyzeMutation.data && (
+            <SavedAnalyses />
+          )}
+          
           {/* Submit Form - Only show when not analyzing */}
           {!analyzeMutation.isPending && (
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">

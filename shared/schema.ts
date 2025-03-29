@@ -68,6 +68,7 @@ export const resumeAnalyses = pgTable("resume_analyses", {
   primaryKeywords: text("primary_keywords").array(),
   suggestedImprovements: text("suggested_improvements").array(),
   generalFeedback: text("general_feedback"),
+  jobAnalysis: jsonb("job_analysis").default(null), // Add job analysis field
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
