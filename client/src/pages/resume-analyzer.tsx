@@ -194,26 +194,8 @@ export default function ResumeAnalyzer() {
             </CardContent>
           </Card>
         ) : !displayedAnalysis ? (
-          <form 
-            onSubmit={(e) => { 
-              console.log("Form submission event triggered");
-              // Always prevent default submission
-              e.preventDefault();
-              
-              // Only process submission if it came from the submit button
-              const submitter = (e as any).nativeEvent?.submitter;
-              console.log("Form submitter:", submitter?.type, submitter?.className);
-              
-              // Ensure the submitter is the actual submit button
-              if (submitter && submitter.type === "submit" && submitter.className.includes("bg-green-600")) {
-                console.log("Processing form submission from the Analyze Resume button");
-                handleSubmit();
-              } else {
-                console.log("Ignoring form submission not from Analyze Resume button");
-              }
-            }} 
-            className="space-y-6 bg-[#FAF9F4] rounded-lg p-6"
-          >
+          <div className="space-y-6 bg-[#FAF9F4] rounded-lg p-6">
+            {/* Changed from form to div to prevent any form submission behaviors */}
             <div className="flex mb-4 gap-2">
               <Button
                 type="button"
@@ -269,55 +251,44 @@ export default function ResumeAnalyzer() {
                 </p>
               )}
 
-              <div className="flex items-center mt-4">
-                {/* Custom toggle switch that won't trigger form submission */}
-                <button 
-                  type="button" // Explicitly set as button type to prevent form submission
-                  className="relative inline-block w-12 h-6 mr-2"
-                  onClick={(e) => {
-                    console.log("Toggle container clicked");
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Use functional state update to ensure we always get the latest state
-                    setIsApplyingForJob(prev => {
-                      console.log("Toggling job description from", prev, "to", !prev);
-                      return !prev;
-                    });
-                  }}
-                >
-                  {/* Hidden input for accessibility - purely visual, not functional */}
-                  <input
-                    type="checkbox"
-                    id="job-description-toggle"
-                    checked={isApplyingForJob}
-                    readOnly
-                    className="peer sr-only"
-                    // Prevent any possible click events by stopping propagation
+              <div className="flex items-center mt-6 mb-2">
+                {/* iOS-style toggle switch */}
+                <div className="flex items-center">
+                  <button 
+                    type="button"
+                    aria-pressed={isApplyingForJob}
+                    className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none"
+                    style={{ backgroundColor: isApplyingForJob ? '#34C759' : '#E5E7EB' }}
                     onClick={(e) => {
-                      e.stopPropagation();
                       e.preventDefault();
+                      e.stopPropagation();
+                      console.log("Toggle clicked - iOS style");
+                      setIsApplyingForJob(prev => !prev);
                     }}
-                  />
-                  {/* Styled label that works as the visible toggle */}
-                  <div
-                    className="absolute cursor-pointer rounded-full bg-gray-200 peer-checked:bg-[#34C759] w-full h-full transition-colors duration-300"
                   >
-                    <span className="block w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 translate-x-0.5 translate-y-0.5 peer-checked:translate-x-6"></span>
-                  </div>
-                </button>
-                {/* Text label that also toggles state - converted to button to prevent form submission */}
-                <button
-                  type="button" // Explicitly set as button type
-                  className="text-sm font-medium cursor-pointer"
-                  onClick={(e) => {
-                    console.log("Text label clicked");
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsApplyingForJob(prev => !prev);
-                  }}
-                >
-                  Add Job Description
-                </button>
+                    <span 
+                      className="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      style={{ 
+                        transform: isApplyingForJob ? 'translateX(100%)' : 'translateX(0%)',
+                        margin: '0.5px' 
+                      }}
+                    />
+                  </button>
+                  
+                  {/* Text label with proper spacing */}
+                  <button
+                    type="button"
+                    className="text-sm font-medium cursor-pointer ml-3"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log("Text label clicked - iOS style");
+                      setIsApplyingForJob(prev => !prev);
+                    }}
+                  >
+                    Add Job Description
+                  </button>
+                </div>
               </div>
 
               <AnimatePresence mode="wait">
@@ -340,13 +311,15 @@ export default function ResumeAnalyzer() {
 
               {/* Primary CTA - Analyze Resume Button */}
               <Button
-                type="submit"
+                type="button"
                 size="lg"
                 className="w-full bg-green-600 hover:bg-green-700 text-white mt-6 py-6 text-lg font-semibold shadow-lg"
                 disabled={analyzeMutation.isPending}
                 onClick={(e) => {
-                  // Extra logging to track button click events
-                  console.log("Analyze Resume button clicked");
+                  // Explicitly call handleSubmit since we're not using a form anymore
+                  e.preventDefault();
+                  console.log("Analyze Resume button clicked - direct execution");
+                  handleSubmit();
                 }}
               >
                 {analyzeMutation.isPending ? 
@@ -368,7 +341,7 @@ export default function ResumeAnalyzer() {
                 View your previous resume analyses
               </div>
             </div>
-          </form>
+          </div>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
