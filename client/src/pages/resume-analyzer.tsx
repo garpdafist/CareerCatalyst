@@ -468,10 +468,6 @@ export default function ResumeAnalyzer() {
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         analysisData={displayedAnalysis}
-        isLoading={isLoadingSavedAnalysis} 
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)}
-        analysisData={displayedAnalysis}
         isLoading={analyzeMutation.isPending || isLoadingSavedAnalysis}
       />
     </div>
