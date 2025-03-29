@@ -196,8 +196,19 @@ export default function ResumeAnalyzer() {
         ) : !displayedAnalysis ? (
           <form 
             onSubmit={(e) => { 
-              e.preventDefault(); 
-              handleSubmit();
+              console.log("Form submission event triggered");
+              e.preventDefault();
+              // Only process form submission from actual submit button clicks
+              const target = e.target as HTMLFormElement;
+              const submitter = (e as any).nativeEvent?.submitter;
+              console.log("Form submitter:", submitter?.type);
+              
+              if (submitter && submitter.type === "submit") {
+                console.log("Processing form submission from submit button");
+                handleSubmit();
+              } else {
+                console.log("Ignoring form submission not from submit button");
+              }
             }} 
             className="space-y-6 bg-[#FAF9F4] rounded-lg p-6"
           >
@@ -257,30 +268,50 @@ export default function ResumeAnalyzer() {
               )}
 
               <div className="flex items-center mt-4">
-                <div className="relative inline-block w-12 h-6 mr-2">
+                {/* Custom toggle switch that won't trigger form submission */}
+                <div 
+                  className="relative inline-block w-12 h-6 mr-2"
+                  onClick={(e) => {
+                    console.log("Toggle container clicked");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Use functional state update to ensure we always get the latest state
+                    setIsApplyingForJob(prev => {
+                      console.log("Toggling job description from", prev, "to", !prev);
+                      return !prev;
+                    });
+                    // Return false to prevent any default behavior
+                    return false;
+                  }}
+                >
+                  {/* Hidden input for accessibility - no onChange handler to prevent duplicate events */}
                   <input
                     type="checkbox"
                     id="job-description-toggle"
                     checked={isApplyingForJob}
-                    onChange={(e) => {
-                      e.preventDefault();
-                      setIsApplyingForJob(prev => !prev);
-                    }}
+                    readOnly
                     className="peer sr-only"
                   />
-                  <label
-                    htmlFor="job-description-toggle"
+                  {/* Styled label that works as the visible toggle */}
+                  <div
                     className="absolute cursor-pointer rounded-full bg-gray-200 peer-checked:bg-[#34C759] w-full h-full transition-colors duration-300"
                   >
                     <span className="block w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 translate-x-0.5 translate-y-0.5 peer-checked:translate-x-6"></span>
-                  </label>
+                  </div>
                 </div>
-                <Label
-                  htmlFor="job-description-toggle"
+                {/* Text label that also toggles state but doesn't use htmlFor to prevent duplicate events */}
+                <div
                   className="text-sm font-medium cursor-pointer"
+                  onClick={(e) => {
+                    console.log("Text label clicked");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsApplyingForJob(prev => !prev);
+                    return false;
+                  }}
                 >
                   Add Job Description
-                </Label>
+                </div>
               </div>
 
               <AnimatePresence mode="wait">
