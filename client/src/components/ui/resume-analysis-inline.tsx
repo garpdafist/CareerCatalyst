@@ -163,7 +163,7 @@ export function ResumeAnalysisInline({
           )}
         </div>
 
-        {/* Job Analysis Section - Check if there's a job description but no analysis */}
+        {/* Job Analysis Section - Check if job description exists */}
         {analysisData.jobDescription ? (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-2">Job Match Analysis</h3>
