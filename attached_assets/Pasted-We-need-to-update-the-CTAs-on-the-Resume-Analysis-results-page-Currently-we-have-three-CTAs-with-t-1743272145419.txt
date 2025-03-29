@@ -1,0 +1,31 @@
+We need to update the CTAs on the Resume Analysis results page. Currently, we have three CTAs with the heading "Ready to Improve Your Resume?": 
+
+• CTA 1: "Improve my resume"  
+• CTA 2: "Generate cover letter"  
+• Small CTA 3: "View previous resume analysis"  
+
+The issues are:
+- CTA 1 and CTA 2 are too long and spread out, making the layout look unbalanced.
+- CTA 3 (the text link) is fine.
+
+Please implement the following changes:
+
+1. **Revamp CTA 1 and CTA 2:**
+   - Combine CTA 1 ("Improve my resume") and CTA 2 ("Generate cover letter") into a compact, visually appealing button group.
+   - Design CTA 1 as the primary action (e.g., with a bold color, larger size) and CTA 2 as a secondary action (e.g., outlined or with a lighter background).
+   - Arrange these buttons side by side on desktop (and stacked on mobile if needed) to create a cohesive unit.
+   - Use consistent padding, margins, and font sizes so they feel balanced and integrated.
+
+2. **Maintain the Heading and CTA 3:**
+   - Keep the heading "Ready to Improve Your Resume?" clearly displayed above the button group.
+   - Leave CTA 3 ("View previous resume analysis") as a smaller text link placed below the button group, ensuring it remains unobtrusive.
+
+3. **Evaluate Additional CTA Options:**
+   - Consider whether these two primary CTAs are sufficient. If any additional CTAs are needed, ensure they do not overwhelm the user or lead to analysis paralysis.
+   - For now, focus on just these two actions to streamline the user experience.
+
+4. **Documentation & Consistency:**
+   - Add inline comments explaining the styling choices (e.g., primary vs. secondary button classes) and the responsive layout logic.
+   - Use our existing Tailwind CSS classes to maintain consistency with the rest of the app.
+
+Please implement these changes and confirm once the new CTA layout is in place. The goal is to provide a clean, balanced, and intuitive call-to-action area that encourages users to take action without feeling overwhelmed.
