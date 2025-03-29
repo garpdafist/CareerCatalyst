@@ -254,6 +254,16 @@ const handleAnalysis = async (req: any, res: any) => {
     bodySize: req.body ? JSON.stringify(req.body).length : 0
   });
   
+  // Log detailed information about the request body for debugging
+  console.log(`[${new Date().toISOString()}] [${requestId}] Request body debug:`, {
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+    contentKey: req.body?.content ? "present" : "missing",
+    contentType: req.body?.content ? typeof req.body.content : "N/A",
+    contentLength: req.body?.content ? req.body.content.length : 0,
+    isResumeObject: req.body?.professionalSummary ? "yes" : "no",
+    bodyPreview: req.body ? JSON.stringify(req.body).substring(0, 200) + '...' : 'empty'
+  });
+  
   // Set timeout for the request - 180 seconds (3 minutes)
   const TIMEOUT = 180000;
   const timeoutTimer = setTimeout(() => {
@@ -267,8 +277,59 @@ const handleAnalysis = async (req: any, res: any) => {
   }, TIMEOUT);
   
   try {
-    let content = req.body?.content || '';
+    let content = '';
     let contentSource = 'body';
+    
+    // Enhanced content extraction to handle different request formats
+    if (req.body?.content) {
+      // Direct content field (simple string format)
+      content = req.body.content;
+      contentSource = 'body.content';
+    } else if (req.body?.professionalSummary) {
+      // Structured resume format - convert to text for analysis
+      try {
+        // For structured resume submission, combine different sections
+        const structuredContent = [
+          `Professional Summary: ${req.body.professionalSummary}`,
+          
+          // Work Experience
+          'Work Experience:',
+          ...(req.body.workExperience?.map(job => 
+            `${job.position} at ${job.company} (${job.duration})\n` +
+            `Achievements: ${job.achievements?.join(', ') || 'None listed'}`
+          ) || []),
+          
+          // Skills
+          'Technical Skills:',
+          ...(req.body.technicalSkills || []),
+          
+          // Education
+          'Education:',
+          ...(req.body.education?.map(edu => 
+            `${edu.degree} from ${edu.institution} (${edu.year})`
+          ) || []),
+          
+          // Optional sections
+          ...(req.body.certifications?.length > 0 ? ['Certifications:', ...req.body.certifications] : []),
+          
+          // Projects
+          ...(req.body.projects?.length > 0 ? [
+            'Projects:',
+            ...(req.body.projects.map(proj => 
+              `${proj.name}: ${proj.description}\nTechnologies: ${proj.technologies?.join(', ') || 'None listed'}`
+            ))
+          ] : [])
+        ].join('\n\n');
+        
+        content = structuredContent;
+        contentSource = 'structured';
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] [${requestId}] Error processing structured resume:`, error);
+        // If we can't process the structured format, try to extract as much as we can
+        content = `${req.body.professionalSummary || ''}\n\n${req.body.technicalSkills?.join(', ') || ''}`;
+        contentSource = 'structured-fallback';
+      }
+    }
 
     // Handle file upload
     if (req.file) {
@@ -508,8 +569,19 @@ export function registerRoutes(app: Express): Server {
     requestTimeout,
     requireAuth,
     resumeAnalysisLimiter, // Apply specific rate limiting
-    validateResumeContent, // Validate input
-    upload.single('file'),
+    upload.single('file'), // Move file upload before validation
+    // Custom middleware to adapt the request for validation when a file is uploaded
+    (req: any, res: any, next: any) => {
+      // If a file was uploaded, adapt the request body to match our schema
+      if (req.file) {
+        console.log('Adapting request with file upload to match schema');
+        // Create a content field if it doesn't exist
+        req.body = req.body || {};
+        req.body.content = 'File uploaded, content will be extracted';
+      }
+      next();
+    },
+    validateResumeContent, // Validate input after adapting for file uploads
     handleAnalysis
   );
 

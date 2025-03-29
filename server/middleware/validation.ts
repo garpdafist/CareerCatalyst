@@ -19,10 +19,19 @@ import { z } from 'zod';
 const createValidator = <T extends z.Schema>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Enhanced logging for debugging validation issues
+      console.log(`[Validation] Request body:`, JSON.stringify(req.body, null, 2));
+      
+      // Try to parse with the schema
       schema.parse(req.body);
+      console.log(`[Validation] Schema validation passed`);
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // Log the full error details
+        console.error(`[Validation Error] ${error.message}`);
+        console.error(`[Validation Error] Details:`, JSON.stringify(error.errors, null, 2));
+        
         res.status(400).json({
           status: 'error',
           message: 'Validation failed',
@@ -32,6 +41,7 @@ const createValidator = <T extends z.Schema>(schema: T) => {
           }))
         });
       } else {
+        console.error(`[Validation] Non-Zod error:`, error);
         next(error);
       }
     }
