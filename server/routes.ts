@@ -37,7 +37,10 @@ import {
   coverLetterLimiter,
   linkedInLimiter,
   getAnalysesLimiter,
-  skipRateLimitForStatic
+  skipRateLimitForStatic,
+  configLimiter,
+  userDataLimiter,
+  healthLimiter
 } from './middleware/rate-limit';
 
 // Import validation middleware
@@ -495,8 +498,8 @@ export function registerRoutes(app: Express): Server {
   // Apply general rate limiting only to routes that pass through skipRateLimitForStatic
   app.use(generalLimiter);
 
-  // Add a simple ping route for testing
-  app.get("/api/ping", (_req, res) => {
+  // Add a simple ping route for testing (no rate limit needed for health checks)
+  app.get("/api/ping", healthLimiter, (_req, res) => {
     res.json({ message: "pong", timestamp: new Date().toISOString() });
   });
 
@@ -569,7 +572,7 @@ export function registerRoutes(app: Express): Server {
     }
   );
 
-  app.get("/api/config", (_req: any, res: any) => {
+  app.get("/api/config", configLimiter, (_req: any, res: any) => {
     res.json({
       supabaseUrl: process.env.VITE_SUPABASE_URL || "",
       supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || ""
@@ -638,18 +641,21 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Privacy and data management endpoints
-  app.get("/api/privacy-policy", privacyPolicyHandler);
-  app.get("/api/terms-of-service", termsOfServiceHandler);
+  // Public policy endpoints with general rate limiting
+  app.get("/api/privacy-policy", generalLimiter, privacyPolicyHandler);
+  app.get("/api/terms-of-service", generalLimiter, termsOfServiceHandler);
   
   // CSRF protected data management routes
   app.get("/api/user/data", 
     requireAuth,
+    userDataLimiter, // Apply stricter rate limiting for data access
     csrfProtection, 
     handleDataAccessRequest
   );
   
   app.delete("/api/user/data", 
     requireAuth,
+    userDataLimiter, // Apply stricter rate limiting for data deletion
     csrfProtection, 
     handleDataDeletionRequest
   );

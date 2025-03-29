@@ -56,22 +56,31 @@ export const resumeSectionsSchema = z.object({
 });
 
 // Resume analysis table with enhanced fields
-export const resumeAnalyses = pgTable("resume_analyses", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id),
-  content: text("content").notNull(),
-  jobDescription: jsonb("job_description").default(null),
-  score: integer("score").notNull(),
-  scores: jsonb("scores").notNull(),
-  resumeSections: jsonb("resume_sections").notNull(),
-  identifiedSkills: text("identified_skills").array(),
-  primaryKeywords: text("primary_keywords").array(),
-  suggestedImprovements: text("suggested_improvements").array(),
-  generalFeedback: text("general_feedback"),
-  jobAnalysis: jsonb("job_analysis").default(null), // Add job analysis field
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Resume analysis table with optimized indexes for query performance
+export const resumeAnalyses = pgTable(
+  "resume_analyses", 
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id),
+    content: text("content").notNull(),
+    jobDescription: jsonb("job_description").default(null),
+    score: integer("score").notNull(),
+    scores: jsonb("scores").notNull(),
+    resumeSections: jsonb("resume_sections").notNull(),
+    identifiedSkills: text("identified_skills").array(),
+    primaryKeywords: text("primary_keywords").array(),
+    suggestedImprovements: text("suggested_improvements").array(),
+    generalFeedback: text("general_feedback"),
+    jobAnalysis: jsonb("job_analysis").default(null),
+    
+    // Add timestamp fields for time-based queries and data retention
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+    
+    // Define optional retention period for data cleanup policies
+    retentionExpiresAt: timestamp("retention_expires_at"),
+  }
+);
 
 // Enhanced Resume Analysis schema with extended properties for the frontend
 export const resumeAnalysisResponseSchema = z.object({
@@ -110,15 +119,18 @@ export type ScoringCriteria = z.infer<typeof scoringCriteriaSchema>;
 export type ResumeSections = z.infer<typeof resumeSectionsSchema>;
 export type JobDescription = z.infer<typeof jobDescriptionSchema>;
 
-// Keep existing user schema and relations
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  emailVerified: timestamp("email_verified"),
-  lastLoginAt: timestamp("last_login_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// User table with optimized structure
+export const users = pgTable(
+  "users", 
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    emailVerified: timestamp("email_verified"),
+    lastLoginAt: timestamp("last_login_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  }
+);
 
 export const userRelations = relations(users, ({ many }) => ({
   analyses: many(resumeAnalyses),

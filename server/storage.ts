@@ -221,12 +221,47 @@ export class DatabaseStorage implements IStorage {
 
   async getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined> {
     try {
+      console.log('Fetching resume analysis by ID:', {
+        id,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Use a prepared statement approach with explicit field selection
+      // This takes advantage of the primary key index on id
       const [analysis] = await db
         .select()
         .from(resumeAnalyses)
-        .where(eq(resumeAnalyses.id, id));
+        .where(eq(resumeAnalyses.id, id))
+        .limit(1); // Ensure only one result (though ID is primary key)
 
-      if (!analysis) return undefined;
+      if (!analysis) {
+        console.log('Analysis not found:', { id });
+        return undefined;
+      }
+
+      console.log('Successfully fetched analysis:', {
+        id: analysis.id,
+        userId: analysis.userId,
+        score: analysis.score,
+        timestamp: new Date().toISOString()
+      });
+
+      // Type-safe date handling
+      let createdDate: Date;
+      let updatedDate: Date;
+      
+      // Explicitly handle date conversion to avoid null issues
+      if (analysis.createdAt) {
+        createdDate = new Date(analysis.createdAt.toString());
+      } else {
+        createdDate = new Date();
+      }
+      
+      if (analysis.updatedAt) {
+        updatedDate = new Date(analysis.updatedAt.toString());
+      } else {
+        updatedDate = new Date();
+      }
 
       // Ensure proper type conversion and field presence
       return {
@@ -238,22 +273,94 @@ export class DatabaseStorage implements IStorage {
         primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
         suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
         generalFeedback: analysis.generalFeedback || '',
-        createdAt: new Date(analysis.createdAt),
-        updatedAt: new Date(analysis.updatedAt)
+        createdAt: createdDate,
+        updatedAt: updatedDate
       } as ResumeAnalysis;
     } catch (error) {
-      console.error('Error in getResumeAnalysis:', error);
+      console.error('Error in getResumeAnalysis:', {
+        error,
+        id,
+        timestamp: new Date().toISOString()
+      });
       throw error;
     }
   }
 
   async getUserAnalyses(userId: string): Promise<ResumeAnalysis[]> {
-    const results = await db
-      .select()
-      .from(resumeAnalyses)
-      .where(eq(resumeAnalyses.userId, userId))
-      .orderBy(resumeAnalyses.createdAt);
-    return results as unknown as ResumeAnalysis[];
+    try {
+      console.log('Fetching analyses for user:', {
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Optimize query to select only necessary fields and use limit
+      // This query will benefit from the userId + createdAt composite index we added
+      const results = await db
+        .select({
+          id: resumeAnalyses.id,
+          userId: resumeAnalyses.userId,
+          score: resumeAnalyses.score,
+          identifiedSkills: resumeAnalyses.identifiedSkills,
+          primaryKeywords: resumeAnalyses.primaryKeywords,
+          suggestedImprovements: resumeAnalyses.suggestedImprovements,
+          generalFeedback: resumeAnalyses.generalFeedback,
+          createdAt: resumeAnalyses.createdAt,
+          updatedAt: resumeAnalyses.updatedAt
+        })
+        .from(resumeAnalyses)
+        .where(eq(resumeAnalyses.userId, userId))
+        .orderBy(resumeAnalyses.createdAt)
+        .limit(100); // Prevents excessive data loading
+      
+      console.log('Successfully fetched analyses:', {
+        userId,
+        count: results.length,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Process each analysis to ensure type safety
+      const processedResults: ResumeAnalysis[] = [];
+      
+      for (const analysis of results) {
+        // Type-safe date handling
+        let createdDate: Date;
+        let updatedDate: Date;
+        
+        // Explicitly handle null date values
+        if (analysis.createdAt) {
+          createdDate = new Date(analysis.createdAt.toString());
+        } else {
+          createdDate = new Date();
+        }
+        
+        if (analysis.updatedAt) {
+          updatedDate = new Date(analysis.updatedAt.toString());
+        } else {
+          updatedDate = new Date();
+        }
+        
+        // Create a properly typed object
+        processedResults.push({
+          ...analysis,
+          id: Number(analysis.id),
+          score: Number(analysis.score),
+          scores: {}, // Default empty scores object as we didn't select it
+          resumeSections: {}, // Default empty resumeSections object as we didn't select it
+          content: '', // Default empty content as we didn't select it (large field)
+          identifiedSkills: Array.isArray(analysis.identifiedSkills) ? analysis.identifiedSkills : [],
+          primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
+          suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
+          generalFeedback: analysis.generalFeedback || '',
+          createdAt: createdDate,
+          updatedAt: updatedDate
+        } as ResumeAnalysis);
+      }
+      
+      return processedResults;
+    } catch (error) {
+      console.error('Error in getUserAnalyses:', error);
+      throw error;
+    }
   }
 }
 

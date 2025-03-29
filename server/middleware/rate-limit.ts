@@ -133,6 +133,30 @@ export const coverLetterLimiter = createLimiter({
   message: 'You can only generate 3 cover letters per minute, please try again shortly'
 });
 
+// User data access rate limiter (3 per hour in production, 10 in development)
+export const userDataLimiter = createLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  devMax: 10, // Higher limit in development
+  message: 'You can only request your data 3 times per hour, please try again later'
+});
+
+// Configuration endpoints rate limiter
+export const configLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  devMax: 100, // Higher limit in development
+  message: 'Too many configuration requests, please try again after a minute'
+});
+
+// Health/status endpoint rate limiter
+export const healthLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  devMax: 150, // Higher limit in development
+  message: 'Too many status check requests, please try again after a minute'
+});
+
 // LinkedIn profile optimizer rate limiter
 export const linkedInLimiter = createLimiter({
   windowMs: 60 * 1000,
