@@ -62,7 +62,10 @@ export function SavedAnalyses() {
           <AnalysisCard 
             key={analysis.id} 
             analysis={analysis} 
-            onClick={() => setAnalysisId(analysis.id)} 
+            onClick={() => {
+              console.log('Clicked analysis card, setting analysisId to:', analysis.id);
+              setAnalysisId(analysis.id);
+            }}
           />
         ))}
       </div>

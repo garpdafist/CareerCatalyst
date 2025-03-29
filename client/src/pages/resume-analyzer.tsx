@@ -302,10 +302,18 @@ export default function ResumeAnalyzer() {
 
   // Effect to load saved analysis from URL parameter
   useEffect(() => {
+    console.log('Resume Analyzer useEffect:');
+    console.log('- savedAnalysis:', savedAnalysis);
+    console.log('- analyzeMutation.data:', analyzeMutation.data);
+    console.log('- isLoadingSavedAnalysis:', isLoadingSavedAnalysis);
+    console.log('- displayedAnalysis:', displayedAnalysis);
+    
     // If we have a saved analysis and no current mutation data, use the saved one
     if (savedAnalysis && !analyzeMutation.data && !isLoadingSavedAnalysis) {
+      console.log('Setting displayed analysis to savedAnalysis');
       setDisplayedAnalysis(savedAnalysis);
     } else if (analyzeMutation.data) {
+      console.log('Setting displayed analysis to analyzeMutation.data');
       setDisplayedAnalysis(analyzeMutation.data);
     }
   }, [savedAnalysis, analyzeMutation.data, isLoadingSavedAnalysis]);

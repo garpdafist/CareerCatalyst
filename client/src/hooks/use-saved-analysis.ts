@@ -39,6 +39,10 @@ export function useSavedAnalysis() {
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!analysisId, // Only run if we have an ID
   });
+  
+  // Add console logs for debugging
+  console.log('useSavedAnalysis hook - analysisId:', analysisId);
+  console.log('useSavedAnalysis hook - savedAnalysis:', savedAnalysis);
 
   // Update URL with analysis ID for deep linking
   const setAnalysisIdWithUrlUpdate = (id: number | null) => {
