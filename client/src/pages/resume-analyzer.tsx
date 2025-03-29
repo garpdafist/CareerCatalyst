@@ -446,28 +446,24 @@ export default function ResumeAnalyzer() {
               transition={{ duration: 0.5 }}
               className="mt-6 md:mt-8"
             >
-              <Card>
-                <CardContent className="p-6">
-                  <ResumeAnalysisInline 
-                    analysisData={displayedAnalysis}
-                    isLoading={false}
-                    onImproveResume={() => {
-                      // Navigate to the resume editor (this would be implemented in a future update)
-                      toast({
-                        title: "Coming Soon",
-                        description: "The resume editor feature will be available soon.",
-                      });
-                    }}
-                    onGenerateCoverLetter={() => {
-                      // Navigate to the cover letter generator (this would be implemented in a future update)
-                      toast({
-                        title: "Coming Soon",
-                        description: "The cover letter generator feature will be available soon.",
-                      });
-                    }}
-                  />
-                </CardContent>
-              </Card>
+              <ResumeAnalysisInline 
+                analysisData={displayedAnalysis}
+                isLoading={false}
+                onImproveResume={() => {
+                  // Navigate to the resume editor (this would be implemented in a future update)
+                  toast({
+                    title: "Coming Soon",
+                    description: "The resume editor feature will be available soon.",
+                  });
+                }}
+                onGenerateCoverLetter={() => {
+                  // Navigate to the cover letter generator (this would be implemented in a future update)
+                  toast({
+                    title: "Coming Soon",
+                    description: "The cover letter generator feature will be available soon.",
+                  });
+                }}
+              />
             </motion.div>
           )}
         </motion.div>
