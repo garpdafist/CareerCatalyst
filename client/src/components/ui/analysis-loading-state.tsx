@@ -13,6 +13,9 @@ interface AnalysisLoadingStateProps {
   style?: LoadingStateStyle;
   allowStyleSelection?: boolean;
   className?: string;
+  funMessage?: string;
+  includesJobDescription?: boolean;
+  expectedTime?: string;
 }
 
 export function AnalysisLoadingState({ 
@@ -20,7 +23,10 @@ export function AnalysisLoadingState({
   status = "Processing...",
   style = "timeline",
   allowStyleSelection = false,
-  className 
+  className,
+  funMessage = "Hang tight while we rummage through your resume for hidden talents…",
+  includesJobDescription = false,
+  expectedTime = "10-15 seconds"
 }: AnalysisLoadingStateProps) {
   const [selectedStyle, setSelectedStyle] = useState<LoadingStateStyle>(style);
 
@@ -29,7 +35,15 @@ export function AnalysisLoadingState({
       case "timeline":
         return <AnimatedTimeline progress={progress} status={status} />;
       case "skeleton":
-        return <AnimatedSkeletonTimeline progress={progress} status={status} />;
+        return (
+          <AnimatedSkeletonTimeline 
+            progress={progress} 
+            status={status} 
+            funMessage={funMessage}
+            includesJobDescription={includesJobDescription}
+            expectedTime={expectedTime}
+          />
+        );
       case "minimal":
         return <AnimatedMinimalSpinner progress={progress} status={status} />;
       default:
@@ -62,7 +76,13 @@ export function AnalysisLoadingState({
         </TabsContent>
         
         <TabsContent value="skeleton">
-          <AnimatedSkeletonTimeline progress={progress} status={status} />
+          <AnimatedSkeletonTimeline 
+            progress={progress} 
+            status={status} 
+            funMessage={funMessage}
+            includesJobDescription={includesJobDescription}
+            expectedTime={expectedTime}
+          />
         </TabsContent>
         
         <TabsContent value="minimal">

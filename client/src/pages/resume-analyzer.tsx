@@ -334,8 +334,16 @@ export default function ResumeAnalyzer() {
                         analysisProgress < 90 ? "Generating recommendations..." :
                           "Finalizing analysis..."
                   }
-                  style="timeline"
+                  style="skeleton"
                   allowStyleSelection={true}
+                  funMessage={
+                    analysisProgress < 30 ? "Hunting for hidden skills in your resume..." :
+                    analysisProgress < 60 ? "Matching your experience with industry standards..." :
+                    analysisProgress < 90 ? "Crafting personalized suggestions..." :
+                    "Polishing the final recommendations..."
+                  }
+                  includesJobDescription={isApplyingForJob}
+                  expectedTime={isApplyingForJob ? "15-20 seconds" : "10-15 seconds"}
                 />
               </CardContent>
             </Card>
