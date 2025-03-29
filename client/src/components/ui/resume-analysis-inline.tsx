@@ -120,7 +120,7 @@ export function ResumeAnalysisInline({
 
         {/* Primary Keywords - Always shown with fallback */}
         <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">Keyskills</h3>
+          <h3 className="text-lg font-medium mb-2">Key Skills</h3>
           {Array.isArray(analysisData.primaryKeywords) && analysisData.primaryKeywords.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {analysisData.primaryKeywords.slice(0, 5).map((keyword, i) => {
@@ -142,7 +142,7 @@ export function ResumeAnalysisInline({
           ) : (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-amber-700">
-                No key terms were identified in your resume. This might indicate that your resume lacks industry-specific terminology
+                No key skills were identified in your resume. This might indicate that your resume lacks industry-specific terminology
                 or that there was an issue with the analysis process.
               </p>
             </div>
@@ -151,7 +151,7 @@ export function ResumeAnalysisInline({
 
         {/* Identified Skills - Always shown with fallback */}
         <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">Skills</h3>
+          <h3 className="text-lg font-medium mb-2">Primary Keywords</h3>
           {Array.isArray(analysisData.identifiedSkills) && analysisData.identifiedSkills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {analysisData.identifiedSkills.slice(0, 5).map((skill, i) => {
@@ -173,7 +173,7 @@ export function ResumeAnalysisInline({
           ) : (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-amber-700">
-                No skills were identified in your resume. Consider revising your resume to clearly highlight your technical 
+                No primary keywords were identified in your resume. Consider revising your resume to clearly highlight your technical 
                 and soft skills using industry-standard terminology.
               </p>
             </div>
@@ -184,16 +184,42 @@ export function ResumeAnalysisInline({
         <div className="mb-8">
           <h3 className="text-lg font-medium mb-2">Suggested Improvements</h3>
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
-            <ul className="list-disc pl-5 space-y-1">
+            <div className="space-y-2">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <li key={i} className="text-gray-700">{improvement}</li>
+                <div key={i} className="p-4 bg-amber-50/50 rounded-md border border-amber-100">
+                  <div className="flex items-start">
+                    <span className="text-amber-600 mr-2">›</span>
+                    <p className="text-amber-800">{improvement}</p>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-amber-700">
                 We weren't able to generate specific improvement suggestions for this resume. This might be due to an analysis issue or insufficient data in your resume.
                 Try adding more detailed information to your resume, or analyze again with a job description for more targeted improvements.
+              </p>
+            </div>
+          )}
+        </div>
+        
+        {/* General Feedback - New section */}
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-2">General Feedback</h3>
+          {analysisData.generalFeedback ? (
+            <div className="p-4 bg-gray-50 rounded-md border border-gray-100">
+              <p className="text-gray-700">
+                {typeof analysisData.generalFeedback === 'string' 
+                  ? analysisData.generalFeedback 
+                  : analysisData.generalFeedback?.overall || 'No overall feedback available.'}
+              </p>
+            </div>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-amber-700">
+                No general feedback was generated for this resume. This might be due to an analysis issue or insufficient data in your resume.
+                Try adding more detailed information to your resume, or analyze again with a job description for more targeted feedback.
               </p>
             </div>
           )}
