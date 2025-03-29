@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 
 // Initialize OpenAI client
+import { createHash } from 'crypto';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Enhanced retry configuration
