@@ -41,17 +41,26 @@ export function ResumeAnalysisInline({
     );
   }
 
-  // Additional detailed debug logging
-  console.log("Analysis Fields:", {
+  // Enhanced detailed debug logging for job description flow
+  console.log("Analysis Fields (Enhanced Debug):", {
     score: analysisData.score,
     hasPrimaryKeywords: Array.isArray(analysisData.primaryKeywords) && analysisData.primaryKeywords.length > 0,
     primaryKeywordsCount: Array.isArray(analysisData.primaryKeywords) ? analysisData.primaryKeywords.length : 0,
     hasGeneralFeedback: !!analysisData.generalFeedback,
     generalFeedbackType: typeof analysisData.generalFeedback,
-    hasJobDescription: !!analysisData.jobDescription,
+    // Critical debugging for job description flow
+    hasJobDescField: 'jobDescription' in analysisData,
+    jobDescriptionValue: analysisData.jobDescription,
     jobDescriptionType: typeof analysisData.jobDescription,
-    hasJobAnalysis: !!analysisData.jobAnalysis,
-    jobAnalysisType: analysisData.jobAnalysis ? typeof analysisData.jobAnalysis : 'undefined',
+    jobDescriptionIsNull: analysisData.jobDescription === null,
+    jobDescriptionIsUndefined: analysisData.jobDescription === undefined,
+    jobDescriptionIsEmptyString: analysisData.jobDescription === '',
+    // Critical debugging for job analysis flow
+    hasJobAnalysisField: 'jobAnalysis' in analysisData,
+    jobAnalysisValue: analysisData.jobAnalysis,
+    jobAnalysisType: typeof analysisData.jobAnalysis,
+    jobAnalysisIsNull: analysisData.jobAnalysis === null,
+    jobAnalysisIsUndefined: analysisData.jobAnalysis === undefined,
     jobAnalysisKeys: analysisData.jobAnalysis ? Object.keys(analysisData.jobAnalysis) : []
   });
   

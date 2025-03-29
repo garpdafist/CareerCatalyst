@@ -304,7 +304,7 @@ const handleAnalysis = async (req: any, res: any) => {
           
           // Work Experience
           'Work Experience:',
-          ...(req.body.workExperience?.map(job => 
+          ...(req.body.workExperience?.map((job: { position: string; company: string; duration: string; achievements?: string[] }) => 
             `${job.position} at ${job.company} (${job.duration})\n` +
             `Achievements: ${job.achievements?.join(', ') || 'None listed'}`
           ) || []),
@@ -315,7 +315,7 @@ const handleAnalysis = async (req: any, res: any) => {
           
           // Education
           'Education:',
-          ...(req.body.education?.map(edu => 
+          ...(req.body.education?.map((edu: { degree: string; institution: string; year: string }) => 
             `${edu.degree} from ${edu.institution} (${edu.year})`
           ) || []),
           
@@ -325,7 +325,7 @@ const handleAnalysis = async (req: any, res: any) => {
           // Projects
           ...(req.body.projects?.length > 0 ? [
             'Projects:',
-            ...(req.body.projects.map(proj => 
+            ...(req.body.projects.map((proj: { name: string; description: string; technologies?: string[] }) => 
               `${proj.name}: ${proj.description}\nTechnologies: ${proj.technologies?.join(', ') || 'None listed'}`
             ))
           ] : [])
@@ -411,18 +411,45 @@ const handleAnalysis = async (req: any, res: any) => {
       
       // Get job description from request if available
       // Extract and log job description information
+      // IMPORTANT: We're capturing job description from req.body.jobDescription
       const jobDescription = req.body?.jobDescription;
-      console.log(`[${new Date().toISOString()}] [${requestId}] Job description info:`, {
+      
+      // Enhanced debug log for job description tracing - step 1: request extraction
+      console.log(`[${new Date().toISOString()}] [${requestId}] 1. JOB DESC TRACE - Extract from request:`, {
         exists: !!jobDescription,
         type: typeof jobDescription,
+        isNull: jobDescription === null,
+        isUndefined: jobDescription === undefined,
         length: jobDescription ? (typeof jobDescription === 'string' ? jobDescription.length : JSON.stringify(jobDescription).length) : 0,
         preview: jobDescription ? (typeof jobDescription === 'string' ? 
           (jobDescription.length > 100 ? jobDescription.substring(0, 100) + '...' : jobDescription) :
-          JSON.stringify(jobDescription).substring(0, 100) + '...') : 'undefined'
+          JSON.stringify(jobDescription).substring(0, 100) + '...') : 'undefined',
+        fullBodyKeys: Object.keys(req.body || {}),
+        isFormData: req.is('multipart/form-data') === 'multipart/form-data',
+        contentType: req.headers['content-type'] || 'none',
+        // Raw body logging attempts (useful for multipart/form-data debugging)
+        rawJobDescField: req.body.jobDescription,
+        rawJobDescType: typeof req.body.jobDescription,
+        bodyHasJobDescKey: 'jobDescription' in req.body
+      });
+      
+      // IMPORTANT: Always pass the exact job description as provided, never set to null
+      // Pass undefined if no job description is explicitly provided
+      const jobDescToPass = jobDescription;
+      
+      // Enhanced debug log for job description tracing - step 2: before API call
+      console.log(`[${new Date().toISOString()}] [${requestId}] 2. JOB DESC TRACE - Before API call:`, {
+        passing: !!jobDescToPass,
+        type: typeof jobDescToPass,
+        isExplicitNull: jobDescToPass === null,
+        isUndefined: jobDescToPass === undefined,
+        valueCheck: jobDescToPass ? 'has value' : 'no value',
+        stringLength: typeof jobDescToPass === 'string' ? jobDescToPass.length : 'not a string',
+        objectKeys: typeof jobDescToPass === 'object' && jobDescToPass !== null ? Object.keys(jobDescToPass) : []
       });
       
       // Set a timeout specifically for the AI analysis
-      const analysisPromise = analyzeResume(content, jobDescription);
+      const analysisPromise = analyzeResume(content, jobDescToPass);
       
       // Create a race between the analysis and a timeout
       const timeoutPromise = new Promise((_, reject) => {
@@ -666,14 +693,23 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Ensure all required fields are present
-      // Log detailed analysis info for debugging
+      // Enhanced logging for job description/analysis debugging
       console.log(`Retrieved detailed analysis for ID ${id}:`, {
         hasJobDescription: !!analysis.jobDescription,
         jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
+        jobDescriptionIsNull: analysis.jobDescription === null,
+        jobDescriptionIsUndefined: analysis.jobDescription === undefined,
+        jobDescriptionIsEmpty: analysis.jobDescription === '',
         hasJobAnalysis: !!analysis.jobAnalysis,
+        jobAnalysisType: typeof analysis.jobAnalysis,
+        jobAnalysisIsNull: analysis.jobAnalysis === null,
+        jobAnalysisIsUndefined: analysis.jobAnalysis === undefined,
         jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : []
       });
       
+      // IMPORTANT: For job description, we must preserve null values
+      // Don't set default values for jobDescription or jobAnalysis if they're null
+      // as this breaks the UI conditional logic
       const sanitizedAnalysis = {
         ...analysis,
         scores: analysis.scores || {},
@@ -681,9 +717,10 @@ export function registerRoutes(app: Express): Server {
         primaryKeywords: analysis.primaryKeywords || [],
         suggestedImprovements: analysis.suggestedImprovements || [],
         generalFeedback: analysis.generalFeedback || '',
-        // Make sure to include job-related fields
-        jobDescription: analysis.jobDescription || null,
-        jobAnalysis: analysis.jobAnalysis || null
+        // Keep job-related fields exactly as they are - don't set defaults
+        // Use conditional spreading to only include them if they exist
+        ...(analysis.jobDescription !== undefined ? {jobDescription: analysis.jobDescription} : {}),
+        ...(analysis.jobAnalysis !== undefined ? {jobAnalysis: analysis.jobAnalysis} : {})
       };
 
       res.json(sanitizedAnalysis);

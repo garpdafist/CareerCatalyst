@@ -145,6 +145,22 @@ export class DatabaseStorage implements IStorage {
       jobAnalysis?: any; // Add job analysis data
     };
   }): Promise<ResumeAnalysis> {
+    // Enhanced logging for debugging job description issues - critical tracing point
+    console.log('JOB DESC TRACE - 3. In saveResumeAnalysis:', {
+      hasJobDescription: !!data.jobDescription,
+      jobDescriptionType: data.jobDescription ? typeof data.jobDescription : 'null/undefined',
+      isNull: data.jobDescription === null,
+      isUndefined: data.jobDescription === undefined,
+      jobDescriptionLength: data.jobDescription && typeof data.jobDescription === 'string' ? data.jobDescription.length : 0,
+      jobDescriptionSample: data.jobDescription && typeof data.jobDescription === 'string' ? 
+        data.jobDescription.substring(0, 50) + '...' : 'none',
+      hasJobAnalysis: !!data.analysis.jobAnalysis,
+      jobAnalysisType: typeof data.analysis.jobAnalysis,
+      jobAnalysisIsNull: data.analysis.jobAnalysis === null,
+      jobAnalysisIsUndefined: data.analysis.jobAnalysis === undefined,
+      jobAnalysisKeys: data.analysis.jobAnalysis ? Object.keys(data.analysis.jobAnalysis) : []
+    });
+    
     console.log('Saving resume analysis:', {
       userId: data.userId,
       score: data.score,
@@ -165,14 +181,13 @@ export class DatabaseStorage implements IStorage {
         content: data.content,
         score: data.score,
         scores: data.analysis.scores,
-        // Add job description if available
-        jobDescription: data.jobDescription ? (
-          // If it's already an object, use it as is
-          typeof data.jobDescription === 'object' ? 
-            data.jobDescription : 
-            // Otherwise, keep it as a string
-            data.jobDescription
-        ) : null,
+        // CRITICAL FIX: Ensure job description is properly stored when available
+        // Don't convert undefined/null job descriptions to empty strings as this breaks the UI logic
+        // Only process the job description if it actually exists
+        ...(data.jobDescription !== undefined && data.jobDescription !== null ? {
+          jobDescription: typeof data.jobDescription === 'object' ? 
+            JSON.stringify(data.jobDescription) : String(data.jobDescription)
+        } : {}),
         resumeSections: resumeSectionsSchema.parse({ 
           professionalSummary: "",
           workExperience: "",

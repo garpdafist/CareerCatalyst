@@ -321,18 +321,35 @@ export const resumeAnalysisResponseSchema = z.object({
   generalFeedback: z.object({
     overall: z.string()
   }),
-  jobAnalysis: z.object({
-    alignmentAndStrengths: z.array(z.string()),
-    gapsAndConcerns: z.array(z.string()),
-    recommendationsToTailor: z.array(z.string()),
-    overallFit: z.string()
-  }).optional()
+  // CRITICAL FIX: Allow null for jobAnalysis to match our implementation
+  jobAnalysis: z.union([
+    z.object({
+      alignmentAndStrengths: z.array(z.string()),
+      gapsAndConcerns: z.array(z.string()),
+      recommendationsToTailor: z.array(z.string()),
+      overallFit: z.string()
+    }),
+    z.null()
+  ])
 });
+
+/**
+ * Custom interface for job analysis to ensure consistent typing 
+ */
+export interface JobAnalysis {
+  alignmentAndStrengths: string[];
+  gapsAndConcerns: string[];
+  recommendationsToTailor: string[];
+  overallFit: string;
+}
 
 /**
  * Type for resume analysis response
  */
-export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+export type ResumeAnalysisResponse = Omit<z.infer<typeof resumeAnalysisResponseSchema>, 'jobAnalysis'> & {
+  // Override the jobAnalysis type to always be null or JobAnalysis (never undefined)
+  jobAnalysis: JobAnalysis | null;
+};
 
 /**
  * Unified resume analysis function that handles both basic and job-targeted analysis
@@ -348,6 +365,18 @@ export async function analyzeResume(
   // Add start timestamp for debugging
   const startTime = Date.now();
   console.log(`[${new Date().toISOString()}] Starting resume analysis for content of length ${content.length}`);
+  
+  // Enhanced job description logging (this is a critical tracing point)
+  console.log(`[${new Date().toISOString()}] JOB DESCRIPTION DEBUG TRACE:`, {
+    exists: !!jobDescription,
+    type: typeof jobDescription,
+    isNull: jobDescription === null,
+    isUndefined: jobDescription === undefined,
+    length: jobDescription ? (typeof jobDescription === 'string' ? jobDescription.length : JSON.stringify(jobDescription).length) : 0,
+    preview: jobDescription ? (typeof jobDescription === 'string' ? 
+      (jobDescription.substring(0, 100) + (jobDescription.length > 100 ? '...' : '')) : 
+      JSON.stringify(jobDescription).substring(0, 100) + '...') : 'undefined'
+  });
   
   // Generate a cache key based on content and job description (if present)
   const cacheKey = generateCacheKey(content, jobDescription);
@@ -502,7 +531,8 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
             summaryClarity: { score: 6, maxScore: 10, feedback: "Adequate summary" },
             overallPolish: { score: 7, maxScore: 10, feedback: "Reasonably polished" }
           },
-          // Always include jobAnalysis (null for no job description)
+          // CRITICAL FIX: Always include jobAnalysis as null when there's no job description
+          // Always use null instead of undefined to ensure consistent behavior with schema
           jobAnalysis: jobDescription ? {
             alignmentAndStrengths: [],
             gapsAndConcerns: [],
@@ -553,7 +583,8 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
         generalFeedback: {
           overall: "We encountered an error analyzing your resume. This might be due to temporary service limitations or issues with the resume format."
         },
-        // Always include jobAnalysis property (null if no job description)
+        // CRITICAL FIX: Always include jobAnalysis as null when there's no job description
+        // Always use null instead of undefined to maintain consistency with schema
         jobAnalysis: jobDescription ? {
           alignmentAndStrengths: [],
           gapsAndConcerns: [],
