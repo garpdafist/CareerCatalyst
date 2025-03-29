@@ -27,8 +27,8 @@ interface AnalysisCardProps {
 }
 
 function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
-  // Extract a resume preview from content - first 30 characters
-  const resumePreview = analysis.content?.substring(0, 40) + "...";
+  // Extract a resume preview from content - just first 30 characters
+  const resumePreview = analysis.content?.substring(0, 30) + "...";
   
   // Extract job title if available
   const hasJobDescription = !!analysis.jobDescription;
@@ -47,8 +47,8 @@ function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
   
   const scoreColorClass = getScoreColor(analysis.score);
   
-  // Get the identified skills/keywords with a maximum of 3
-  const skills = (analysis.identifiedSkills || []).slice(0, 3);
+  // Get the identified skills/keywords with a maximum of 2 (reduced from 3)
+  const skills = (analysis.identifiedSkills || []).slice(0, 2);
   
   // Format the date for display
   const formattedDate = analysis.createdAt
@@ -95,9 +95,9 @@ function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
                 {skill}
               </Badge>
             ))}
-            {analysis.identifiedSkills && analysis.identifiedSkills.length > 3 && (
+            {analysis.identifiedSkills && analysis.identifiedSkills.length > 2 && (
               <Badge variant="outline" className="text-xs px-2 py-0.5">
-                +{analysis.identifiedSkills.length - 3} more
+                +{analysis.identifiedSkills.length - 2} more
               </Badge>
             )}
           </div>
@@ -119,6 +119,10 @@ function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
           variant="secondary" 
           size="sm" 
           className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent double firing with card click
+            onClick();
+          }}
         >
           <Search className="h-4 w-4 mr-2" />
           View Results
@@ -144,12 +148,13 @@ export function SavedAnalyses() {
   // Handle view results click
   const handleViewResults = (analysisId: number) => {
     console.log('Clicked analysis card, setting analysisId to:', analysisId);
+    
+    // Set the analysis ID in the state
     setAnalysisId(analysisId);
     
-    // Add URL parameter without page reload - this persists the state
-    const url = new URL(window.location.href);
-    url.searchParams.set('id', analysisId.toString());
-    window.history.pushState({}, '', url);
+    // Add URL parameter and reload page to trigger proper data loading
+    // This is more reliable than just updating the state
+    window.location.href = `${window.location.pathname}?id=${analysisId}`;
   };
 
   // Process analyses based on current sort and filter options
@@ -261,8 +266,8 @@ export function SavedAnalyses() {
           onClick={() => {
             // Clear any existing analysis ID and reset form
             setAnalysisId(null);
-            // Scroll to the top where the form is
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Remove ID from URL and reload to reset the form
+            window.location.href = window.location.pathname;
           }}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
