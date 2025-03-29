@@ -120,17 +120,24 @@ export function ResumeAnalysisInline({
 
         {/* Primary Keywords - Always shown with fallback */}
         <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">Key Terms Identified</h3>
+          <h3 className="text-lg font-medium mb-2">Keyskills</h3>
           {Array.isArray(analysisData.primaryKeywords) && analysisData.primaryKeywords.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {analysisData.primaryKeywords.map((keyword, i) => (
-                <span 
-                  key={i} 
-                  className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-                >
-                  {keyword}
-                </span>
-              ))}
+              {analysisData.primaryKeywords.slice(0, 5).map((keyword, i) => {
+                // Convert to propercase (capitalize first letter of each word)
+                const propercaseKeyword = keyword.split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                  .join(' ');
+                
+                return (
+                  <span 
+                    key={i} 
+                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                  >
+                    {propercaseKeyword}
+                  </span>
+                );
+              })}
             </div>
           ) : (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
@@ -144,17 +151,24 @@ export function ResumeAnalysisInline({
 
         {/* Identified Skills - Always shown with fallback */}
         <div className="mb-8">
-          <h3 className="text-lg font-medium mb-2">Skills Identified</h3>
+          <h3 className="text-lg font-medium mb-2">Skills</h3>
           {Array.isArray(analysisData.identifiedSkills) && analysisData.identifiedSkills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {analysisData.identifiedSkills.map((skill, i) => (
-                <span 
-                  key={i} 
-                  className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
-                >
-                  {skill}
-                </span>
-              ))}
+              {analysisData.identifiedSkills.slice(0, 5).map((skill, i) => {
+                // Convert to propercase (capitalize first letter of each word)
+                const propercaseSkill = skill.split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                  .join(' ');
+                
+                return (
+                  <span 
+                    key={i} 
+                    className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
+                  >
+                    {propercaseSkill}
+                  </span>
+                );
+              })}
             </div>
           ) : (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
@@ -320,14 +334,17 @@ export function ResumeAnalysisInline({
         
         {/* Lower CTAs: Additional Options - More balanced layout */}
         <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-3">
-          {/* Do Another Analysis Link */}
-          <Link 
-            href="/resume-analyzer" 
+          {/* Do Another Analysis Button - Using a button styled like a link for functionality */}
+          <button 
+            onClick={() => {
+              // Navigate to the resume analyzer page
+              window.location.href = "/resume-analyzer";
+            }}
             className="text-sm flex items-center text-muted-foreground hover:text-primary transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Do another analysis
-          </Link>
+          </button>
           
           {/* View Previous Analyses Link */}
           <Link 
