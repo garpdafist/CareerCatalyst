@@ -522,100 +522,78 @@ export function ResumeAnalysisEnhanced({
             </div>
             
             {analysisData.jobAnalysis && typeof analysisData.jobAnalysis === 'object' ? (
-              <div className="space-y-8 p-2">
-                {/* Alignment & Strengths section */}
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                    Alignment & Strengths
-                  </h3>
-                  
-                  {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
-                  analysisData.jobAnalysis.alignmentAndStrengths.length > 0 ? (
-                    <div className="space-y-3">
-                      {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
-                        <div key={i} className="flex items-start bg-green-50 p-4 rounded-lg border border-green-100">
-                          <div className="flex-shrink-0 text-green-600 mr-3 mt-0.5">
-                            <CheckCircle2 className="h-5 w-5" />
-                          </div>
-                          <p className="text-gray-700">{strength}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 italic p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      No specific strengths were identified for this job
-                    </p>
-                  )}
-                </div>
-                
-                {/* Gaps & Concerns section */}
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                    Gaps & Concerns
-                  </h3>
-                  
-                  {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
-                  analysisData.jobAnalysis.gapsAndConcerns.length > 0 ? (
-                    <div className="space-y-3">
-                      {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
-                        <div key={i} className="flex items-start bg-red-50 p-4 rounded-lg border border-red-100">
-                          <div className="flex-shrink-0 text-red-500 mr-3 mt-0.5">
-                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                              <line x1="12" y1="8" x2="12" y2="12" />
-                              <line x1="12" y1="16" x2="12.01" y2="16" />
-                            </svg>
-                          </div>
-                          <p className="text-gray-700">{gap}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 italic p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      No specific gaps were identified for this job
-                    </p>
-                  )}
-                </div>
-                
-                {/* How to Tailor Your Resume section */}
-                {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
-                analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                      How to Tailor Your Resume
-                    </h3>
-                    
-                    <div className="space-y-3">
-                      {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
-                        <div key={i} className="flex items-start bg-blue-50 p-4 rounded-lg border border-blue-100">
-                          <div className="flex-shrink-0 text-blue-500 mr-3 mt-0.5">
-                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                          </div>
-                          <p className="text-gray-700">{rec}</p>
-                        </div>
-                      ))}
-                    </div>
+              <div className="space-y-6">
+                {/* Overall Fit with progress indicator */}
+                {analysisData.jobAnalysis.overallFit && (
+                  <div className="p-5 bg-[#f5f0e5] rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">Overall Job Fit</h3>
+                    <p className="text-gray-700 mb-4">{analysisData.jobAnalysis.overallFit}</p>
                   </div>
                 )}
                 
-                {/* Overall Fit Assessment section */}
-                {analysisData.jobAnalysis.overallFit && (
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                      Overall Fit Assessment
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Strengths */}
+                  <div className="bg-[#f5f0e5] p-5 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
+                      <CheckCircle2 className="h-5 w-5 mr-2 text-gray-600" />
+                      Your Resume Strengths
                     </h3>
-                    <div className="flex items-start bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div className="flex-shrink-0 text-gray-500 mr-3 mt-0.5">
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" />
-                          <path d="M12 16v-4" />
-                          <path d="M12 8h.01" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-700">{analysisData.jobAnalysis.overallFit}</p>
-                    </div>
+                    
+                    {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
+                    analysisData.jobAnalysis.alignmentAndStrengths.length > 0 ? (
+                      <ul className="space-y-2">
+                        {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
+                          <li key={i} className="flex items-start">
+                            <span className="text-gray-600 mr-2">✓</span>
+                            <span className="text-gray-700">{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500 italic">No specific strengths were identified for this job</p>
+                    )}
+                  </div>
+                  
+                  {/* Gaps */}
+                  <div className="bg-[#f5f0e5] p-5 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
+                      <span className="h-5 w-5 mr-2 text-gray-600 flex items-center justify-center">⚠</span>
+                      Gaps to Address
+                    </h3>
+                    
+                    {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
+                    analysisData.jobAnalysis.gapsAndConcerns.length > 0 ? (
+                      <ul className="space-y-2">
+                        {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
+                          <li key={i} className="flex items-start">
+                            <span className="text-gray-600 mr-2">→</span>
+                            <span className="text-gray-700">{gap}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500 italic">No specific gaps were identified for this job</p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Recommendations */}
+                {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
+                analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
+                  <div className="bg-[#f5f0e5] p-5 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
+                      <Lightbulb className="h-5 w-5 mr-2 text-gray-600" />
+                      Tailoring Recommendations
+                    </h3>
+                    
+                    <ul className="space-y-2">
+                      {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
+                        <li key={i} className="flex items-start">
+                          <span className="text-gray-600 mr-2">→</span>
+                          <span className="text-gray-700">{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
@@ -643,42 +621,41 @@ export function ResumeAnalysisEnhanced({
         ) : null}
       </div>
 
-      {/* Action Buttons - New design styling */}
-      <div className="mt-12">
-        {/* CTA Container with mint green background */}
-        <div className="bg-green-50 p-6 rounded-lg border border-green-100 mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">Ready to Improve Your Resume?</h3>
-          <p className="text-gray-700 mb-4">
-            Use our AI-powered resume editor to implement these suggestions and create a stronger resume
-          </p>
+      {/* Action Buttons - Enhanced styling */}
+      <div className="mt-8">
+        {/* Primary CTA Container with modern styling */}
+        <div className="bg-[#f5f0e5] p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Ready to Improve Your Resume?</h3>
           
-          {/* Button with arrow icon */}
-          <div className="flex justify-between items-center">
+          {/* Button Group: Primary and Secondary CTAs side by side on desktop, stacked on mobile */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Primary CTA - More prominent styling with gradient background */}
             <Button 
-              className="bg-[#009962] hover:bg-[#00875a] text-white py-4 px-6
-                        flex items-center justify-center shadow-sm transition-all duration-200 text-base"
+              className="flex-1 bg-[#009962] hover:bg-[#00875a] text-white 
+                        flex items-center justify-center shadow-sm transition-all duration-200 text-base py-6"
               onClick={onImproveResume}
               size="lg"
             >
+              <PenLine className="h-5 w-5 mr-2" />
               <span>Improve My Resume</span>
             </Button>
             
-            <ArrowRight className="h-6 w-6 text-green-600" />
+            {/* Secondary CTA - Complementary but less prominent styling */}
+            <Button 
+              variant="outline"
+              onClick={onGenerateCoverLetter}
+              size="lg"
+              className="flex-1 border-gray-300 text-gray-800 hover:bg-gray-50 flex items-center justify-center
+                        transition-all duration-200 py-6 text-base"
+            >
+              <FileText className="h-5 w-5 mr-2" />
+              <span>Generate Cover Letter</span>
+            </Button>
           </div>
         </div>
         
         {/* Lower CTAs: Additional Options */}
-        <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-8 mt-6">
-          {/* Generate Cover Letter Button */}
-          <Button 
-            variant="outline"
-            onClick={onGenerateCoverLetter}
-            className="w-full sm:w-auto border-gray-300 text-gray-800 hover:bg-gray-50 flex items-center justify-center"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            <span>Generate Cover Letter</span>
-          </Button>
-          
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-3">
           {/* Do Another Analysis Button */}
           <button 
             onClick={() => {
@@ -690,6 +667,15 @@ export function ResumeAnalysisEnhanced({
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Do another analysis
           </button>
+          
+          {/* View Previous Analyses Link */}
+          <Link 
+            href="/all-analyses" 
+            className="text-sm flex items-center text-gray-500 hover:text-gray-800 transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5 mr-1.5" />
+            View your previous analyses
+          </Link>
         </div>
       </div>
     </div>
