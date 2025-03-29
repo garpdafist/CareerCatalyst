@@ -428,18 +428,45 @@ export function registerRoutes(app: Express): Server {
   );
 
   app.get("/api/resume-analysis/:id", requireAuth, async (req: any, res: any) => {
-    const id = parseInt(req.params.id);
-    const analysis = await storage.getResumeAnalysis(id);
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid analysis ID" });
+      }
 
-    if (!analysis) {
-      return res.status(404).json({ message: "Analysis not found" });
+      const analysis = await storage.getResumeAnalysis(id);
+      console.log(`Retrieved analysis for ID ${id}:`, {
+        found: !!analysis,
+        userId: analysis?.userId,
+        requestUserId: req.session.userId
+      });
+
+      if (!analysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+
+      if (analysis.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Ensure all required fields are present
+      const sanitizedAnalysis = {
+        ...analysis,
+        scores: analysis.scores || {},
+        identifiedSkills: analysis.identifiedSkills || [],
+        primaryKeywords: analysis.primaryKeywords || [],
+        suggestedImprovements: analysis.suggestedImprovements || [],
+        generalFeedback: analysis.generalFeedback || ''
+      };
+
+      res.json(sanitizedAnalysis);
+    } catch (error: any) {
+      console.error('Error retrieving resume analysis:', error);
+      res.status(500).json({ 
+        message: "Failed to retrieve analysis",
+        error: error.message 
+      });
     }
-
-    if (analysis.userId !== req.session.userId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    res.json(analysis);
   });
 
   app.get("/api/user/analyses", requireAuth, async (req: any, res: any) => {

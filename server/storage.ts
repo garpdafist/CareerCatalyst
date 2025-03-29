@@ -220,11 +220,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined> {
-    const [analysis] = await db
-      .select()
-      .from(resumeAnalyses)
-      .where(eq(resumeAnalyses.id, id));
-    return analysis as unknown as ResumeAnalysis | undefined;
+    try {
+      const [analysis] = await db
+        .select()
+        .from(resumeAnalyses)
+        .where(eq(resumeAnalyses.id, id));
+
+      if (!analysis) return undefined;
+
+      // Ensure proper type conversion and field presence
+      return {
+        ...analysis,
+        id: Number(analysis.id),
+        score: Number(analysis.score),
+        scores: analysis.scores || {},
+        identifiedSkills: Array.isArray(analysis.identifiedSkills) ? analysis.identifiedSkills : [],
+        primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
+        suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
+        generalFeedback: analysis.generalFeedback || '',
+        createdAt: new Date(analysis.createdAt),
+        updatedAt: new Date(analysis.updatedAt)
+      } as ResumeAnalysis;
+    } catch (error) {
+      console.error('Error in getResumeAnalysis:', error);
+      throw error;
+    }
   }
 
   async getUserAnalyses(userId: string): Promise<ResumeAnalysis[]> {
