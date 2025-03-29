@@ -1,4 +1,4 @@
-import { Check, AlertTriangle, ArrowUpRight, ArrowRight } from 'lucide-react';
+import { Check, AlertCircle, ArrowRight, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,9 +20,15 @@ export function ResumeAnalysisInline({
 }: ResumeAnalysisInlineProps) {
   // Get score color based on score value 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "bg-green-100 text-green-800 border-green-200";
-    if (score >= 60) return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    return "bg-red-100 text-red-800 border-red-200";
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-amber-600";
+    return "text-red-600";
+  };
+  
+  // Helper to limit array length
+  const limitArrayLength = (arr: string[] | null | undefined, maxLength: number = 5): string[] => {
+    if (!arr) return [];
+    return arr.slice(0, maxLength);
   };
 
   if (isLoading) {
@@ -46,31 +52,35 @@ export function ResumeAnalysisInline({
       </div>
     );
   }
+  
+  // Check if we have job description analysis
+  const hasJobAnalysis = analysisData.jobAnalysis && 
+    (analysisData.jobAnalysis.alignmentAndStrengths?.length > 0 || 
+     analysisData.jobAnalysis.gapsAndConcerns?.length > 0 ||
+     analysisData.jobAnalysis.recommendationsToTailor?.length > 0 ||
+     analysisData.jobAnalysis.overallFit);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-[#faf9f4] p-6 rounded-lg">
       {/* Header with Analysis title and score */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <span className="text-green-600">✦</span> Analysis Results
         </h2>
-        <Badge 
-          variant="outline" 
-          className={`${getScoreColor(analysisData.score)} text-xl px-4 py-1.5`}
-        >
+        <span className={`text-2xl font-bold ${getScoreColor(analysisData.score)}`}>
           {analysisData.score}/100
-        </Badge>
+        </span>
       </div>
 
       {/* Key Skills Section */}
       <div>
         <h3 className="text-lg font-medium mb-3">Key Skills</h3>
         <div className="flex flex-wrap gap-2">
-          {analysisData.identifiedSkills?.map((skill, index) => (
+          {limitArrayLength(analysisData.identifiedSkills, 5).map((skill, index) => (
             <Badge 
               key={index} 
               variant="secondary"
-              className="bg-green-50 text-green-700 border-green-200"
+              className="bg-green-50 text-green-700 border-green-100 font-normal py-1.5 px-3"
             >
               {skill}
             </Badge>
@@ -85,9 +95,14 @@ export function ResumeAnalysisInline({
       {analysisData.primaryKeywords && analysisData.primaryKeywords.length > 0 && (
         <div>
           <h3 className="text-lg font-medium mb-3">Primary Keywords</h3>
+          <p className="text-sm text-muted-foreground mb-2">Keywords from your resume:</p>
           <div className="flex flex-wrap gap-2">
-            {analysisData.primaryKeywords.map((keyword, index) => (
-              <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+            {limitArrayLength(analysisData.primaryKeywords, 5).map((keyword, index) => (
+              <Badge 
+                key={index} 
+                variant="outline" 
+                className="bg-blue-50/50 text-blue-700 border-blue-100 font-normal py-1.5 px-3"
+              >
                 {keyword}
               </Badge>
             ))}
@@ -95,18 +110,18 @@ export function ResumeAnalysisInline({
         </div>
       )}
 
-      {/* Improvements Section */}
+      {/* Suggested Improvements Section */}
       {analysisData.suggestedImprovements && analysisData.suggestedImprovements.length > 0 && (
         <div>
           <h3 className="text-lg font-medium mb-3">Suggested Improvements</h3>
-          <ul className="space-y-2">
+          <div className="space-y-2 bg-amber-50/50 p-4 rounded-lg border border-amber-100">
             {analysisData.suggestedImprovements.map((improvement, index) => (
-              <li key={index} className="flex items-start">
-                <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span className="text-muted-foreground">{improvement}</span>
-              </li>
+              <div key={index} className="flex items-start py-2">
+                <span className="text-amber-700 mr-2">❯</span>
+                <span className="text-amber-700">{improvement}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
@@ -114,99 +129,108 @@ export function ResumeAnalysisInline({
       {analysisData.generalFeedback && (
         <div>
           <h3 className="text-lg font-medium mb-3">General Feedback</h3>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-muted-foreground">
-                {typeof analysisData.generalFeedback === 'object' 
-                  ? analysisData.generalFeedback.overall 
-                  : analysisData.generalFeedback}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="p-4 bg-white rounded-lg border border-border/30">
+            <p className="text-muted-foreground">
+              {typeof analysisData.generalFeedback === 'object' 
+                ? analysisData.generalFeedback.overall 
+                : analysisData.generalFeedback}
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Job Analysis Section (if available) */}
-      {analysisData.jobAnalysis && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">Job Match Analysis</h3>
+      {/* Job Match Analysis Section (only if job analysis is available) */}
+      {hasJobAnalysis && (
+        <>
+          <h2 className="text-xl font-bold mt-10 pt-6 border-t">Job Match Analysis</h2>
           
-          {analysisData.jobAnalysis.alignmentAndStrengths && analysisData.jobAnalysis.alignmentAndStrengths.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-medium text-green-700 mb-2">Alignment & Strengths</h4>
-              <ul className="space-y-2">
-                {analysisData.jobAnalysis.alignmentAndStrengths.map((point, index) => (
-                  <li key={index} className="flex items-start">
+          {/* Alignment & Strengths */}
+          {analysisData.jobAnalysis?.alignmentAndStrengths && analysisData.jobAnalysis.alignmentAndStrengths.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Alignment & Strengths</h3>
+              <div className="space-y-1">
+                {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, index) => (
+                  <div key={index} className="flex items-start p-2 bg-green-50/50 rounded-lg border border-green-100">
                     <Check className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{point}</span>
-                  </li>
+                    <span className="text-green-700">{strength}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
           
-          {analysisData.jobAnalysis.gapsAndConcerns && analysisData.jobAnalysis.gapsAndConcerns.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-medium text-red-700 mb-2">Gaps & Concerns</h4>
-              <ul className="space-y-2">
-                {analysisData.jobAnalysis.gapsAndConcerns.map((point, index) => (
-                  <li key={index} className="flex items-start">
-                    <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{point}</span>
-                  </li>
+          {/* Gaps & Concerns */}
+          {analysisData.jobAnalysis?.gapsAndConcerns && analysisData.jobAnalysis.gapsAndConcerns.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Gaps & Concerns</h3>
+              <div className="space-y-1">
+                {analysisData.jobAnalysis.gapsAndConcerns.map((concern, index) => (
+                  <div key={index} className="flex items-start p-2 bg-red-50/50 rounded-lg border border-red-100">
+                    <AlertCircle className="h-5 w-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-red-700">{concern}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
           
-          {analysisData.jobAnalysis.recommendationsToTailor && analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-medium text-blue-700 mb-2">How to Tailor Your Resume</h4>
-              <ul className="space-y-2">
-                {analysisData.jobAnalysis.recommendationsToTailor.map((point, index) => (
-                  <li key={index} className="flex items-start">
-                    <ArrowUpRight className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{point}</span>
-                  </li>
+          {/* How to Tailor Your Resume */}
+          {analysisData.jobAnalysis?.recommendationsToTailor && analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-3">How to Tailor Your Resume</h3>
+              <div className="space-y-1">
+                {analysisData.jobAnalysis.recommendationsToTailor.map((recommendation, index) => (
+                  <div key={index} className="flex items-start p-2 bg-blue-50/50 rounded-lg border border-blue-100">
+                    <span className="text-blue-700 mr-2">❯</span>
+                    <span className="text-blue-700">{recommendation}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
           
-          {analysisData.jobAnalysis.overallFit && (
-            <Card>
-              <CardContent className="p-4">
-                <h4 className="font-medium mb-2">Overall Fit Assessment</h4>
+          {/* Overall Fit Assessment */}
+          {analysisData.jobAnalysis?.overallFit && (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Overall Fit Assessment</h3>
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex">
+                <Info className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0 mt-0.5" />
                 <p className="text-muted-foreground">{analysisData.jobAnalysis.overallFit}</p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Action Buttons */}
-      <div className="mt-8 space-y-4">
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mt-8 pt-6 border-t border-border/30">
+        {/* Primary CTA */}
+        <div className="bg-green-50 p-6 rounded-lg border border-green-100 mb-4">
+          <h3 className="text-lg font-medium text-green-700 mb-4">Ready to Improve Your Resume?</h3>
           <Button 
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-between"
             onClick={onImproveResume}
             size="lg"
           >
-            Improve My Resume <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={onGenerateCoverLetter}
-            size="lg"
-            className="border-green-200 text-green-700 hover:bg-green-50"
-          >
-            Generate Cover Letter
+            <span>Improve My Resume</span>
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
         
-        <div className="w-full text-center mt-3">
+        {/* Secondary CTA */}
+        <Button 
+          variant="outline"
+          onClick={onGenerateCoverLetter}
+          size="lg"
+          className="w-full border-green-200 text-green-700 hover:bg-green-50 mb-6"
+        >
+          Generate Cover Letter
+        </Button>
+        
+        {/* Less prominent link */}
+        <div className="w-full text-center">
           <Link href="/all-analyses" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            View all analyses
+            View your previous resume analyses
           </Link>
         </div>
       </div>
