@@ -509,6 +509,23 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
           parsedResponse.primaryKeywords = initialAnalysis.keywords || [];
         }
         
+        // Ensure we have suggested improvements
+        if (!parsedResponse.suggestedImprovements || parsedResponse.suggestedImprovements.length === 0) {
+          parsedResponse.suggestedImprovements = [
+            "Add more quantifiable achievements to showcase your impact",
+            "Improve your skills section with more relevant technologies",
+            "Ensure your resume summary clearly communicates your value proposition",
+            "Use more industry-specific keywords throughout your resume"
+          ];
+        }
+        
+        // Ensure we have general feedback
+        if (!parsedResponse.generalFeedback || !parsedResponse.generalFeedback.overall) {
+          parsedResponse.generalFeedback = {
+            overall: "Your resume shows your experience and skills, but could benefit from more specific achievements and clearer formatting. Consider tailoring it more specifically to your target roles and highlighting your unique value proposition."
+          };
+        }
+        
         console.log(`[${new Date().toISOString()}] Response parsed and enhanced successfully`);
         return parsedResponse;
       } catch (error: any) {

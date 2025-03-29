@@ -171,6 +171,9 @@ export class DatabaseStorage implements IStorage {
       hasPrimaryKeywords: !!data.analysis.primaryKeywords,
       primaryKeywordsCount: data.analysis.primaryKeywords?.length,
       primaryKeywords: data.analysis.primaryKeywords,
+      hasSuggestedImprovements: !!data.analysis.suggestedImprovements,
+      suggestedImprovementsCount: data.analysis.suggestedImprovements?.length,
+      suggestedImprovementsSample: data.analysis.suggestedImprovements?.slice(0, 2),
       timestamp: new Date().toISOString()
     });
 
@@ -222,6 +225,9 @@ export class DatabaseStorage implements IStorage {
         primaryKeywords: analysis.primaryKeywords,
         hasGeneralFeedback: !!analysis.generalFeedback,
         generalFeedbackContent: analysis.generalFeedback,
+        hasSuggestedImprovements: !!analysis.suggestedImprovements,
+        suggestedImprovementsCount: analysis.suggestedImprovements?.length,
+        suggestedImprovementsSample: analysis.suggestedImprovements?.slice(0, 2),
         hasJobDescription: !!analysis.jobDescription,
         jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
         hasJobAnalysis: !!analysis.jobAnalysis,
@@ -271,7 +277,10 @@ export class DatabaseStorage implements IStorage {
         jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : [],
         hasPrimaryKeywords: !!analysis.primaryKeywords,
         primaryKeywordsCount: analysis.primaryKeywords?.length,
+        hasSuggestedImprovements: !!analysis.suggestedImprovements, 
+        suggestedImprovementsCount: analysis.suggestedImprovements?.length,
         hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback,
         timestamp: new Date().toISOString()
       });
 
