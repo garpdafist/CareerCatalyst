@@ -10,6 +10,7 @@ import ResumeAnalyzer from "@/pages/resume-analyzer";
 import ResumeEditor from "@/components/resume/resume-editor";
 import CoverLetterGenerator from "@/pages/cover-letter-generator";
 import LinkedInOptimizer from "@/pages/linkedin-optimizer";
+import AllAnalyses from "@/pages/all-analyses";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useState, useEffect } from "react";
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/" component={Home} />
       <ProtectedRoute path="/resume-analyzer" component={ResumeAnalyzer} showContentWithoutAuth={true} />
+      <ProtectedRoute path="/all-analyses" component={AllAnalyses} showContentWithoutAuth={true} />
       <ProtectedRoute path="/resume-editor" component={ResumeEditor} showContentWithoutAuth={true} />
       <ProtectedRoute path="/cover-letter" component={CoverLetterGenerator} showContentWithoutAuth={true} />
       <ProtectedRoute path="/linkedin-optimizer" component={LinkedInOptimizer} showContentWithoutAuth={true} />

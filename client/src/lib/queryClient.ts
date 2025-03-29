@@ -152,35 +152,13 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
-/**
- * Custom caching configuration for specific query types
- * @param queryKey The query key to check
- * @returns The staleTime in milliseconds
- */
-const getQueryStaleTime = (queryKey: unknown[]): number => {
-  // Resume analysis data should be cached for a long time
-  if (typeof queryKey[0] === 'string' && queryKey[0].includes('/api/resume-analysis/')) {
-    // Cache individual resume analyses for 24 hours - they don't change 
-    return 24 * 60 * 60 * 1000;
-  }
-  
-  // User analyses list should be refreshed more frequently
-  if (queryKey[0] === '/api/user-analyses') {
-    // Cache for 5 minutes
-    return 5 * 60 * 1000;
-  }
-  
-  // Default to infinite stale time for other queries
-  return Infinity;
-};
-
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: (query) => getQueryStaleTime(query.queryKey),
+      staleTime: Infinity,
       retry: (failureCount, error) => {
         // Don't retry on 4xx errors except for 429 (rate limit)
         if (error instanceof Error) {

@@ -5,7 +5,7 @@ import { useSavedAnalysis } from "@/hooks/use-saved-analysis";
 import { 
   Loader2, Clock, FileText, Search, AlertCircle, 
   ArrowUpDown, PlusCircle, CalendarDays, Tag, 
-  Activity, Briefcase 
+  Activity, Briefcase, ArrowUpRight 
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import {
   SelectLabel, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
 
 // Define filter and sort options
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
@@ -355,17 +356,17 @@ export function SavedAnalyses() {
         ))}
       </div>
       
-      {/* Show more/less button when necessary */}
+      {/* Replace show more/less with link to all analyses page */}
       {processedAnalyses.length > 2 && (
-        <Button
-          variant="outline"
-          onClick={() => setExpanded(!expanded)}
-          className="w-full"
-        >
-          {expanded 
-            ? "Show Less" 
-            : `View All ${processedAnalyses.length} Analyses`}
-        </Button>
+        <Link href="/all-analyses">
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center"
+          >
+            <span>View All {processedAnalyses.length} Analyses</span>
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
       )}
     </div>
   );
