@@ -299,6 +299,20 @@ export default function ResumeAnalyzer() {
 
   // State to hold the displayed analysis (either from mutation or from saved analysis)
   const [displayedAnalysis, setDisplayedAnalysis] = useState<ResumeAnalysis | null>(null);
+  
+  // Create a default empty analysis for TypeScript (not actually used)
+  const emptyAnalysis: ResumeAnalysis = {
+    id: 0,
+    userId: "",
+    content: "",
+    score: 0,
+    identifiedSkills: [],
+    primaryKeywords: [],
+    suggestedImprovements: [],
+    generalFeedback: "",
+    createdAt: null,
+    updatedAt: null,
+  };
 
   // Effect to load saved analysis from URL parameter
   useEffect(() => {

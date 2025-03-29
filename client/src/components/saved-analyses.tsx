@@ -105,7 +105,6 @@ function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
   return (
     <Card 
       className="transition-all duration-300 hover:shadow-md cursor-pointer"
-      onClick={onClick}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
@@ -131,7 +130,12 @@ function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
         )}
       </CardContent>
       <CardFooter className="pt-0">
-        <Button variant="ghost" size="sm" className="w-full gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full gap-2"
+          onClick={onClick}
+        >
           <Search className="h-4 w-4" />
           View Results
         </Button>
