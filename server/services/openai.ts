@@ -1,9 +1,9 @@
 import { JobDescription } from "@shared/schema";
 import OpenAI from "openai";
 import { z } from "zod";
+import crypto from "crypto";
 
 // Initialize OpenAI client
-import { createHash } from 'crypto';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Enhanced retry configuration
@@ -135,8 +135,11 @@ async function preprocessText(text: string): Promise<string> {
     // Fallback: if full preprocessing fails, try a simpler chunking strategy
     try {
       console.log(`[${new Date().toISOString()}] Attempting fallback preprocessing strategy`);
-      // Simple chunking by splitting the text into smaller pieces
-      const simpleChunks = text.match(/.{1,5000}/g) || [text];
+      // Simple chunking by splitting the text into smaller pieces (5000 char chunks)
+      const simpleChunks = [];
+      for (let i = 0; i < text.length; i += 5000) {
+        simpleChunks.push(text.substring(i, i + 5000));
+      }
       
       let simpleSummary = '';
       // Process one chunk at a time to avoid overwhelming the API
@@ -210,9 +213,8 @@ async function makeOpenAIRequest<T>(
 const analysisCache = new Map<string, { timestamp: number, result: any }>();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hour cache TTL
 
-// Create MD5 hash for caching
-function createHash(str: string): string {
-  const crypto = require('crypto');
+// Create MD5 hash for caching using ES modules
+function createMD5Hash(str: string): string {
   return crypto.createHash('md5').update(str).digest('hex');
 }
 
@@ -272,7 +274,7 @@ export async function analyzeResumeWithAI(
   console.log(`[${new Date().toISOString()}] Starting resume analysis for content of length ${content.length}`);
   
   // Generate a cache key based on content
-  const cacheKey = createHash(content);
+  const cacheKey = createMD5Hash(content);
   
   // Check if we have a recent cached result
   const cachedResult = analysisCache.get(cacheKey);
@@ -416,8 +418,6 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
   }
 }
 
-type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
-
 const resumeAnalysisResponseSchema = z.object({
   score: z.number().min(0).max(100),
   scores: z.object({
@@ -462,6 +462,8 @@ const resumeAnalysisResponseSchema = z.object({
     overallFit: z.string()
   }).optional()
 });
+
+type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
 
 
 export async function analyzeResumeWithJobDescription(
