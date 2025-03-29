@@ -8,6 +8,39 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+interface AnalysisCardProps {
+  analysis: ResumeAnalysis;
+  onClick: () => void;
+}
+
+function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <FileText className="h-5 w-5 text-blue-600" />
+          Resume Analysis #{analysis.id}
+        </CardTitle>
+        <CardDescription>
+          <Clock className="h-4 w-4 inline-block mr-1" />
+          {formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold mb-2">
+          Score: {analysis.score}/100
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button onClick={onClick} className="w-full">
+          <Search className="h-4 w-4 mr-2" />
+          View Results
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
 export function SavedAnalyses() {
   const { 
     userAnalyses, 
@@ -15,8 +48,18 @@ export function SavedAnalyses() {
     userAnalysesError,
     setAnalysisId
   } = useSavedAnalysis();
-  
+
   const [expanded, setExpanded] = useState(false);
+
+  const handleViewResults = (analysisId: number) => {
+    setAnalysisId(analysisId);
+    // Add URL parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set('id', analysisId.toString());
+    window.history.pushState({}, '', url);
+    // Reload the page to show results
+    window.location.reload();
+  };
 
   if (isLoadingUserAnalyses) {
     return (
@@ -42,104 +85,41 @@ export function SavedAnalyses() {
     );
   }
 
-  if (!userAnalyses || userAnalyses.length === 0) {
-    return null; // Don't show anything if no analyses
+  if (!userAnalyses?.length) {
+    return (
+      <Alert className="my-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>No saved analyses</AlertTitle>
+        <AlertDescription>
+          Upload a resume to get started with your first analysis.
+        </AlertDescription>
+      </Alert>
+    );
   }
 
-  // Sort analyses with newest first
-  const sortedAnalyses = [...userAnalyses].sort((a, b) => {
-    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-  });
-
-  // Display only the most recent 3 analyses unless expanded
-  const displayedAnalyses = expanded ? sortedAnalyses : sortedAnalyses.slice(0, 3);
+  const displayedAnalyses = expanded ? userAnalyses : userAnalyses.slice(0, 2);
 
   return (
-    <div className="my-6">
-      <h3 className="text-xl font-semibold mb-3">Your Recent Analyses</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Previous Analyses</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {displayedAnalyses.map((analysis) => (
-          <AnalysisCard 
-            key={analysis.id} 
-            analysis={analysis} 
-            onClick={() => {
-              console.log('Clicked analysis card, setting analysisId to:', analysis.id);
-              setAnalysisId(analysis.id);
-            }}
+          <AnalysisCard
+            key={analysis.id}
+            analysis={analysis}
+            onClick={() => handleViewResults(analysis.id)}
           />
         ))}
       </div>
-      
-      {userAnalyses.length > 3 && (
-        <Button 
-          variant="ghost" 
+      {userAnalyses.length > 2 && (
+        <Button
+          variant="outline"
           onClick={() => setExpanded(!expanded)}
-          className="mt-3"
+          className="w-full"
         >
-          {expanded ? "Show Less" : `Show ${userAnalyses.length - 3} More`}
+          {expanded ? "Show Less" : `Show ${userAnalyses.length - 2} More`}
         </Button>
       )}
     </div>
-  );
-}
-
-interface AnalysisCardProps {
-  analysis: ResumeAnalysis;
-  onClick: () => void;
-}
-
-function AnalysisCard({ analysis, onClick }: AnalysisCardProps) {
-  // Format the date for display
-  const formattedDate = analysis.createdAt
-    ? formatDistanceToNow(new Date(analysis.createdAt), { addSuffix: true })
-    : "Unknown date";
-
-  // Get the first 100 characters of content for preview
-  const contentPreview = analysis.content?.substring(0, 100) + "...";
-
-  // Get job title if available
-  const jobTitle = analysis.jobDescription 
-    ? (analysis.jobDescription as any).text?.substring(0, 30)
-    : null;
-
-  return (
-    <Card 
-      className="transition-all duration-300 hover:shadow-md cursor-pointer"
-    >
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-medium">
-            Analysis #{analysis.id}
-          </CardTitle>
-          <div className="bg-primary/10 text-primary font-medium rounded-full px-2 py-1 text-sm">
-            {analysis.score}/10
-          </div>
-        </div>
-        <CardDescription className="flex items-center gap-1 text-xs">
-          <Clock className="h-3 w-3" /> {formattedDate}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="line-clamp-2 text-sm opacity-80">
-          {contentPreview}
-        </div>
-        {jobTitle && (
-          <div className="mt-2 text-xs border border-primary/20 rounded px-2 py-1 bg-primary/5 inline-block">
-            Job: {jobTitle}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="pt-0">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full gap-2"
-          onClick={onClick}
-        >
-          <Search className="h-4 w-4" />
-          View Results
-        </Button>
-      </CardFooter>
-    </Card>
   );
 }
