@@ -67,7 +67,7 @@ export default function ResumeAnalyzer() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  
+
   // Analysis state
   const { 
     savedAnalysis, 
@@ -77,9 +77,9 @@ export default function ResumeAnalyzer() {
     refetchUserAnalyses,
     findAnalysisInCache
   } = useSavedAnalysis();
-  
+
   const [displayedAnalysis, setDisplayedAnalysis] = useState<ResumeAnalysis | null>(null);
-  
+
   const analyzeMutation = useMutation({
     mutationFn: async (data: { content: string; jobDescription?: string } | FormData) => {
       setAnalysisProgress(0);
@@ -149,7 +149,7 @@ export default function ResumeAnalyzer() {
       }
     }
   }, [savedAnalysis, analyzeMutation.data, analysisId, findAnalysisInCache]);
-  
+
   const handleSubmit = () => {
     if (!content.trim() && !file) {
       toast({
@@ -262,7 +262,10 @@ export default function ResumeAnalyzer() {
                     type="checkbox"
                     id="job-description-toggle"
                     checked={isApplyingForJob}
-                    onChange={() => setIsApplyingForJob(!isApplyingForJob)}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      setIsApplyingForJob(prev => !prev);
+                    }}
                     className="peer sr-only"
                   />
                   <label
