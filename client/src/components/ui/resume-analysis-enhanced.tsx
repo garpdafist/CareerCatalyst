@@ -41,7 +41,7 @@ export function ResumeAnalysisEnhanced({
     skills: true,
     keywords: true,
     improvements: true,
-    jobAnalysis: false
+    jobAnalysis: true
   });
   
   // Ref for sticky navigation
@@ -507,17 +507,20 @@ export function ResumeAnalysisEnhanced({
               <div className="space-y-6">
                 {/* Overall Fit with progress indicator */}
                 {analysisData.jobAnalysis.overallFit && (
-                  <div className="p-5 bg-[#f8f5ee] rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-medium text-[#292929] mb-2">Overall Job Fit</h3>
+                  <div className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-medium text-[#292929] mb-2 flex items-center">
+                      <Briefcase className="h-5 w-5 mr-2 text-[#2e7d32]" />
+                      Overall Job Fit
+                    </h3>
                     <p className="text-gray-700 mb-4">{analysisData.jobAnalysis.overallFit}</p>
                   </div>
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Strengths */}
-                  <div className="bg-[#f8f5ee] p-5 rounded-lg border border-gray-200">
+                  <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
                     <h3 className="text-lg font-medium text-[#292929] mb-3 flex items-center">
-                      <CheckCircle2 className="h-5 w-5 mr-2 text-gray-600" />
+                      <CheckCircle2 className="h-5 w-5 mr-2 text-[#2e7d32]" />
                       Your Resume Strengths
                     </h3>
                     
@@ -537,7 +540,7 @@ export function ResumeAnalysisEnhanced({
                   </div>
                   
                   {/* Gaps */}
-                  <div className="bg-[#f8f5ee] p-5 rounded-lg border border-gray-200">
+                  <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
                     <h3 className="text-lg font-medium text-[#292929] mb-3 flex items-center">
                       <span className="h-5 w-5 mr-2 text-red-600 flex items-center justify-center">⚠</span>
                       Gaps to Address
@@ -548,7 +551,7 @@ export function ResumeAnalysisEnhanced({
                       <ul className="space-y-2">
                         {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
                           <li key={i} className="flex items-start">
-                            <span className="text-red-600 mr-2">✕</span>
+                            <span className="text-red-600 mr-2 font-bold">✕</span>
                             <span className="text-gray-700">{gap}</span>
                           </li>
                         ))}
@@ -562,16 +565,16 @@ export function ResumeAnalysisEnhanced({
                 {/* Recommendations */}
                 {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
                 analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
-                  <div className="bg-[#f8f5ee] p-5 rounded-lg border border-gray-200">
+                  <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm mt-6">
                     <h3 className="text-lg font-medium text-[#292929] mb-3 flex items-center">
-                      <Lightbulb className="h-5 w-5 mr-2 text-gray-600" />
+                      <Lightbulb className="h-5 w-5 mr-2 text-[#2e7d32]" />
                       Tailoring Recommendations
                     </h3>
                     
                     <ul className="space-y-2">
                       {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
                         <li key={i} className="flex items-start">
-                          <span className="text-[#2e7d32] mr-2">→</span>
+                          <span className="text-[#2e7d32] mr-2 font-bold">→</span>
                           <span className="text-gray-700">{rec}</span>
                         </li>
                       ))}
@@ -580,9 +583,9 @@ export function ResumeAnalysisEnhanced({
                 )}
               </div>
             ) : (
-              <div className="p-5 bg-[#f8f5ee] border border-gray-200 rounded-lg">
+              <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex">
-                  <Briefcase className="h-5 w-5 text-gray-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <Briefcase className="h-5 w-5 text-[#2e7d32] mr-2 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-[#292929] font-medium mb-2">
                       Job Analysis Information
