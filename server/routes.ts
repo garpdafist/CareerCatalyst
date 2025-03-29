@@ -7,6 +7,116 @@ import session from "express-session";
 import nodemailer from 'nodemailer';
 import multer from 'multer';
 import { analyzeResumeWithAI } from "./services/openai";
+import OpenAI from "openai";
+
+// Initialize OpenAI client
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Define helper functions for cover letter generation and LinkedIn content analysis
+async function generateCoverLetterContent(
+  role: string,
+  company: string,
+  achievements: string,
+  brand: string,
+  formats: string[],
+  resumeData: any
+): Promise<any> {
+  try {
+    let prompt = `
+    Create a professional cover letter for ${role} position at ${company}.
+    
+    Role: ${role}
+    Company: ${company}
+    Key Achievements: ${achievements || 'Not provided'}
+    Tone/Brand: ${brand || 'Professional'}
+    
+    Resume Data: ${resumeData ? JSON.stringify(resumeData) : 'Not provided'}
+    
+    Include: 
+    - Professional greeting and introduction
+    - Highlights of relevant experience 
+    - Specific achievements that match the role
+    - Expression of interest in the company
+    - Call to action and professional closing
+    `;
+
+    // Create basic formats container
+    const result: Record<string, string> = {};
+    
+    // Process each requested format
+    for (const format of formats) {
+      let formatPrompt = prompt;
+      
+      if (format === 'email') {
+        formatPrompt += "Create this as a formal email format with subject line.";
+      } else if (format === 'video') {
+        formatPrompt += "Create this as a script for a video introduction. Include pauses and emphasis.";
+      } else if (format === 'linkedin') {
+        formatPrompt += "Create this as a LinkedIn message reaching out about the position. Keep it concise but impactful.";
+      }
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional cover letter writer with expertise in crafting compelling job application materials."
+          },
+          {
+            role: "user",
+            content: formatPrompt
+          }
+        ],
+        temperature: 0.7
+      });
+      
+      result[format] = response.choices[0].message.content || '';
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error generating cover letter:', error);
+    throw error;
+  }
+}
+
+async function analyzeLinkedInContent(sections: any[]): Promise<any> {
+  try {
+    const analysisPrompt = `
+    Analyze the following LinkedIn profile sections and provide specific recommendations for improvement:
+    
+    ${sections.map(section => `${section.name}: ${section.content}`).join('\n\n')}
+    
+    For each section provide:
+    1. Current strengths
+    2. Specific areas for improvement
+    3. Recommended revisions with examples
+    4. Keywords that could be added
+    5. Overall section score (1-10)
+    `;
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a LinkedIn profile optimization expert who helps professionals improve their profiles for maximum impact. Provide detailed, actionable advice."
+        },
+        {
+          role: "user",
+          content: analysisPrompt
+        }
+      ],
+      temperature: 0.5,
+      response_format: { type: "json_object" }
+    });
+    
+    return JSON.parse(response.choices[0].message.content || '{}');
+  } catch (error) {
+    console.error('Error analyzing LinkedIn content:', error);
+    throw error;
+  }
+}
 
 // Add scoring weights after imports
 const SCORING_WEIGHTS = {
