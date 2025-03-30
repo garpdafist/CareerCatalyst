@@ -19,6 +19,7 @@ export default function AuthPage() {
   const [countdown, setCountdown] = useState(60);
   const [showResend, setShowResend] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   
   const { signIn, isLoading, verifyOtp, isVerifyingOtp, user } = useAuth();
   
@@ -135,17 +136,48 @@ export default function AuthPage() {
 
   // Function to validate email format
   const isValidEmail = (email: string) => {
+    // More comprehensive validation
+    if (!email) return false;
+    
+    // Check for commas in the domain part (common error)
+    if (email.includes('@') && email.split('@')[1].includes(',')) {
+      return false;
+    }
+    
+    // Standard email regex
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
+  };
+  
+  // Live validation as user types
+  const validateEmailInput = (value: string) => {
+    if (!value) return null;
+    if (value.includes('@') && value.split('@')[1].includes(',')) {
+      return "Email domain should use periods (.) not commas (,)";
+    }
+    if (!isValidEmail(value) && value.length > 5) {
+      return "Please enter a valid email address";
+    }
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null); // Clear any previous errors
     
-    // Check if email format is valid
+    // First check with our validateEmailInput function to get specific errors
+    const validationError = validateEmailInput(email);
+    if (validationError) {
+      setEmailError(validationError);
+      setErrorMsg(validationError);
+      return;
+    }
+    
+    // Double-check if email format is valid
     if (!isValidEmail(email)) {
-      setErrorMsg("Please enter a valid email address (e.g., name@example.com)");
+      const errorMessage = "Please enter a valid email address (e.g., name@example.com)";
+      setEmailError(errorMessage);
+      setErrorMsg(errorMessage);
       return;
     }
     
@@ -365,14 +397,24 @@ export default function AuthPage() {
                         type="email"
                         placeholder="Enter your email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEmail(value);
+                          setEmailError(validateEmailInput(value));
+                        }}
                         required
                         disabled={isLoading}
-                        className="w-full bg-white py-6 px-4 border border-[#e5e5e5] placeholder:text-muted-foreground/60 focus:border-[#009963]"
+                        className={`w-full bg-white py-6 px-4 border ${
+                          emailError ? 'border-red-300 focus:border-red-500' : 'border-[#e5e5e5] focus:border-[#009963]'
+                        } placeholder:text-muted-foreground/60`}
                         pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
                         title="Please enter a valid email address (e.g., name@example.com)"
                       />
-                      <p className="text-xs text-muted-foreground px-1">Format: name@example.com</p>
+                      {emailError ? (
+                        <p className="text-xs text-red-500 px-1 mt-1">{emailError}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground px-1">Format: name@example.com</p>
+                      )}
                     </div>
                   </div>
                   
