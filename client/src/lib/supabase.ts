@@ -150,37 +150,99 @@ export async function initSupabase() {
         const supabaseURLObj = new URL(config.supabaseUrl);
         console.log(`URL will connect to protocol: ${supabaseURLObj.protocol}, host: ${supabaseURLObj.host}`);
         
+        // Verify URL structure and format before proceeding
+        if (!supabaseURLObj.hostname.includes('supabase')) {
+          console.warn('Warning: Supabase URL does not include "supabase" domain, this might be incorrect:', config.supabaseUrl);
+        }
+        
+        // Verify API key format
+        if (!config.supabaseAnonKey || config.supabaseAnonKey.length < 20) {
+          console.warn('Warning: Supabase anon key may be invalid. Check the key format and length.');
+        }
+        
         // Add custom retry logic and timeout options
-        supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+        const supabaseOptions = {
           auth: {
             autoRefreshToken: true,
             persistSession: true,
             storageKey: 'career-ai-auth',
-            flowType: 'pkce',
+            flowType: 'pkce' as const, // Type assertion to fix LSP error
             detectSessionInUrl: true
           },
           global: {
             headers: {
               'x-application-name': 'career-ai-platform'
             }
+          },
+          // Add retries for authentication API calls
+          realtime: {
+            timeout: 30000 // 30 seconds timeout for realtime subscriptions
           }
-        });
+        };
         
-        // Add timeout handling through custom HTTP request handling
+        // Log full client configuration
+        console.log('Creating Supabase client with options:', JSON.stringify(supabaseOptions, null, 2));
+        
+        // Create the Supabase client
+        supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, supabaseOptions);
+        
+        // Modify fetch to handle timeouts and add retry logic for network issues
         try {
-          // Set a default timeout for requests
+          // Save original fetch
           const originalFetch = global.fetch;
-          global.fetch = function timeoutFetch(url: RequestInfo | URL, options: RequestInit = {}) {
+          
+          // Replace with our enhanced version
+          global.fetch = async function enhancedFetch(url: RequestInfo | URL, options: RequestInit = {}) {
+            const urlStr = url.toString();
+            const isSupabaseRequest = urlStr.includes('supabase');
+            
+            // Longer timeout for Supabase requests
+            const timeoutMs = isSupabaseRequest ? 30000 : 15000; 
+            
             // Add a timeout signal if one isn't already provided
             if (!options.signal) {
               const controller = new AbortController();
-              setTimeout(() => controller.abort(), 15000); // 15-second timeout
+              setTimeout(() => controller.abort(), timeoutMs);
               options.signal = controller.signal;
             }
+            
+            // Add retry logic for auth-related Supabase requests
+            if (isSupabaseRequest && urlStr.includes('/auth/')) {
+              console.log(`Enhanced fetch for auth endpoint: ${urlStr.substring(0, 100)}...`);
+              
+              // For auth requests, try up to 3 times with exponential backoff
+              let attempt = 0;
+              const maxAttempts = 3;
+              
+              while (attempt < maxAttempts) {
+                try {
+                  if (attempt > 0) {
+                    console.log(`Retry attempt ${attempt} for auth request`);
+                    // Exponential backoff: 500ms, 1500ms, 4500ms
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(3, attempt) * 500));
+                  }
+                  
+                  const response = await originalFetch(url, options);
+                  return response;
+                } catch (error: any) {
+                  attempt++;
+                  console.warn(`Fetch error (attempt ${attempt}/${maxAttempts}):`, error.name, error.message);
+                  
+                  // If this was the last attempt, rethrow
+                  if (attempt >= maxAttempts) {
+                    throw error;
+                  }
+                  
+                  // Otherwise continue to retry
+                }
+              }
+            }
+            
+            // For non-auth requests or if we get here, just do a normal fetch with timeout
             return originalFetch(url, options);
           };
         } catch (fetchError) {
-          console.warn('Failed to set up custom fetch with timeout:', fetchError);
+          console.warn('Failed to set up enhanced fetch with timeout and retries:', fetchError);
         }
       } catch (initError: any) {
         console.error('Error creating Supabase client:', initError);

@@ -197,38 +197,127 @@ export default function AuthPage() {
       console.error('Auth page sign-in error:', error);
       
       // Detailed error logging
+      console.error('Authentication error details:', error);
+      
+      // Specific error handling for different scenarios
       if (error instanceof Error) {
         console.error('Error name:', error.name);
         console.error('Error message:', error.message);
         console.error('Stack trace:', error.stack);
-        setErrorMsg(`Authentication error: ${error.message || 'Failed to sign in'}`);
+        
+        // Check for common network-related errors
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          setErrorMsg('Network error: Could not connect to authentication service. Please check your internet connection.');
+          setConnectionStatus({
+            hasIssue: true,
+            issueType: 'network',
+            serviceName: 'Authentication Service'
+          });
+        } 
+        // Check for AbortError which occurs when fetch is timed out
+        else if (error.name === 'AbortError') {
+          setErrorMsg('Authentication request timed out. This could be due to slow network connection.');
+          setConnectionStatus({
+            hasIssue: true,
+            issueType: 'connection',
+            serviceName: 'Authentication Service'
+          });
+        } 
+        // Check for browser security restrictions
+        else if (error.message.includes('CORS') || error.message.includes('content security policy')) {
+          setErrorMsg('Browser Security Restriction Detected: Your browser is blocking the authentication service. Try disabling extensions or using a different browser.');
+          setConnectionStatus({
+            hasIssue: true,
+            issueType: 'browser',
+            serviceName: 'Authentication Service'
+          });
+        }
+        // Default error message
+        else {
+          setErrorMsg(`Authentication error: ${error.message || 'Failed to sign in'}`);
+        }
       } else if (error && typeof error === 'object') {
-        console.error('Error object:', JSON.stringify(error, null, 2));
-        setErrorMsg(`Authentication error: ${error.message || 'Failed to sign in'}`);
+        const errorString = JSON.stringify(error);
+        console.error('Error object:', errorString);
+        
+        if (errorString.includes('CORS') || errorString.includes('security') || errorString.includes('blocked')) {
+          setErrorMsg('Browser Security Restriction Detected: Your browser is blocking the connection to our authentication service.');
+          setConnectionStatus({
+            hasIssue: true,
+            issueType: 'browser',
+            serviceName: 'Authentication Service'
+          });
+        } else {
+          setErrorMsg(`Authentication error: ${error.message || 'Failed to sign in'}`);
+        }
       } else {
         console.error('Unknown error type:', error);
         setErrorMsg('Authentication error: Unable to connect to authentication service');
       }
       
-      // Let's test if we can access authentication service
+      // Perform advanced connectivity diagnostics
       try {
-        console.log('Testing connectivity to authentication service...');
-        // Don't use a direct domain, fetch config from server
+        console.log('Running comprehensive connectivity diagnostics...');
+        
+        // Check if we can access our own API
+        const apiConnectivityTest = await fetch('/api/health', { 
+          method: 'GET',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (!apiConnectivityTest.ok) {
+          console.error('API connectivity test failed');
+          setErrorMsg('Cannot connect to application server. Please check your network connection.');
+          return;
+        }
+        
+        // Check if we can access the authentication service configuration
         const configResponse = await fetch('/api/config');
+        
+        if (!configResponse.ok) {
+          console.error('Config API failed:', configResponse.status);
+          setErrorMsg('Cannot retrieve authentication configuration. Please try again later.');
+          return;
+        }
+        
         const config = await configResponse.json();
         
-        if (config.supabaseUrl) {
-          // Make generic connectivity test without exposing domain in UI
-          console.log('Testing authentication service connectivity...');
-          const response = await fetch(config.supabaseUrl + '/health');
-          console.log('Authentication service health check response:', response.status);
-          if (!response.ok) {
-            setErrorMsg('Authentication service connection issue. Please try again later.');
-          }
+        if (!config.supabaseUrl) {
+          console.error('No Supabase URL in config');
+          setErrorMsg('Authentication service configuration is missing. Please contact support.');
+          return;
         }
-      } catch (networkError) {
-        console.error('Authentication service connectivity error:', networkError);
-        setErrorMsg('Cannot connect to authentication service. Please check your network connection.');
+        
+        // Attempt to directly test authentication service (will likely fail if there are security restrictions)
+        try {
+          const authTest = await fetch(config.supabaseUrl + '/health', { 
+            mode: 'no-cors', // This allows the request but won't let us read the response
+            method: 'GET',
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          
+          console.log('Authentication service connectivity test completed');
+        } catch (directTestError) {
+          console.error('Direct authentication service test failed:', directTestError);
+          // This is expected to fail in some browsers due to CORS, so don't update error message
+        }
+        
+        // Use our server as a proxy to test connectivity
+        const proxyTest = await fetch('/api/auth-service-test');
+        const proxyResult = await proxyTest.json();
+        
+        if (!proxyResult.success) {
+          console.error('Server proxy test failed:', proxyResult.error);
+          setErrorMsg(`Server cannot connect to authentication service: ${proxyResult.errorType || 'Unknown error'}`);
+          setConnectionStatus({
+            hasIssue: true,
+            issueType: proxyResult.errorType === 'ENOTFOUND' ? 'dns' : 'connection',
+            serviceName: 'Authentication Service'
+          });
+        }
+      } catch (diagnosticError) {
+        console.error('Error during connectivity diagnostics:', diagnosticError);
+        // Keep the original error message
       }
     }
   };

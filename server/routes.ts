@@ -909,6 +909,110 @@ export function registerRoutes(app: Express): Server {
     });
   });
 
+  // Endpoint to test authentication service connectivity
+  app.get("/api/auth-service-test", configLimiter, async (req: any, res: any) => {
+    console.log('[AUTH TEST] Running authentication service test from server');
+    
+    // Try to use VITE_ prefixed vars first, fall back to non-prefixed versions
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+    
+    if (!supabaseUrl) {
+      console.error('[AUTH TEST] No Supabase URL available in environment');
+      return res.json({
+        success: false,
+        error: 'Missing configuration',
+        errorType: 'CONFIG_MISSING'
+      });
+    }
+    
+    try {
+      // Extract hostname from URL
+      const urlObj = new URL(supabaseUrl);
+      const hostname = urlObj.hostname;
+      
+      console.log(`[AUTH TEST] Testing direct connectivity to ${hostname}`);
+      
+      try {
+        // Use node-fetch with timeout for server-side testing
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log(`[AUTH TEST] Auth service response:`, {
+          status: response.status,
+          ok: response.ok,
+          statusText: response.statusText
+        });
+        
+        // 401 is actually expected for health endpoints that require auth
+        const isSuccessful = response.status === 200 || response.status === 401;
+        
+        if (isSuccessful) {
+          return res.json({
+            success: true,
+            status: response.status,
+            message: 'Successfully connected to authentication service'
+          });
+        } else {
+          return res.json({
+            success: false,
+            status: response.status,
+            error: `Authentication service returned error status: ${response.status}`,
+            errorType: 'SERVICE_ERROR'
+          });
+        }
+      } catch (error: any) {
+        console.error('[AUTH TEST] Error connecting to auth service:', error);
+        
+        // Determine error type
+        let errorType = 'CONNECTION_ERROR';
+        
+        if (error.name === 'AbortError') {
+          errorType = 'TIMEOUT';
+        } else if (error.code === 'ENOTFOUND') {
+          errorType = 'ENOTFOUND';
+        } else if (error.code === 'ETIMEDOUT') {
+          errorType = 'ETIMEDOUT';
+        } else if (error.code === 'ECONNREFUSED') {
+          errorType = 'ECONNREFUSED';
+        }
+        
+        return res.json({
+          success: false,
+          error: error.message || 'Unknown error',
+          errorType,
+          code: error.code
+        });
+      }
+    } catch (error: any) {
+      console.error('[AUTH TEST] Error parsing Supabase URL:', error);
+      return res.json({
+        success: false,
+        error: 'Invalid Supabase URL format',
+        errorType: 'CONFIG_INVALID'
+      });
+    }
+  });
+
+  // Add a simple health endpoint
+  app.get("/api/health", healthLimiter, (_req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   app.post("/api/generate-cover-letter", 
     requireAuth, 
     coverLetterLimiter,
