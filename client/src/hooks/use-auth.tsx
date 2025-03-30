@@ -63,9 +63,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string) => {
     setIsLoading(true);
     try {
+      // Log config data for debugging
+      console.log('Fetching Supabase client');
+      
       // Configure enhanced email template with OTP instructions
       const supabase = await getSupabase();
-      const { error } = await supabase.auth.signInWithOtp({
+      
+      console.log('Supabase client initialized, sending OTP');
+      
+      // Detailed logging before API call
+      console.log(`Starting signInWithOtp for ${email} with redirect to ${window.location.origin}`);
+      console.log('Hybrid authentication enabled:', true);
+      
+      const { error, data } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: window.location.origin,
@@ -77,7 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      if (error) throw error;
+      console.log('signInWithOtp response:', data ? 'Data received' : 'No data', error ? 'Error present' : 'No error');
+      
+      if (error) {
+        console.error('Supabase signInWithOtp error details:', error);
+        throw error;
+      }
 
       toast({
         title: "Check your email",
@@ -89,6 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log(`Authentication attempt initiated for email: ${email} at ${new Date().toISOString()}`);
     } catch (error: any) {
       console.error('Authentication error:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast({
         title: "Sign in failed",
         description: error.message,
@@ -128,23 +148,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyOtp = async (email: string, otp: string) => {
     setIsVerifyingOtp(true);
     try {
+      console.log('Starting OTP verification for:', email);
+      console.log('OTP code length:', otp.length);
+      
       const supabase = await getSupabase();
+      console.log('Supabase client retrieved for OTP verification');
+      
       const { error, data } = await supabase.auth.verifyOtp({
         email,
         token: otp,
         type: 'email'
       });
 
-      if (error) throw error;
+      console.log('OTP verification response:', {
+        success: !error,
+        hasUserData: !!data?.user,
+        errorMessage: error?.message || 'none'
+      });
+
+      if (error) {
+        console.error('OTP verification error details:', error);
+        throw error;
+      }
 
       // Successful OTP verification
-      setUser(data.user);
-      toast({
-        title: "Success",
-        description: "You have successfully signed in.",
-      });
+      if (data?.user) {
+        console.log('User authenticated successfully:', data.user.id);
+        setUser(data.user);
+        toast({
+          title: "Success",
+          description: "You have successfully signed in.",
+        });
+      } else {
+        console.error('Authentication successful but no user data returned');
+        toast({
+          title: "Sign in issue",
+          description: "Authentication successful, but user data is missing. Please try again.",
+          variant: "destructive",
+        });
+        throw new Error('No user data returned from successful authentication');
+      }
       setLocation('/');
     } catch (error: any) {
+      console.error('OTP verification error:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast({
         title: "Verification failed",
         description: error.message,

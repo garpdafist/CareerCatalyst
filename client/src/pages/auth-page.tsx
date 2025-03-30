@@ -44,10 +44,13 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Initiating sign-in process for:', email);
       await signIn(email);
+      console.log('Sign-in successful, OTP should be sent');
       setShowResend(true);
       setShowOtp(true); // Show OTP verification screen
     } catch (error) {
+      console.error('Auth page sign-in error:', error);
       // Error is handled in useAuth
     }
   };
@@ -66,8 +69,11 @@ export default function AuthPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('Verifying OTP:', { email, otpLength: otp.length });
       await verifyOtp(email, otp);
+      console.log('OTP verification successful');
     } catch (error) {
+      console.error('Auth page OTP verification error:', error);
       // Error is handled in useAuth hook
     }
   };
