@@ -38,7 +38,8 @@ export default function AuthCallback() {
         const { error } = await supabase.auth.getSession();
         
         if (error) {
-          throw error;
+          console.error('Authentication session error:', error);
+          throw new Error('Failed to establish authentication session. Please try again.');
         }
         
         // Show success state briefly before redirecting
