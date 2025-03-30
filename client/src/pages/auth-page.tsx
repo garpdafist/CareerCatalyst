@@ -42,11 +42,10 @@ export default function AuthPage() {
   const [connectionStatus, setConnectionStatus] = useState<{
     hasIssue: boolean;
     issueType: 'dns' | 'connection' | 'network' | 'browser' | null;
-    domain: string | null;
+    serviceName?: string; // Use service name instead of domain for security
   }>({
     hasIssue: false,
-    issueType: null,
-    domain: null
+    issueType: null
   });
 
   // Check for connectivity issues with Supabase on page load
@@ -61,12 +60,12 @@ export default function AuthPage() {
         
         // Check if server-side diagnostics detected DNS issues
         if (config.diagnostics?.dnsStatus) {
-          const { canResolve, canConnect, domain } = config.diagnostics.dnsStatus;
-          console.log('Server-side DNS diagnostics:', { canResolve, canConnect, domain });
+          const { canResolve, canConnect, serviceName } = config.diagnostics.dnsStatus;
+          console.log('Server-side diagnostics:', { canResolve, canConnect, serviceName });
           
-          // If server couldn't resolve or connect to Supabase, show warning
+          // If server couldn't resolve or connect to auth service, show warning
           if (!canResolve || !canConnect) {
-            console.warn('Server detected connectivity issues with Supabase');
+            console.warn('Server detected connectivity issues with authentication service');
             
             // Determine the issue type
             const issueType = !canResolve ? 'dns' : 'connection';
@@ -75,7 +74,7 @@ export default function AuthPage() {
             setConnectionStatus({
               hasIssue: true,
               issueType,
-              domain
+              serviceName
             });
           }
         }
@@ -110,7 +109,7 @@ export default function AuthPage() {
             setConnectionStatus({
               hasIssue: true,
               issueType,
-              domain: config.supabaseUrl ? new URL(config.supabaseUrl).hostname : null
+              serviceName: "authentication service"
             });
           }
         }
@@ -121,7 +120,7 @@ export default function AuthPage() {
         setConnectionStatus({
           hasIssue: true,
           issueType: 'network',
-          domain: null
+          serviceName: "authentication service"
         });
       }
     }
@@ -166,16 +165,24 @@ export default function AuthPage() {
         setErrorMsg('Authentication error: Unable to connect to authentication service');
       }
       
-      // Let's test if we can access Supabase directly
+      // Let's test if we can access authentication service
       try {
-        console.log('Testing direct fetch to Supabase URL...');
-        const response = await fetch('https://pwiysqqirjnjqacevzfp.supabase.co/health');
-        console.log('Supabase health check response:', response.status, response.statusText);
-        if (!response.ok) {
-          setErrorMsg('Authentication service connection issue. Please try again later.');
+        console.log('Testing connectivity to authentication service...');
+        // Don't use a direct domain, fetch config from server
+        const configResponse = await fetch('/api/config');
+        const config = await configResponse.json();
+        
+        if (config.supabaseUrl) {
+          // Make generic connectivity test without exposing domain in UI
+          console.log('Testing authentication service connectivity...');
+          const response = await fetch(config.supabaseUrl + '/health');
+          console.log('Authentication service health check response:', response.status);
+          if (!response.ok) {
+            setErrorMsg('Authentication service connection issue. Please try again later.');
+          }
         }
       } catch (networkError) {
-        console.error('Supabase direct fetch error:', networkError);
+        console.error('Authentication service connectivity error:', networkError);
         setErrorMsg('Cannot connect to authentication service. Please check your network connection.');
       }
     }
@@ -282,7 +289,7 @@ export default function AuthPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Connection warning banner - conditionally shown based on connectionStatus */}
                   {connectionStatus.hasIssue && (
-                    <Alert variant="warning" className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                    <Alert className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
                       <div className="flex items-start">
                         <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
                         <div>
@@ -294,8 +301,7 @@ export default function AuthPage() {
                               : 'Network Connectivity Issue Detected'}
                           </h3>
                           <p className="text-sm text-amber-700 mt-1">
-                            We're having trouble connecting to our authentication service
-                            {connectionStatus.domain ? ` (${connectionStatus.domain})` : ''}.
+                            We're having trouble connecting to our authentication service.
                           </p>
                           <ul className="list-disc pl-5 mt-1 text-sm text-amber-700">
                             {connectionStatus.issueType === 'dns' && (

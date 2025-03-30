@@ -765,20 +765,20 @@ export function registerRoutes(app: Express): Server {
       canResolve: boolean;
       error: string | null;
       canConnect: boolean;
-      domain: string;
+      serviceName: string; // Generic service reference instead of domain
     } = {
       canResolve: false,
       error: null,
       canConnect: false,
-      domain: ""
+      serviceName: "authentication service" // Generic name instead of exposing hostname
     };
     
     if (supabaseUrl) {
       try {
-        // Extract hostname from URL
+        // Extract hostname from URL for internal use only
         const urlObj = new URL(supabaseUrl);
         const hostname = urlObj.hostname;
-        dnsStatus.domain = hostname;
+        // Don't store the actual domain in the response object
         
         console.log(`[API CONFIG] Testing DNS resolution for ${hostname}`);
         
@@ -889,7 +889,7 @@ export function registerRoutes(app: Express): Server {
       dnsStatus: {
         canResolve: dnsStatus.canResolve,
         canConnect: dnsStatus.canConnect,
-        domain: dnsStatus.domain
+        serviceName: dnsStatus.serviceName
       }
     });
     
