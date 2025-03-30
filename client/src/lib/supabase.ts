@@ -93,9 +93,64 @@ export async function initSupabase() {
         });
         throw new Error('Invalid Supabase configuration received from server');
       }
+      
+      // Test DNS connectivity to the Supabase URL
+      try {
+        console.log('Testing connectivity to Supabase URL before client creation...');
+        const supabaseURLObj = new URL(config.supabaseUrl);
+        const testDomain = supabaseURLObj.hostname;
+        
+        console.log(`Attempting to connect to ${testDomain} for DNS check...`);
+        
+        // Create a simple fetch with a 7-second timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
+        
+        try {
+          // Try to fetch a known endpoint that should be accessible
+          // We're just testing connectivity, not expecting a valid response
+          const dnsTestUrl = `${config.supabaseUrl}/auth/v1/health`;
+          console.log(`Connectivity test URL: ${dnsTestUrl}`);
+          
+          const dnsTestResponse = await fetch(dnsTestUrl, {
+            signal: controller.signal,
+            method: 'HEAD' // Just do a HEAD request to minimize data transfer
+          });
+          
+          clearTimeout(timeoutId);
+          console.log(`DNS connectivity check result: status ${dnsTestResponse.status}`);
+        } catch (dnsError: any) {
+          clearTimeout(timeoutId);
+          const errorType = dnsError.name || 'Unknown';
+          const errorMsg = dnsError.message || 'No message';
+          
+          console.error(`DNS connectivity check failed:`, {
+            type: errorType,
+            message: errorMsg,
+            isDNSError: errorMsg.includes('resolve host') || errorMsg.includes('connect') || errorMsg.includes('network'),
+            stack: dnsError.stack
+          });
+          
+          if (errorType === 'TypeError' && 
+             (errorMsg.includes('Failed to fetch') || 
+              errorMsg.includes('resolve host') || 
+              errorMsg.includes('network'))) {
+            // This is likely a DNS resolution or connectivity issue
+            throw new Error(`Cannot connect to the authentication service at ${testDomain}. Your network may be blocking access to this domain.`);
+          }
+        }
+      } catch (connectivityError) {
+        console.error('Connectivity test failed:', connectivityError);
+        // Don't throw here, still try to create the client
+      }
 
       console.log('Creating Supabase client with URL and key');
       try {
+        // Try to diagnose any issues with the URL format
+        const supabaseURLObj = new URL(config.supabaseUrl);
+        console.log(`URL will connect to protocol: ${supabaseURLObj.protocol}, host: ${supabaseURLObj.host}`);
+        
+        // Add custom retry logic and timeout options
         supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
           auth: {
             autoRefreshToken: true,
@@ -110,6 +165,23 @@ export async function initSupabase() {
             }
           }
         });
+        
+        // Add timeout handling through custom HTTP request handling
+        try {
+          // Set a default timeout for requests
+          const originalFetch = global.fetch;
+          global.fetch = function timeoutFetch(url: RequestInfo | URL, options: RequestInit = {}) {
+            // Add a timeout signal if one isn't already provided
+            if (!options.signal) {
+              const controller = new AbortController();
+              setTimeout(() => controller.abort(), 15000); // 15-second timeout
+              options.signal = controller.signal;
+            }
+            return originalFetch(url, options);
+          };
+        } catch (fetchError) {
+          console.warn('Failed to set up custom fetch with timeout:', fetchError);
+        }
       } catch (initError: any) {
         console.error('Error creating Supabase client:', initError);
         console.error('Error details:', {

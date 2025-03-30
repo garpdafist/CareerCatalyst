@@ -66,8 +66,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Log config data for debugging
       console.log('Fetching Supabase client');
       
+      // DNS pre-resolution test
+      try {
+        console.log('Testing connectivity to Supabase domain...');
+        // Use a fetch with timeout to test network connectivity
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        try {
+          const healthResponse = await fetch('https://api.supabase.com/ping', {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          console.log('Supabase API connectivity test result:', healthResponse.status);
+        } catch (networkError) {
+          clearTimeout(timeoutId);
+          console.error('Supabase API connectivity test failed:', networkError);
+        }
+      } catch (preCheckError) {
+        console.error('Failed during pre-connection check:', preCheckError);
+      }
+      
       // Configure enhanced email template with OTP instructions
-      const supabase = await getSupabase();
+      let supabase;
+      try {
+        supabase = await getSupabase();
+        console.log('Supabase client initialized successfully');
+      } catch (initError) {
+        console.error('Failed to initialize Supabase client:', initError);
+        // Try to get the specific error
+        if (initError instanceof Error) {
+          console.error('Supabase client error details:', {
+            message: initError.message,
+            name: initError.name,
+            stack: initError.stack
+          });
+        }
+        throw new Error(`Authentication service connection failed: ${initError instanceof Error ? initError.message : 'Unknown error'}`);
+      }
       
       console.log('Supabase client initialized, sending OTP');
       
@@ -75,7 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log(`Starting signInWithOtp for ${email} with redirect to ${window.location.origin}`);
       console.log('Hybrid authentication enabled:', true);
       
-      const { error, data } = await supabase.auth.signInWithOtp({
+      // Add timeout handling for OTP request
+      const authPromise = supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: window.location.origin,
@@ -86,6 +123,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         },
       });
+      
+      // Set up a timeout to catch hanging requests
+      let timeoutId: NodeJS.Timeout | null = null;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Supabase authentication request timed out after 15 seconds'));
+        }, 15000);
+      });
+      
+      // Race between the actual request and the timeout
+      const { error, data } = await Promise.race([
+        authPromise,
+        timeoutPromise.then(() => { throw new Error('Authentication request timed out'); })
+      ]).finally(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+      }) as any;
 
       console.log('signInWithOtp response:', data ? 'Data received' : 'No data', error ? 'Error present' : 'No error');
       

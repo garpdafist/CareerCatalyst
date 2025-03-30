@@ -747,7 +747,7 @@ export function registerRoutes(app: Express): Server {
     }
   );
 
-  app.get("/api/config", configLimiter, (req: any, res: any) => {
+  app.get("/api/config", configLimiter, async (req: any, res: any) => {
     console.log('[API CONFIG] Request received from:', req.ip);
     console.log('[API CONFIG] Environment variables status:',  {
       VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ? `exists (starts with ${process.env.VITE_SUPABASE_URL.substring(0, 10)}...)` : 'missing',
@@ -760,11 +760,110 @@ export function registerRoutes(app: Express): Server {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
     
+    // Test DNS connectivity to Supabase from the server
+    let dnsStatus: {
+      canResolve: boolean;
+      error: string | null;
+      canConnect: boolean;
+      domain: string;
+    } = {
+      canResolve: false,
+      error: null,
+      canConnect: false,
+      domain: ""
+    };
+    
+    if (supabaseUrl) {
+      try {
+        // Extract hostname from URL
+        const urlObj = new URL(supabaseUrl);
+        const hostname = urlObj.hostname;
+        dnsStatus.domain = hostname;
+        
+        console.log(`[API CONFIG] Testing DNS resolution for ${hostname}`);
+        
+        // Use DNS resolution testing
+        try {
+          const { exec } = require('child_process');
+          
+          // Use getent to test DNS resolution (Linux)
+          const dnsCheckPromise = new Promise((resolve) => {
+            exec(`getent hosts ${hostname}`, (error: any, stdout: string, stderr: string) => {
+              if (error) {
+                console.error(`[API CONFIG] DNS resolution error: ${error.message}`);
+                resolve({ success: false, error: error.message, stdout, stderr });
+              } else {
+                resolve({ success: true, stdout, stderr });
+              }
+            });
+          });
+          
+          const dnsResult = await dnsCheckPromise;
+          dnsStatus.canResolve = (dnsResult as any).success;
+          
+          if (!(dnsResult as any).success) {
+            dnsStatus.error = `Cannot resolve hostname ${hostname}`;
+            console.error(`[API CONFIG] DNS resolution failed for ${hostname}`);
+          } else {
+            console.log(`[API CONFIG] DNS resolution successful for ${hostname}`);
+            
+            // Now test connectivity with a simple https request
+            try {
+              const https = require('https');
+              const agent = new https.Agent({
+                rejectUnauthorized: false, // For testing only
+                timeout: 5000
+              });
+              
+              const fetchPromise = new Promise((resolve) => {
+                const req = https.get(`${supabaseUrl}/auth/v1/health`, { agent }, (res: any) => {
+                  resolve({ success: true, statusCode: res.statusCode });
+                });
+                
+                req.on('error', (err: any) => {
+                  resolve({ success: false, error: err.message });
+                });
+                
+                req.setTimeout(5000, () => {
+                  req.destroy();
+                  resolve({ success: false, error: 'Connection timed out' });
+                });
+              });
+              
+              const fetchResult = await fetchPromise;
+              dnsStatus.canConnect = (fetchResult as any).success;
+              
+              if (!(fetchResult as any).success) {
+                console.error(`[API CONFIG] Connection failed: ${(fetchResult as any).error}`);
+              } else {
+                console.log(`[API CONFIG] Connection successful, status: ${(fetchResult as any).statusCode}`);
+              }
+            } catch (connErr: any) {
+              console.error(`[API CONFIG] Connection test error: ${connErr.message}`);
+            }
+          }
+        } catch (err: any) {
+          console.error(`[API CONFIG] DNS test execution error: ${err.message}`);
+          dnsStatus.error = err.message;
+        }
+      } catch (urlErr: any) {
+        console.error(`[API CONFIG] URL parsing error: ${urlErr.message}`);
+        dnsStatus.error = urlErr.message;
+      }
+    }
+    
+    console.log('[API CONFIG] DNS connectivity test results:', dnsStatus);
+    
     console.log('[API CONFIG] Sending response with URL and key availability:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseAnonKey,
       urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 10) + '...' : 'empty',
-      keyLength: supabaseAnonKey?.length || 0
+      keyLength: supabaseAnonKey?.length || 0,
+      dnsStatus: {
+        canResolve: dnsStatus.canResolve,
+        canConnect: dnsStatus.canConnect,
+        domain: dnsStatus.domain
+      }
     });
     
     res.set({
@@ -776,7 +875,10 @@ export function registerRoutes(app: Express): Server {
     
     res.json({
       supabaseUrl: supabaseUrl,
-      supabaseAnonKey: supabaseAnonKey
+      supabaseAnonKey: supabaseAnonKey,
+      diagnostics: {
+        dnsStatus
+      }
     });
   });
 
