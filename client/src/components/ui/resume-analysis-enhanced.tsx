@@ -192,33 +192,47 @@ export function ResumeAnalysisEnhanced({
                     <div className="flex flex-col md:flex-row md:items-center p-5 bg-[#f8f5ee] rounded-lg border border-gray-200">
                       <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
                         <div className="relative w-24 h-24 mx-auto">
-                          <svg className="w-full h-full" viewBox="0 0 36 36">
-                            <path
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="#E5E7EB"
+                          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                            {/* Background circle */}
+                            <circle 
+                              cx="18" 
+                              cy="18" 
+                              r="15.9155" 
+                              fill="none" 
+                              stroke="#E5E7EB" 
                               strokeWidth="3"
                             />
-                            <path
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            
+                            {/* Score circle that animates - starts at 12 o'clock (thanks to -rotate-90) */}
+                            <circle
+                              cx="18"
+                              cy="18"
+                              r="15.9155"
                               fill="none"
                               stroke={scoreColors.bg}
                               strokeWidth="3"
                               strokeDasharray={`${analysisData.score}, 100`}
-                              className="animate-scoreCircle origin-center transition-all duration-[2500ms] ease-out"
+                              className="animate-scoreCircle origin-center"
                               style={{
-                                // Animate using CSS for smoother performance
-                                strokeDasharray: `${analysisData.score}, 100`,
-                                strokeDashoffset: 0,
-                              }}
+                                // Starting with 0 and animating to full value
+                                strokeDasharray: `0, 100`,
+                                animationName: 'scoreCircleFill, colorTransition',
+                                animationDuration: '2s, 2s',
+                                animationFillMode: 'forwards',
+                                animationTimingFunction: 'ease-out',
+                                animationDelay: '0.2s',
+                                '--score-target': analysisData.score,
+                              } as React.CSSProperties}
                             />
                           </svg>
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                            <span className="text-2xl font-bold animate-countUp" data-target={analysisData.score}>
+                            <span 
+                              className="text-2xl font-bold" 
+                              data-target={analysisData.score}
+                              style={{
+                                counterReset: `score ${analysisData.score}`,
+                              }}
+                            >
                               {analysisData.score}
                             </span>
                             <span className="text-xs block text-gray-500">out of 100</span>
@@ -338,25 +352,7 @@ export function ResumeAnalysisEnhanced({
                 </DialogContent>
               </Dialog>
               
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
-                onClick={() => toggleSection('skills')}
-              >
-                <Zap className="h-3.5 w-3.5 mr-1 text-[#009962]" />
-                <span>Key Skills</span>
-              </Button>
-              
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
-                onClick={() => toggleSection('feedback')}
-              >
-                <FileText className="h-3.5 w-3.5 mr-1 text-[#009962]" />
-                <span>Feedback</span>
-              </Button>
+              {/* Buttons removed as requested */}
               
               {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
                 <Button 
@@ -396,33 +392,47 @@ export function ResumeAnalysisEnhanced({
             <div className="flex flex-col md:flex-row md:items-center p-6 bg-[#f8f5ee] rounded-lg border border-gray-200">
               <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
                 <div className="relative w-28 h-28 mx-auto">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#E5E7EB"
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    {/* Background circle */}
+                    <circle 
+                      cx="18" 
+                      cy="18" 
+                      r="15.9155" 
+                      fill="none" 
+                      stroke="#E5E7EB" 
                       strokeWidth="3"
                     />
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                    
+                    {/* Score circle that animates - starts at 12 o'clock (thanks to -rotate-90) */}
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9155"
                       fill="none"
                       stroke={scoreColors.bg}
                       strokeWidth="3"
                       strokeDasharray={`${analysisData.score}, 100`}
-                      className="animate-scoreCircle origin-center transition-all duration-[2500ms] ease-out"
+                      className="animate-scoreCircle origin-center"
                       style={{
-                        // Animate using CSS for smoother performance
-                        strokeDasharray: `${analysisData.score}, 100`,
-                        strokeDashoffset: 0,
-                      }}
+                        // Starting with 0 and animating to full value
+                        strokeDasharray: `0, 100`,
+                        animationName: 'scoreCircleFill, colorTransition',
+                        animationDuration: '2s, 2s',
+                        animationFillMode: 'forwards',
+                        animationTimingFunction: 'ease-out',
+                        animationDelay: '0.2s',
+                        '--score-target': analysisData.score,
+                      } as React.CSSProperties}
                     />
                   </svg>
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                    <span className="text-3xl font-bold animate-countUp" data-target={analysisData.score}>
+                    <span 
+                      className="text-3xl font-bold" 
+                      data-target={analysisData.score}
+                      style={{
+                        counterReset: `score ${analysisData.score}`,
+                      }}
+                    >
                       {analysisData.score}
                     </span>
                     <span className="text-xs block text-gray-500">out of 100</span>
@@ -676,90 +686,103 @@ export function ResumeAnalysisEnhanced({
               </h2>
             </div>
             
+            {/* Content based on available data */}
             {analysisData.jobAnalysis && typeof analysisData.jobAnalysis === 'object' ? (
+              // Job analysis is available - show detailed sections
               <div className="space-y-8">
                 {/* Alignment & Strengths */}
                 {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
-                analysisData.jobAnalysis.alignmentAndStrengths.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
-                    <CheckCircle2 className="h-5 w-5 mr-2 text-[#009962]" />
-                    Alignment & Strengths
-                  </h3>
-                  <div className="space-y-2">
-                    {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
-                      <div key={i} className="py-3 px-4 bg-[#e8f5e9] rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex items-center">
-                          <span className="text-[#2e7d32] mr-2 font-bold text-lg">✓</span>
-                          <span className="text-[#292929] text-sm">{strength}</span>
+                 analysisData.jobAnalysis.alignmentAndStrengths.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                      <CheckCircle2 className="h-5 w-5 mr-2 text-[#009962]" />
+                      Alignment & Strengths
+                    </h3>
+                    <div className="space-y-2">
+                      {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
+                        <div key={i} className="py-3 px-4 bg-[#e8f5e9] rounded-lg border border-gray-200 shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-[#2e7d32] mr-2 font-bold text-lg">✓</span>
+                            <span className="text-[#292929] text-sm">{strength}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
                 )}
                 
                 {/* Gaps & Concerns */}
                 {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
-                analysisData.jobAnalysis.gapsAndConcerns.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
-                    <AlertCircle className="h-5 w-5 mr-2 text-[#e53935]" />
-                    Gaps & Concerns
-                  </h3>
-                  <div className="space-y-2">
-                    {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
-                      <div key={i} className="py-3 px-4 bg-[#ffebee] rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex items-center">
-                          <span className="text-[#e53935] mr-2 font-bold text-lg">✕</span>
-                          <span className="text-[#292929] text-sm">{gap}</span>
+                 analysisData.jobAnalysis.gapsAndConcerns.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                      <AlertCircle className="h-5 w-5 mr-2 text-[#e53935]" />
+                      Gaps & Concerns
+                    </h3>
+                    <div className="space-y-2">
+                      {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
+                        <div key={i} className="py-3 px-4 bg-[#ffebee] rounded-lg border border-gray-200 shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-[#e53935] mr-2 font-bold text-lg">✕</span>
+                            <span className="text-[#292929] text-sm">{gap}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
                 )}
                 
                 {/* How to Tailor Your Resume */}
                 {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
-                analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
-                    <RefreshCw className="h-5 w-5 mr-2 text-[#3f51b5]" />
-                    How to Tailor Your Resume
-                  </h3>
-                  <div className="space-y-2">
-                    {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
-                      <div key={i} className="py-3 px-4 bg-[#e3f2fd] rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex items-center">
-                          <span className="text-[#3f51b5] mr-2 font-bold text-lg">→</span>
-                          <span className="text-[#292929] text-sm">{rec}</span>
+                 analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                      <RefreshCw className="h-5 w-5 mr-2 text-[#3f51b5]" />
+                      How to Tailor Your Resume
+                    </h3>
+                    <div className="space-y-2">
+                      {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
+                        <div key={i} className="py-3 px-4 bg-[#e3f2fd] rounded-lg border border-gray-200 shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-[#3f51b5] mr-2 font-bold text-lg">→</span>
+                            <span className="text-[#292929] text-sm">{rec}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
                 )}
                 
                 {/* Overall Fit Assessment */}
                 {analysisData.jobAnalysis.overallFit && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
-                    <Award className="h-5 w-5 mr-2 text-[#009962]" />
-                    Overall Fit Assessment
-                  </h3>
-                  <div className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <div className="flex items-start">
-                      <span className="text-[#009962] mr-2 text-lg flex-shrink-0">ⓘ</span>
-                      <span className="text-[#292929] text-sm">{analysisData.jobAnalysis.overallFit}</span>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                      <Award className="h-5 w-5 mr-2 text-[#009962]" />
+                      Overall Fit Assessment
+                    </h3>
+                    <div className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-start">
+                        <span className="text-[#009962] mr-2 text-lg flex-shrink-0">ⓘ</span>
+                        <span className="text-[#292929] text-sm">{analysisData.jobAnalysis.overallFit}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
-                
-
+              </div>
+            ) : analysisData.jobDescription && !analysisData.jobAnalysis ? (
+              // Job description exists but no analysis
+              <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div className="flex items-start">
+                  <Lightbulb className="h-5 w-5 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
+                  <p className="text-[#292929] text-sm">
+                    We detected a job description in your analysis, but detailed job matching analysis wasn't generated.
+                    This might be due to processing limitations or insufficient information in the resume or job description.
+                    Try re-analyzing or providing a more detailed job description.
+                  </p>
+                </div>
               </div>
             ) : (
+              // Fallback message
               <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-start">
                   <Briefcase className="h-4 w-4 text-[#009962] mr-2 flex-shrink-0 mt-0.5" />
