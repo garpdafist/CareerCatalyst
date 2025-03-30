@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Redirect } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, ShieldCheck, Clock, ArrowRight, AlertTriangle } from "lucide-react";
+import { Loader2, Mail, ShieldCheck, Clock, ArrowRight, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OtpInput } from "@/components/ui/otp-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -144,20 +144,52 @@ export default function AuthPage() {
       return false;
     }
     
-    // Standard email regex
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
+    // Fixed email regex that won't cause CSP/regex syntax errors
+    // Using a simpler pattern that's still effective but avoids problematic characters
+    try {
+      // Basic email regex with fewer special characters
+      const emailRegex = new RegExp('^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+      return emailRegex.test(email);
+    } catch (error) {
+      console.error('Email validation regex error:', error);
+      // Fallback validation if regex fails
+      return email.includes('@') && email.includes('.') && email.length > 5;
+    }
   };
   
-  // Live validation as user types
+  // Enhanced live validation as user types with more specific error messages
   const validateEmailInput = (value: string) => {
     if (!value) return null;
+    
+    // Check for common email mistakes and provide specific feedback
     if (value.includes('@') && value.split('@')[1].includes(',')) {
       return "Email domain should use periods (.) not commas (,)";
     }
+    
+    if (value.includes(' ')) {
+      return "Email address cannot contain spaces";
+    }
+    
+    // Check for missing @ symbol in emails with reasonable length
+    if (!value.includes('@') && value.length > 5) {
+      return "Email address must include an @ symbol";
+    }
+    
+    // Check for missing domain after @ symbol
+    if (value.endsWith('@')) {
+      return "Please include a domain after @";
+    }
+    
+    // Check for domain with no TLD
+    if (value.includes('@') && !value.split('@')[1].includes('.') && value.split('@')[1].length > 2) {
+      return "Domain must include a period (e.g., .com, .org)";
+    }
+    
+    // General validation for other cases
     if (!isValidEmail(value) && value.length > 5) {
       return "Please enter a valid email address";
     }
+    
     return null;
   };
 
@@ -481,24 +513,40 @@ export default function AuthPage() {
                       Email Address
                     </Label>
                     <div className="space-y-1">
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setEmail(value);
-                          setEmailError(validateEmailInput(value));
-                        }}
-                        required
-                        disabled={isLoading}
-                        className={`w-full bg-white py-6 px-4 border ${
-                          emailError ? 'border-red-300 focus:border-red-500' : 'border-[#e5e5e5] focus:border-[#009963]'
-                        } placeholder:text-muted-foreground/60`}
-                        pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-                        title="Please enter a valid email address (e.g., name@example.com)"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={email}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setEmail(value);
+                            setEmailError(validateEmailInput(value));
+                          }}
+                          required
+                          disabled={isLoading}
+                          className={`w-full py-6 px-4 pr-10 ${
+                            email && email.length > 5
+                              ? emailError
+                                ? "border-red-300 focus:border-red-500 bg-red-50/50" 
+                                : isValidEmail(email)
+                                ? "border-green-300 focus:border-green-500 bg-green-50/50"
+                                : "border-[#e5e5e5] focus:border-[#009963]"
+                              : "border-[#e5e5e5] focus:border-[#009963]"
+                          } placeholder:text-muted-foreground/60`}
+                          title="Please enter a valid email address (e.g., name@example.com)"
+                        />
+                        {email && email.length > 5 && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            {emailError ? (
+                              <XCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                            ) : isValidEmail(email) ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" aria-hidden="true" />
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
                       {emailError ? (
                         <p className="text-xs text-red-500 px-1 mt-1">{emailError}</p>
                       ) : (

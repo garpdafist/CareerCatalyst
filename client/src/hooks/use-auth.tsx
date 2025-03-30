@@ -69,41 +69,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Advanced CSP and network diagnostics
       try {
         console.log('Testing connectivity to Supabase domain...');
-        console.log('Checking CSP settings by fetching debug endpoint...');
+        console.log('Testing if browser CSP allows external connections...');
         
-        // First check our CSP settings from debug endpoint
+        // Check actual CSP by examining document.head meta tags
         try {
+          // Get CSP from meta tag if it exists (this is the most reliable method)
+          const cspMetaTag = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+          if (cspMetaTag) {
+            const cspMetaContent = cspMetaTag.getAttribute('content');
+            console.log('Found CSP meta tag with content:', cspMetaContent);
+            
+            // Check if connect-src includes Supabase domains
+            if (cspMetaContent) {
+              const hasSupabaseDomains = cspMetaContent.includes('supabase.co');
+              const hasWildcardDomains = cspMetaContent.includes('*');
+              
+              console.log(`CSP meta tag analysis:
+                Has Supabase domains: ${hasSupabaseDomains}
+                Has wildcard domains: ${hasWildcardDomains}`);
+              
+              if (!hasSupabaseDomains && !hasWildcardDomains) {
+                console.error('CSP META TAG DOES NOT ALLOW SUPABASE CONNECTIONS!');
+              }
+            }
+          } else {
+            console.warn('No CSP meta tag found in document head - relying on HTTP header CSP');
+          }
+          
+          // Also check server-side CSP configuration
           const cspDebugResponse = await fetch('/api/debug-csp');
           const cspDebugData = await cspDebugResponse.json();
-          console.log('CSP debug information:', cspDebugData);
+          console.log('Server CSP debug information:', cspDebugData);
           
-          // Analyze the CSP header to check if it allows Supabase connections
-          const cspHeader = cspDebugData.csp || '';
-          if (cspHeader) {
-            console.log('Current CSP header:', cspHeader);
+          // Analyze the applied CSP to confirm it allows Supabase connections
+          const serverCsp = cspDebugData.appliedCsp || '';
+          if (serverCsp) {
+            console.log('Server CSP value:', serverCsp);
             
             // Check if connect-src includes wildcards or specific Supabase domains
-            const connectSrcMatch = cspHeader.match(/connect-src([^;]*)/);
+            const connectSrcMatch = serverCsp.match(/connect-src([^;]*)/);
             if (connectSrcMatch) {
               const connectSrc = connectSrcMatch[1];
-              console.log('Connect-src directive:', connectSrc);
+              console.log('Server connect-src directive:', connectSrc);
               
               const hasWildcard = connectSrc.includes('*');
               const hasSupabase = connectSrc.includes('supabase');
-              const hasApiSupabase = connectSrc.includes('api.supabase.com');
+              const hasSpecificSupabase = connectSrc.includes('pwiysqqirjnjqacevzfp.supabase.co');
               
-              console.log(`CSP connect-src analysis: 
+              console.log(`Server CSP connect-src analysis: 
                 Has wildcard: ${hasWildcard}
                 Has supabase domain: ${hasSupabase}
-                Has api.supabase.com: ${hasApiSupabase}`);
+                Has specific Supabase project: ${hasSpecificSupabase}`);
             } else {
-              console.warn('No connect-src directive found in CSP header!');
+              console.warn('No connect-src directive found in server CSP!');
             }
           } else {
-            console.warn('No CSP header found in response!');
+            console.warn('No CSP found in server response!');
           }
         } catch (cspDebugError) {
-          console.error('Failed to fetch CSP debug information:', cspDebugError);
+          console.error('Failed during CSP analysis:', cspDebugError);
         }
         
         // Now test actual connectivity to Supabase endpoints
