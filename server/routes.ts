@@ -747,10 +747,36 @@ export function registerRoutes(app: Express): Server {
     }
   );
 
-  app.get("/api/config", configLimiter, (_req: any, res: any) => {
+  app.get("/api/config", configLimiter, (req: any, res: any) => {
+    console.log('[API CONFIG] Request received from:', req.ip);
+    console.log('[API CONFIG] Environment variables status:',  {
+      VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ? `exists (starts with ${process.env.VITE_SUPABASE_URL.substring(0, 10)}...)` : 'missing',
+      VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ? `exists (length: ${process.env.VITE_SUPABASE_ANON_KEY.length})` : 'missing',
+      SUPABASE_URL: process.env.SUPABASE_URL ? `exists (starts with ${process.env.SUPABASE_URL.substring(0, 10)}...)` : 'missing',
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? `exists (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'missing',
+    });
+    
+    // Try to use VITE_ prefixed vars first, fall back to non-prefixed versions
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+    
+    console.log('[API CONFIG] Sending response with URL and key availability:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 10) + '...' : 'empty',
+      keyLength: supabaseAnonKey?.length || 0
+    });
+    
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
+    
     res.json({
-      supabaseUrl: process.env.VITE_SUPABASE_URL || "",
-      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || ""
+      supabaseUrl: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey
     });
   });
 

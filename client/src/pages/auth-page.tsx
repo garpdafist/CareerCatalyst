@@ -7,9 +7,10 @@ import { motion } from "framer-motion";
 import { Redirect } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, ShieldCheck, Clock, ArrowRight } from "lucide-react";
+import { Loader2, Mail, ShieldCheck, Clock, ArrowRight, AlertTriangle } from "lucide-react";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OtpInput } from "@/components/ui/otp-input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ export default function AuthPage() {
   const [showOtp, setShowOtp] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [showResend, setShowResend] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const { signIn, isLoading, verifyOtp, isVerifyingOtp, user } = useAuth();
   
@@ -43,15 +45,48 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null); // Clear any previous errors
     try {
       console.log('Initiating sign-in process for:', email);
+      
+      // Add network logging
+      console.log('Network status:', navigator.onLine ? 'Online' : 'Offline');
+      console.log('Current URL:', window.location.href);
+      console.log('API endpoint:', '/api/config');
+      
       await signIn(email);
       console.log('Sign-in successful, OTP should be sent');
       setShowResend(true);
       setShowOtp(true); // Show OTP verification screen
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth page sign-in error:', error);
-      // Error is handled in useAuth
+      
+      // Detailed error logging
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Stack trace:', error.stack);
+        setErrorMsg(`Authentication error: ${error.message || 'Failed to sign in'}`);
+      } else if (error && typeof error === 'object') {
+        console.error('Error object:', JSON.stringify(error, null, 2));
+        setErrorMsg(`Authentication error: ${error.message || 'Failed to sign in'}`);
+      } else {
+        console.error('Unknown error type:', error);
+        setErrorMsg('Authentication error: Unable to connect to authentication service');
+      }
+      
+      // Let's test if we can access Supabase directly
+      try {
+        console.log('Testing direct fetch to Supabase URL...');
+        const response = await fetch('https://pwiysqqirjnjqacevzfp.supabase.co/health');
+        console.log('Supabase health check response:', response.status, response.statusText);
+        if (!response.ok) {
+          setErrorMsg('Authentication service connection issue. Please try again later.');
+        }
+      } catch (networkError) {
+        console.error('Supabase direct fetch error:', networkError);
+        setErrorMsg('Cannot connect to authentication service. Please check your network connection.');
+      }
     }
   };
 
@@ -68,13 +103,26 @@ export default function AuthPage() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     try {
       console.log('Verifying OTP:', { email, otpLength: otp.length });
       await verifyOtp(email, otp);
       console.log('OTP verification successful');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth page OTP verification error:', error);
-      // Error is handled in useAuth hook
+      
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Stack trace:', error.stack);
+        setErrorMsg(`Verification error: ${error.message || 'Invalid code'}`);
+      } else if (error && typeof error === 'object') {
+        console.error('Error object:', JSON.stringify(error, null, 2));
+        setErrorMsg(`Verification error: ${error.message || 'Invalid code'}`);
+      } else {
+        console.error('Unknown error type:', error);
+        setErrorMsg('Verification error: Unable to verify code');
+      }
     }
   };
 
@@ -141,6 +189,16 @@ export default function AuthPage() {
               {!showOtp ? (
                 // Initial email input form
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {errorMsg && (
+                    <Alert variant="destructive" className="bg-[#ffebee] border-red-200 text-red-700">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Authentication Error</AlertTitle>
+                      <AlertDescription>
+                        {errorMsg}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="space-y-3">
                     <Label htmlFor="email" className="text-sm font-medium">
                       Email Address
@@ -178,6 +236,16 @@ export default function AuthPage() {
               ) : (
                 // OTP verification form
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
+                  {errorMsg && (
+                    <Alert variant="destructive" className="bg-[#ffebee] border-red-200 text-red-700">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Verification Error</AlertTitle>
+                      <AlertDescription>
+                        {errorMsg}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                
                   <div className="text-center mb-4">
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#e8f5e9] mb-3">
                       <Mail className="h-6 w-6 text-[#2e7d32]" />
