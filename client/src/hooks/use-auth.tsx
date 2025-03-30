@@ -66,25 +66,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Log config data for debugging
       console.log('Fetching Supabase client');
       
-      // DNS pre-resolution test
+      // Advanced CSP and network diagnostics
       try {
         console.log('Testing connectivity to Supabase domain...');
-        // Use a fetch with timeout to test network connectivity
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        console.log('Checking CSP settings by fetching debug endpoint...');
         
+        // First check our CSP settings from debug endpoint
         try {
-          const healthResponse = await fetch('https://api.supabase.com/ping', {
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-          console.log('Supabase API connectivity test result:', healthResponse.status);
-        } catch (networkError) {
-          clearTimeout(timeoutId);
-          console.error('Supabase API connectivity test failed:', networkError);
+          const cspDebugResponse = await fetch('/api/debug-csp');
+          const cspDebugData = await cspDebugResponse.json();
+          console.log('CSP debug information:', cspDebugData);
+          
+          // Analyze the CSP header to check if it allows Supabase connections
+          const cspHeader = cspDebugData.csp || '';
+          if (cspHeader) {
+            console.log('Current CSP header:', cspHeader);
+            
+            // Check if connect-src includes wildcards or specific Supabase domains
+            const connectSrcMatch = cspHeader.match(/connect-src([^;]*)/);
+            if (connectSrcMatch) {
+              const connectSrc = connectSrcMatch[1];
+              console.log('Connect-src directive:', connectSrc);
+              
+              const hasWildcard = connectSrc.includes('*');
+              const hasSupabase = connectSrc.includes('supabase');
+              const hasApiSupabase = connectSrc.includes('api.supabase.com');
+              
+              console.log(`CSP connect-src analysis: 
+                Has wildcard: ${hasWildcard}
+                Has supabase domain: ${hasSupabase}
+                Has api.supabase.com: ${hasApiSupabase}`);
+            } else {
+              console.warn('No connect-src directive found in CSP header!');
+            }
+          } else {
+            console.warn('No CSP header found in response!');
+          }
+        } catch (cspDebugError) {
+          console.error('Failed to fetch CSP debug information:', cspDebugError);
         }
-      } catch (preCheckError) {
-        console.error('Failed during pre-connection check:', preCheckError);
+        
+        // Now test actual connectivity to Supabase endpoints
+        console.log('Attempting live connectivity tests to Supabase services...');
+        
+        // Array of test endpoints to try
+        const testEndpoints = [
+          'https://api.supabase.com/ping',
+          'https://pwiysqqirjnjqacevzfp.supabase.co/rest/v1/',
+          'https://pwiysqqirjnjqacevzfp.supabase.co/auth/v1/health'
+        ];
+        
+        // Test each endpoint
+        for (const endpoint of testEndpoints) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          try {
+            console.log(`Testing connectivity to: ${endpoint}`);
+            const response = await fetch(endpoint, {
+              signal: controller.signal,
+              mode: 'cors', // Explicitly request CORS
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            clearTimeout(timeoutId);
+            console.log(`Endpoint ${endpoint} test result: ${response.status}`);
+          } catch (fetchError: any) {
+            clearTimeout(timeoutId);
+            console.error(`Endpoint ${endpoint} test failed:`, fetchError);
+            
+            // Check if this is a CSP error
+            if (fetchError instanceof DOMException && 
+                fetchError.name === 'SecurityError') {
+              console.error('CSP VIOLATION DETECTED! This is a Content Security Policy issue.');
+            }
+            
+            // Check for network errors vs CSP errors
+            if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+              console.error('Network error detected - likely connectivity issue rather than CSP');
+            }
+          }
+        }
+      } catch (diagnosticError) {
+        console.error('Failed during connection diagnostics:', diagnosticError);
       }
       
       // Configure enhanced email template with OTP instructions
