@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Redirect } from "wouter";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, ShieldCheck, Clock, ArrowRight, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { 
+  Loader2, Mail, ShieldCheck, Clock, ArrowRight, 
+  AlertTriangle, CheckCircle, XCircle 
+} from "lucide-react";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OtpInput } from "@/components/ui/otp-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,7 +45,7 @@ export default function AuthPage() {
   const [connectionStatus, setConnectionStatus] = useState<{
     hasIssue: boolean;
     issueType: 'dns' | 'connection' | 'network' | 'browser' | null;
-    serviceName?: string; // Use service name instead of domain for security
+    serviceName?: string; 
   }>({
     hasIssue: false,
     issueType: null
