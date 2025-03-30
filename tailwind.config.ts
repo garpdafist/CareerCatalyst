@@ -72,10 +72,43 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "score-circle-fill": {
+          "0%": { 
+            strokeDasharray: "0, 100",
+            strokeDashoffset: "0" 
+          },
+          "30%": { 
+            strokeDasharray: "var(--score-target), 100",
+            strokeDashoffset: "25" 
+          },
+          "60%": { 
+            strokeDasharray: "var(--score-target), 100",
+            strokeDashoffset: "12" 
+          },
+          "100%": { 
+            strokeDasharray: "var(--score-target), 100",
+            strokeDashoffset: "0" 
+          }
+        },
+        "count-up": {
+          "0%": { content: "'0'" },
+          "20%": { content: "var(--score-target-20)" },
+          "40%": { content: "var(--score-target-40)" },
+          "60%": { content: "var(--score-target-60)" },
+          "80%": { content: "var(--score-target-80)" },
+          "100%": { content: "var(--score-target)" }
+        },
+        "color-transition": {
+          "0%": { stroke: "#ef4444" },  
+          "50%": { stroke: "#eab308" },
+          "100%": { stroke: "#22c55e" }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "scoreCircle": "score-circle-fill 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, color-transition 2.5s ease-out forwards",
+        "countUp": "count-up 2s steps(5, end) forwards"
       },
     },
   },

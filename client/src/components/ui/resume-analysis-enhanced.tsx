@@ -188,7 +188,7 @@ export function ResumeAnalysisEnhanced({
                   </DialogHeader>
                   
                   <div className="space-y-6 mt-4">
-                    {/* Overall Score with circular indicator */}
+                    {/* Overall Score with animated circular indicator */}
                     <div className="flex flex-col md:flex-row md:items-center p-5 bg-[#f8f5ee] rounded-lg border border-gray-200">
                       <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
                         <div className="relative w-24 h-24 mx-auto">
@@ -209,22 +209,53 @@ export function ResumeAnalysisEnhanced({
                               stroke={scoreColors.bg}
                               strokeWidth="3"
                               strokeDasharray={`${analysisData.score}, 100`}
-                              className="transition-all duration-1000 ease-out"
+                              className="animate-scoreCircle origin-center transition-all duration-[2500ms] ease-out"
+                              style={{
+                                // Animate using CSS for smoother performance
+                                strokeDasharray: `${analysisData.score}, 100`,
+                                strokeDashoffset: 0,
+                              }}
                             />
                           </svg>
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                            <span className="text-2xl font-bold">{analysisData.score}</span>
+                            <span className="text-2xl font-bold animate-countUp" data-target={analysisData.score}>
+                              {analysisData.score}
+                            </span>
                             <span className="text-xs block text-gray-500">out of 100</span>
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex-grow">
-                        <h3 className="text-lg font-semibold mb-2">Resume Quality Score</h3>
-                        <p className="text-gray-600 mb-4 text-sm">
+                        <h3 className="text-lg font-semibold mb-2 text-[#1c170d]">Resume Quality Score</h3>
+                        <p className="text-[#292929] mb-4 text-sm leading-relaxed">
                           This score reflects how well your resume meets industry standards and best practices. 
-                          A higher score indicates a stronger resume that's more likely to impress employers.
+                          A higher score indicates a stronger resume that's more likely to impress employers 
+                          and pass through applicant tracking systems.
                         </p>
+                        
+                        <div className="bg-[#f8f5ee] p-3 rounded-lg mb-4 border border-gray-200">
+                          <h4 className="text-xs font-medium mb-2 text-[#1c170d]">What does this score mean?</h4>
+                          <ul className="space-y-1.5 text-xs text-[#292929]">
+                            <li className="flex items-start">
+                              <span className="text-red-500 mr-2 font-bold">•</span>
+                              <span><strong>Below 60:</strong> Your resume needs significant improvements in multiple areas.</span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="text-amber-500 mr-2 font-bold">•</span>
+                              <span><strong>60-75:</strong> Your resume is average. It has some strong points but needs refinement.</span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="text-green-600 mr-2 font-bold">•</span>
+                              <span><strong>75-90:</strong> Your resume is strong and likely to be competitive for most positions.</span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="text-green-700 mr-2 font-bold">•</span>
+                              <span><strong>90-100:</strong> Your resume is excellent, highly competitive, and optimized for success.</span>
+                            </li>
+                          </ul>
+                        </div>
+                        
                         <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
                           <div 
                             className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${scoreColors.bg}`}
@@ -382,21 +413,29 @@ export function ResumeAnalysisEnhanced({
                       stroke={scoreColors.bg}
                       strokeWidth="3"
                       strokeDasharray={`${analysisData.score}, 100`}
-                      className="transition-all duration-1000 ease-out"
+                      className="animate-scoreCircle origin-center transition-all duration-[2500ms] ease-out"
+                      style={{
+                        // Animate using CSS for smoother performance
+                        strokeDasharray: `${analysisData.score}, 100`,
+                        strokeDashoffset: 0,
+                      }}
                     />
                   </svg>
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                    <span className="text-3xl font-bold">{analysisData.score}</span>
+                    <span className="text-3xl font-bold animate-countUp" data-target={analysisData.score}>
+                      {analysisData.score}
+                    </span>
                     <span className="text-xs block text-gray-500">out of 100</span>
                   </div>
                 </div>
               </div>
               
               <div className="flex-grow">
-                <h3 className="text-xl font-semibold mb-2">Resume Quality Score</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-xl font-semibold mb-2 text-[#1c170d]">Resume Quality Score</h3>
+                <p className="text-[#292929] mb-4 text-sm leading-relaxed">
                   This score reflects how well your resume meets industry standards and best practices. 
-                  A higher score indicates a stronger resume that's more likely to impress employers.
+                  A higher score indicates a stronger resume that's more likely to impress employers
+                  and pass through applicant tracking systems.
                 </p>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
                   <div 
@@ -480,18 +519,12 @@ export function ResumeAnalysisEnhanced({
         </div>
         
         {/* General Feedback Section */}
-        <div className={`mb-8 ${expandedSections.feedback ? '' : 'hidden'}`}>
-          <div className="flex justify-between items-center mb-4">
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <FileText className="h-6 w-6 mr-2 text-[#009962]" />
               Overall Feedback
             </h2>
-            <button 
-              onClick={() => toggleSection('feedback')}
-              className="text-gray-500 hover:text-gray-700 p-1"
-            >
-              {expandedSections.feedback ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </button>
           </div>
           
           {analysisData.generalFeedback ? (
@@ -519,18 +552,12 @@ export function ResumeAnalysisEnhanced({
         </div>
         
         {/* Skills & Keywords Section */}
-        <div className={`mb-8 ${expandedSections.skills ? '' : 'hidden'}`}>
-          <div className="flex justify-between items-center mb-4">
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <Zap className="h-6 w-6 mr-2 text-[#009962]" />
               Skills & Keywords
             </h2>
-            <button 
-              onClick={() => toggleSection('skills')}
-              className="text-gray-500 hover:text-gray-700 p-1"
-            >
-              {expandedSections.skills ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -607,24 +634,18 @@ export function ResumeAnalysisEnhanced({
         </div>
         
         {/* Suggested Improvements Section */}
-        <div className={`mb-8 ${expandedSections.improvements ? '' : 'hidden'}`}>
-          <div className="flex justify-between items-center mb-4">
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
               <Lightbulb className="h-6 w-6 mr-2 text-[#4A90E2]" />
               Suggested Improvements
             </h2>
-            <button 
-              onClick={() => toggleSection('improvements')}
-              className="text-gray-500 hover:text-gray-700 p-1"
-            >
-              {expandedSections.improvements ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </button>
           </div>
           
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="py-3 px-4 bg-[#EEF4FD] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div key={i} className="py-2 px-4 bg-[#EEF4FD] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
                   <div className="flex items-center group">
                     <span className="text-[#4A90E2] mr-2 font-bold text-lg">→</span>
                     <p className="text-[#292929] text-sm">{improvement}</p>
@@ -647,18 +668,12 @@ export function ResumeAnalysisEnhanced({
         
         {/* Job Analysis Section */}
         {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
-          <div className={`mb-8 ${expandedSections.jobAnalysis ? '' : 'hidden'}`}>
-            <div className="flex justify-between items-center mb-6">
+          <div className="mb-8">
+            <div className="flex items-center mb-6">
               <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
                 <Briefcase className="h-6 w-6 mr-2 text-[#009962]" />
                 Job Match Analysis
               </h2>
-              <button 
-                onClick={() => toggleSection('jobAnalysis')}
-                className="text-gray-500 hover:text-gray-700 p-1"
-              >
-                {expandedSections.jobAnalysis ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
             </div>
             
             {analysisData.jobAnalysis && typeof analysisData.jobAnalysis === 'object' ? (
