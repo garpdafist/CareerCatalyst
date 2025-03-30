@@ -377,9 +377,9 @@ export function ResumeAnalysisEnhanced({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Key Skills */}
-            <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-semibold mb-3 flex items-center text-[#1c170d]">
-                <CheckCircle2 className="h-5 w-5 mr-2 text-gray-600" />
+            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-[#1c170d]">
+                <CheckCircle2 className="h-5 w-5 mr-2 text-[#009962]" />
                 Key Skills
               </h3>
               
@@ -394,7 +394,7 @@ export function ResumeAnalysisEnhanced({
                     return (
                       <span 
                         key={i} 
-                        className="px-3 py-1.5 bg-[#e8f5e9] text-[#2e7d32] rounded-full text-sm font-medium border border-[#2e7d32] shadow-sm"
+                        className="px-3 py-1.5 bg-[#e8f5e9] text-[#009962] rounded-full text-sm font-medium border border-[#009962] shadow-sm"
                       >
                         {propercaseKeyword}
                       </span>
@@ -412,9 +412,9 @@ export function ResumeAnalysisEnhanced({
             </div>
             
             {/* Primary Keywords */}
-            <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-semibold mb-3 flex items-center text-[#1c170d]">
-                <FileCheck className="h-5 w-5 mr-2 text-gray-600" />
+            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-[#1c170d]">
+                <FileCheck className="h-5 w-5 mr-2 text-[#009962]" />
                 Primary Keywords
               </h3>
               
@@ -452,7 +452,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.improvements ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
-              <Lightbulb className="h-6 w-6 mr-2 text-gray-600" />
+              <Lightbulb className="h-6 w-6 mr-2 text-[#009962]" />
               Suggested Improvements
             </h2>
             <button 
@@ -466,10 +466,10 @@ export function ResumeAnalysisEnhanced({
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
             <div className="space-y-3">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div key={i} className="p-6 bg-[#f8f5ee] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
                   <div className="flex items-start group">
-                    <span className="text-[#2e7d32] mr-2 group-hover:text-[#1b5e20] transition-colors">→</span>
-                    <p className="text-gray-700 group-hover:text-[#292929] transition-colors">{improvement}</p>
+                    <span className="text-[#009962] mr-3 font-bold text-xl">→</span>
+                    <p className="text-[#292929]">{improvement}</p>
                   </div>
                 </div>
               ))}
@@ -513,10 +513,10 @@ export function ResumeAnalysisEnhanced({
                   </h3>
                   <div className="space-y-2">
                     {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
-                      <div key={i} className="p-4 bg-[#e8f5e9] rounded-lg">
+                      <div key={i} className="p-6 bg-[#e8f5e9] rounded-lg border border-gray-200 shadow-sm">
                         <div className="flex items-start">
-                          <span className="text-[#2e7d32] mr-3 font-bold text-xl">✓</span>
-                          <span className="text-gray-800">{strength}</span>
+                          <span className="text-[#009962] mr-3 font-bold text-xl">✓</span>
+                          <span className="text-[#292929]">{strength}</span>
                         </div>
                       </div>
                     ))}
@@ -533,10 +533,10 @@ export function ResumeAnalysisEnhanced({
                   </h3>
                   <div className="space-y-2">
                     {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
-                      <div key={i} className="p-4 bg-[#ffebee] rounded-lg">
+                      <div key={i} className="p-6 bg-[#ffebee] rounded-lg border border-gray-200 shadow-sm">
                         <div className="flex items-start">
-                          <span className="text-red-600 mr-3 font-bold text-xl">✕</span>
-                          <span className="text-gray-800">{gap}</span>
+                          <span className="text-[#e53935] mr-3 font-bold text-xl">✕</span>
+                          <span className="text-[#292929]">{gap}</span>
                         </div>
                       </div>
                     ))}
@@ -553,10 +553,10 @@ export function ResumeAnalysisEnhanced({
                   </h3>
                   <div className="space-y-2">
                     {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
-                      <div key={i} className="p-4 bg-[#e3f2fd] rounded-lg">
+                      <div key={i} className="p-6 bg-[#e3f2fd] rounded-lg border border-gray-200 shadow-sm">
                         <div className="flex items-start">
-                          <span className="text-blue-600 mr-3 font-bold text-xl">→</span>
-                          <span className="text-gray-800">{rec}</span>
+                          <span className="text-[#3f51b5] mr-3 font-bold text-xl">→</span>
+                          <span className="text-[#292929]">{rec}</span>
                         </div>
                       </div>
                     ))}
@@ -570,31 +570,16 @@ export function ResumeAnalysisEnhanced({
                   <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
                     Overall Fit Assessment
                   </h3>
-                  <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div className="flex items-start">
                       <span className="text-gray-500 mr-3 text-xl flex-shrink-0">ⓘ</span>
-                      <span className="text-gray-800">{analysisData.jobAnalysis.overallFit}</span>
+                      <span className="text-[#292929]">{analysisData.jobAnalysis.overallFit}</span>
                     </div>
                   </div>
                 </div>
                 )}
                 
-                {/* Ready to Improve CTA */}
-                <div className="p-6 bg-[#e8f5e9] rounded-lg mt-8">
-                  <h3 className="text-xl font-semibold mb-2 text-[#1c170d]">
-                    Ready to Improve Your Resume?
-                  </h3>
-                  <p className="text-gray-700 mb-4">
-                    Use our AI-powered resume editor to implement these suggestions and create a stronger resume
-                  </p>
-                  <button 
-                    onClick={onImproveResume}
-                    className="flex items-center text-[#2e7d32] font-medium hover:text-[#1b5e20] transition-colors"
-                  >
-                    <span>Improve my resume</span>
-                    <ArrowRight className="h-5 w-5 ml-2" />
-                  </button>
-                </div>
+
               </div>
             ) : (
               <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
