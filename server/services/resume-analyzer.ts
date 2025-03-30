@@ -526,6 +526,21 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
           };
         }
         
+        // Critical fix: Ensure jobAnalysis is populated when a job description is provided
+        if (jobDescription && (!parsedResponse.jobAnalysis || parsedResponse.jobAnalysis === null)) {
+          console.log(`[${new Date().toISOString()}] WARNING: Job description was provided but jobAnalysis is missing in the response`);
+          parsedResponse.jobAnalysis = {
+            alignmentAndStrengths: ["Your skills match some of the requirements in the job description."],
+            gapsAndConcerns: ["There may be requirements in the job description that aren't reflected in your resume."],
+            recommendationsToTailor: [
+              "Tailor your resume to highlight experience relevant to this position",
+              "Incorporate keywords from the job description into your resume",
+              "Quantify achievements that demonstrate skills mentioned in the job posting"
+            ],
+            overallFit: "The AI was unable to generate a complete job match analysis. To get better results, try analyzing your resume against a more detailed job description."
+          };
+        }
+        
         console.log(`[${new Date().toISOString()}] Response parsed and enhanced successfully`);
         return parsedResponse;
       } catch (error: any) {
@@ -548,13 +563,15 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
             summaryClarity: { score: 6, maxScore: 10, feedback: "Adequate summary" },
             overallPolish: { score: 7, maxScore: 10, feedback: "Reasonably polished" }
           },
-          // CRITICAL FIX: Always include jobAnalysis as null when there's no job description
-          // Always use null instead of undefined to ensure consistent behavior with schema
+          // When job description exists, always populate jobAnalysis with meaningful content
           jobAnalysis: jobDescription ? {
-            alignmentAndStrengths: [],
-            gapsAndConcerns: [],
-            recommendationsToTailor: [],
-            overallFit: "No job analysis could be generated."
+            alignmentAndStrengths: ["Your resume contains some relevant skills."],
+            gapsAndConcerns: ["There may be gaps between your resume and the job requirements."],
+            recommendationsToTailor: [
+              "Tailor your resume to highlight experience relevant to this position",
+              "Incorporate keywords from the job description into your resume"
+            ],
+            overallFit: "We encountered difficulty analyzing your resume against this job description. Try reviewing both documents to ensure they are well-structured."
           } : null
         };
       }
@@ -600,13 +617,16 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
         generalFeedback: {
           overall: "We encountered an error analyzing your resume. This might be due to temporary service limitations or issues with the resume format."
         },
-        // CRITICAL FIX: Always include jobAnalysis as null when there's no job description
-        // Always use null instead of undefined to maintain consistency with schema
+        // When job description exists, always provide meaningful job analysis content
         jobAnalysis: jobDescription ? {
-          alignmentAndStrengths: [],
-          gapsAndConcerns: [],
-          recommendationsToTailor: ["Try analyzing again with the job description"],
-          overallFit: "Unable to analyze job fit due to a service error."
+          alignmentAndStrengths: ["Your resume may contain skills relevant to this job."],
+          gapsAndConcerns: ["Service error prevented detailed gap analysis."],
+          recommendationsToTailor: [
+            "Try analyzing again with the job description", 
+            "Ensure your resume highlights skills mentioned in the job posting",
+            "Format your resume clearly to help our AI analyze it better"
+          ],
+          overallFit: "We encountered a service error while analyzing your job fit. Please try again later."
         } : null
       };
     }
