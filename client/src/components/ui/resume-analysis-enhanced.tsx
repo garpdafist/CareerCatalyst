@@ -21,6 +21,15 @@ import { ResumeAnalysis } from '@shared/schema';
 import { Link, useLocation } from 'wouter';
 import { useState, useRef, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 interface ResumeAnalysisEnhancedProps {
   analysisData: ResumeAnalysis | null | undefined;
@@ -37,13 +46,16 @@ export function ResumeAnalysisEnhanced({
 }: ResumeAnalysisEnhancedProps) {
   // State for accordion sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    score: true,
+    score: false, // Hidden by default now
     feedback: true,
     skills: true,
     keywords: true,
     improvements: true,
     jobAnalysis: true
   });
+  
+  // State for score details popup modal
+  const [scoreDetailsOpen, setScoreDetailsOpen] = useState(false);
   
   // Ref for sticky navigation
   const navRef = useRef<HTMLDivElement>(null);
@@ -153,34 +165,176 @@ export function ResumeAnalysisEnhanced({
             </div>
             
             <div className="flex gap-2 flex-wrap">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
+                  >
+                    <BarChart3 className="h-3.5 w-3.5 mr-1 text-[#009962]" />
+                    <span>View Score Breakdown</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center">
+                      <BarChart3 className="h-5 w-5 mr-2 text-[#009962]" />
+                      Resume Score Breakdown
+                    </DialogTitle>
+                    <DialogDescription>
+                      Detailed breakdown of your resume score by category.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-6 mt-4">
+                    {/* Overall Score with circular indicator */}
+                    <div className="flex flex-col md:flex-row md:items-center p-5 bg-[#f8f5ee] rounded-lg border border-gray-200">
+                      <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
+                        <div className="relative w-24 h-24 mx-auto">
+                          <svg className="w-full h-full" viewBox="0 0 36 36">
+                            <path
+                              d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke="#E5E7EB"
+                              strokeWidth="3"
+                            />
+                            <path
+                              d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                              fill="none"
+                              stroke={scoreColors.bg}
+                              strokeWidth="3"
+                              strokeDasharray={`${analysisData.score}, 100`}
+                              className="transition-all duration-1000 ease-out"
+                            />
+                          </svg>
+                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                            <span className="text-2xl font-bold">{analysisData.score}</span>
+                            <span className="text-xs block text-gray-500">out of 100</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-grow">
+                        <h3 className="text-lg font-semibold mb-2">Resume Quality Score</h3>
+                        <p className="text-gray-600 mb-4 text-sm">
+                          This score reflects how well your resume meets industry standards and best practices. 
+                          A higher score indicates a stronger resume that's more likely to impress employers.
+                        </p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                          <div 
+                            className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${scoreColors.bg}`}
+                            style={{ width: `${analysisData.score}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Needs Improvement</span>
+                          <span>Excellent</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Score Categories */}
+                    {analysisData.scores && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {Object.entries(analysisData.scores).map(([key, scoreObj]) => {
+                          if (!scoreObj || typeof scoreObj !== 'object') return null;
+                          
+                          // Generate a proper display name for the category
+                          const displayName = key
+                            .replace(/([A-Z])/g, ' $1') // Add spaces before capital letters
+                            .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
+                            .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                            .replace(/Readability/, 'Readability') // Fix specific cases
+                            .replace(/Keywords/, 'Keywords')
+                            .replace(/Relevance/, 'Relevance')
+                            .replace(/Metrics/, 'Metrics')
+                            .replace(/Polish/, 'Polish')
+                            .replace(/Clarity/, 'Clarity');
+                          
+                          // Safely get score and maxScore with type checking
+                          const score = typeof scoreObj === 'object' && scoreObj !== null && 'score' in scoreObj 
+                            ? (scoreObj.score as number) || 0 
+                            : 0;
+                            
+                          const maxScore = typeof scoreObj === 'object' && scoreObj !== null && 'maxScore' in scoreObj 
+                            ? (scoreObj.maxScore as number) || 10 
+                            : 10;
+                            
+                          const percentage = (score / maxScore) * 100;
+                          const categoryColor = getScoreColor(percentage);
+                          
+                          // Select an appropriate icon based on the category name
+                          let Icon = CheckCircle2;
+                          if (key.toLowerCase().includes('keyword')) Icon = FileCheck;
+                          else if (key.toLowerCase().includes('achievement')) Icon = Award;
+                          else if (key.toLowerCase().includes('structure')) Icon = PenLine;
+                          else if (key.toLowerCase().includes('summary')) Icon = FileText;
+                          else if (key.toLowerCase().includes('polish')) Icon = Star;
+                          
+                          return (
+                            <div key={key} className="p-3 rounded-lg border border-gray-200">
+                              <div className="flex items-center mb-2">
+                                <Icon className={`h-5 w-5 mr-2 ${categoryColor.icon}`} />
+                                <h4 className="font-medium text-sm">{displayName}</h4>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                                <div 
+                                  className={`h-1.5 rounded-full ${categoryColor.bg}`}
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">
+                                  {score}/{maxScore}
+                                </span>
+                                {typeof scoreObj === 'object' && scoreObj !== null && 'feedback' in scoreObj && (
+                                  <span className="text-xs text-gray-500">
+                                    {scoreObj.feedback ? String(scoreObj.feedback) : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-gray-700 border-gray-300 hover:bg-gray-50"
-                onClick={() => toggleSection('score')}
+                className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
+                onClick={() => toggleSection('skills')}
               >
-                <BarChart3 className="h-4 w-4 mr-1" />
-                <span>Score Details</span>
+                <Zap className="h-3.5 w-3.5 mr-1 text-[#009962]" />
+                <span>Key Skills</span>
               </Button>
               
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-gray-700 border-gray-300 hover:bg-gray-50"
-                onClick={() => toggleSection('improvements')}
+                className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
+                onClick={() => toggleSection('feedback')}
               >
-                <Lightbulb className="h-4 w-4 mr-1" />
-                <span>Improvements</span>
+                <FileText className="h-3.5 w-3.5 mr-1 text-[#009962]" />
+                <span>Feedback</span>
               </Button>
               
               {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="text-gray-700 border-gray-300 hover:bg-gray-50"
+                  className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
                   onClick={() => toggleSection('jobAnalysis')}
                 >
-                  <Briefcase className="h-4 w-4 mr-1" />
+                  <Briefcase className="h-3.5 w-3.5 mr-1 text-[#009962]" />
                   <span>Job Match</span>
                 </Button>
               ) : null}
@@ -341,10 +495,10 @@ export function ResumeAnalysisEnhanced({
           </div>
           
           {analysisData.generalFeedback ? (
-            <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-start">
-                <span className="text-[#009962] mr-3 text-xl flex-shrink-0">ⓘ</span>
-                <p className="text-[#292929] leading-relaxed">
+                <span className="text-[#009962] mr-2 text-lg flex-shrink-0">ⓘ</span>
+                <p className="text-[#292929] leading-relaxed text-sm">
                   {typeof analysisData.generalFeedback === 'object' 
                     ? analysisData.generalFeedback.overall 
                     : analysisData.generalFeedback}
@@ -352,10 +506,10 @@ export function ResumeAnalysisEnhanced({
               </div>
             </div>
           ) : (
-            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex">
-                <Lightbulb className="h-5 w-5 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
-                <p className="text-[#292929]">
+            <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="flex items-start">
+                <Lightbulb className="h-4 w-4 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-[#292929] text-sm">
                   We weren't able to generate overall feedback for this resume. This might be due to an analysis issue or insufficient data. 
                   Please try analyzing your resume again or contact support if this problem persists.
                 </p>
@@ -468,21 +622,21 @@ export function ResumeAnalysisEnhanced({
           </div>
           
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="p-6 bg-[#EEF4FD] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
-                  <div className="flex items-start group">
-                    <span className="text-[#4A90E2] mr-3 font-bold text-xl">→</span>
-                    <p className="text-[#292929]">{improvement}</p>
+                <div key={i} className="py-3 px-4 bg-[#EEF4FD] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex items-center group">
+                    <span className="text-[#4A90E2] mr-2 font-bold text-lg">→</span>
+                    <p className="text-[#292929] text-sm">{improvement}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex">
-                <Lightbulb className="h-5 w-5 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
-                <p className="text-[#292929]">
+            <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="flex items-start">
+                <Lightbulb className="h-4 w-4 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-[#292929] text-sm">
                   We weren't able to generate specific improvement suggestions for this resume. This might be due to an analysis issue or insufficient data in your resume.
                   Try adding more detailed information to your resume, or analyze again with a job description for more targeted improvements.
                 </p>
@@ -519,10 +673,10 @@ export function ResumeAnalysisEnhanced({
                   </h3>
                   <div className="space-y-2">
                     {analysisData.jobAnalysis.alignmentAndStrengths.map((strength, i) => (
-                      <div key={i} className="p-6 bg-[#e8f5e9] rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex items-start">
-                          <span className="text-[#009962] mr-3 font-bold text-xl">✓</span>
-                          <span className="text-[#292929]">{strength}</span>
+                      <div key={i} className="py-3 px-4 bg-[#e8f5e9] rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-center">
+                          <span className="text-[#2e7d32] mr-2 font-bold text-lg">✓</span>
+                          <span className="text-[#292929] text-sm">{strength}</span>
                         </div>
                       </div>
                     ))}
@@ -540,10 +694,10 @@ export function ResumeAnalysisEnhanced({
                   </h3>
                   <div className="space-y-2">
                     {analysisData.jobAnalysis.gapsAndConcerns.map((gap, i) => (
-                      <div key={i} className="p-6 bg-[#ffebee] rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex items-start">
-                          <span className="text-[#e53935] mr-3 font-bold text-xl">✕</span>
-                          <span className="text-[#292929]">{gap}</span>
+                      <div key={i} className="py-3 px-4 bg-[#ffebee] rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-center">
+                          <span className="text-[#e53935] mr-2 font-bold text-lg">✕</span>
+                          <span className="text-[#292929] text-sm">{gap}</span>
                         </div>
                       </div>
                     ))}
@@ -561,10 +715,10 @@ export function ResumeAnalysisEnhanced({
                   </h3>
                   <div className="space-y-2">
                     {analysisData.jobAnalysis.recommendationsToTailor.map((rec, i) => (
-                      <div key={i} className="p-6 bg-[#e3f2fd] rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex items-start">
-                          <span className="text-[#3f51b5] mr-3 font-bold text-xl">→</span>
-                          <span className="text-[#292929]">{rec}</span>
+                      <div key={i} className="py-3 px-4 bg-[#e3f2fd] rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-center">
+                          <span className="text-[#3f51b5] mr-2 font-bold text-lg">→</span>
+                          <span className="text-[#292929] text-sm">{rec}</span>
                         </div>
                       </div>
                     ))}
@@ -579,10 +733,10 @@ export function ResumeAnalysisEnhanced({
                     <Award className="h-5 w-5 mr-2 text-[#009962]" />
                     Overall Fit Assessment
                   </h3>
-                  <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div className="flex items-start">
-                      <span className="text-[#009962] mr-3 text-xl flex-shrink-0">ⓘ</span>
-                      <span className="text-[#292929]">{analysisData.jobAnalysis.overallFit}</span>
+                      <span className="text-[#009962] mr-2 text-lg flex-shrink-0">ⓘ</span>
+                      <span className="text-[#292929] text-sm">{analysisData.jobAnalysis.overallFit}</span>
                     </div>
                   </div>
                 </div>
@@ -591,18 +745,18 @@ export function ResumeAnalysisEnhanced({
 
               </div>
             ) : (
-              <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                <div className="flex">
-                  <Briefcase className="h-5 w-5 text-[#009962] mr-2 flex-shrink-0 mt-0.5" />
+              <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div className="flex items-start">
+                  <Briefcase className="h-4 w-4 text-[#009962] mr-2 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[#1c170d] font-medium mb-2">
+                    <p className="text-[#1c170d] font-medium mb-2 text-sm">
                       Job Analysis Information
                     </p>
-                    <p className="text-[#292929]">
+                    <p className="text-[#292929] text-sm">
                       We detected a job description in your submission, but we weren't able to generate 
                       a complete job-specific analysis for your resume.
                     </p>
-                    <p className="text-[#292929] mt-2">
+                    <p className="text-[#292929] mt-2 text-sm">
                       This might be due to an analysis processing issue or insufficient details in the job description.
                       Try providing a more detailed job description with clear requirements and responsibilities for better matching results.
                     </p>
