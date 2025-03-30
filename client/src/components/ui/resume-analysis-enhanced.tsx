@@ -352,19 +352,7 @@ export function ResumeAnalysisEnhanced({
                 </DialogContent>
               </Dialog>
               
-              {/* Buttons removed as requested */}
-              
-              {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs"
-                  onClick={() => toggleSection('jobAnalysis')}
-                >
-                  <Briefcase className="h-3.5 w-3.5 mr-1 text-[#009962]" />
-                  <span>Job Match</span>
-                </Button>
-              ) : null}
+              {/* All buttons removed except View Score Breakdown */}
             </div>
           </div>
         </div>
@@ -411,16 +399,10 @@ export function ResumeAnalysisEnhanced({
                       fill="none"
                       stroke={scoreColors.bg}
                       strokeWidth="3"
-                      strokeDasharray={`${analysisData.score}, 100`}
                       className="animate-scoreCircle origin-center"
                       style={{
                         // Starting with 0 and animating to full value
-                        strokeDasharray: `0, 100`,
-                        animationName: 'scoreCircleFill, colorTransition',
-                        animationDuration: '2s, 2s',
-                        animationFillMode: 'forwards',
-                        animationTimingFunction: 'ease-out',
-                        animationDelay: '0.2s',
+                        strokeDasharray: "0, 100",
                         '--score-target': analysisData.score,
                       } as React.CSSProperties}
                     />
