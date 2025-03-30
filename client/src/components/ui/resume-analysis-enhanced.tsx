@@ -211,11 +211,12 @@ export function ResumeAnalysisEnhanced({
                               fill="none"
                               stroke={scoreColors.bg}
                               strokeWidth="3"
-                              className="animate-scoreCircle origin-center"
                               style={{
-                                // Starting with 0 and animating to full value
-                                strokeDasharray: "0, 100",
-                                '--score-target': analysisData.score,
+                                strokeDasharray: `${analysisData.score}, 100`,
+                                strokeDashoffset: "0",
+                                transition: "stroke-dasharray 2s ease-out, stroke 2s ease-out",
+                                transform: "rotate(-90deg)",
+                                transformOrigin: "center",
                               } as React.CSSProperties}
                             />
                           </svg>
@@ -388,11 +389,12 @@ export function ResumeAnalysisEnhanced({
                       fill="none"
                       stroke={scoreColors.bg}
                       strokeWidth="3"
-                      className="animate-scoreCircle origin-center"
                       style={{
-                        // Starting with 0 and animating to full value
-                        strokeDasharray: "0, 100",
-                        '--score-target': analysisData.score,
+                        strokeDasharray: `${analysisData.score}, 100`,
+                        strokeDashoffset: "0",
+                        transition: "stroke-dasharray 2s ease-out, stroke 2s ease-out",
+                        transform: "rotate(-90deg)",
+                        transformOrigin: "center",
                       } as React.CSSProperties}
                     />
                   </svg>
