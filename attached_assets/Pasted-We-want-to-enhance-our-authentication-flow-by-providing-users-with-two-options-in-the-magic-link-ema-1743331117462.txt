@@ -1,0 +1,34 @@
+We want to enhance our authentication flow by providing users with two options in the magic link email:
+1. They can simply click the magic link to log in automatically.
+2. Alternatively, they can use a one-time password (OTP) provided in the same email by entering it manually on the login page.
+
+Please implement the following changes:
+
+1. **Email Template Update:**
+   - Modify our authentication email to include both:
+     a. A clickable magic link.
+     b. A unique, time-limited OTP code (e.g., a 6-digit numeric code).
+   - Add clear instructions in the email, such as:
+     "Click the magic link below to sign in automatically, or enter the OTP code provided on the login page if you prefer."
+   
+2. **Backend OTP Generation and Storage:**
+   - Integrate logic to generate a secure OTP code when sending out the magic link email.
+   - Ensure the OTP is stored securely (linked to the user's email or a temporary session) and is set to expire after a short duration (e.g., 10 minutes).
+   - If the magic link is used, ensure the OTP is invalidated (and vice versa) to avoid reuse.
+
+3. **Login Page Update:**
+   - Update the login page UI to include an input field for the OTP code alongside the magic link option.
+   - Implement logic to verify the OTP when the user submits it. On successful verification, log the user in.
+   - Display clear error messages if the OTP is invalid or expired.
+
+4. **User Experience & Error Handling:**
+   - Clearly communicate on the login page that users have two options to log in.
+   - Provide feedback (e.g., loading indicators, success/failure messages) for both the magic link and OTP methods.
+   - Ensure that all interactions are secure and that the OTP cannot be reused.
+
+5. **Security, Logging, and Documentation:**
+   - Log OTP generation and verification events for auditing purposes.
+   - Ensure that both the magic link and OTP flows adhere to our security best practices.
+   - Add inline comments and documentation explaining the new hybrid authentication process, including how OTP generation, storage, and verification work.
+
+Please implement these changes and confirm once the hybrid authentication process (magic link with optional OTP) is working as expected.

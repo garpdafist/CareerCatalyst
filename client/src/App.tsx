@@ -6,6 +6,7 @@ import { Navbar } from "@/components/navbar";
 import { AuthProvider } from "@/hooks/use-auth";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
+import AuthCallback from "@/pages/auth-callback";
 import ResumeAnalyzer from "@/pages/resume-analyzer";
 import ResumeEditor from "@/components/resume/resume-editor";
 import CoverLetterGenerator from "@/pages/cover-letter-generator";
@@ -21,6 +22,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/auth-callback" component={AuthCallback} />
       <Route path="/" component={Home} />
       <ProtectedRoute path="/resume-analyzer" component={ResumeAnalyzer} showContentWithoutAuth={true} />
       <ProtectedRoute path="/all-analyses" component={AllAnalyses} showContentWithoutAuth={true} />
@@ -65,7 +67,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {location !== '/auth' && <Navbar />}
+        {!location.startsWith('/auth') && <Navbar />}
         <main>
           <Router />
         </main>

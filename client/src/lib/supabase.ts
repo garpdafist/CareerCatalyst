@@ -24,6 +24,14 @@ export async function initSupabase() {
         auth: {
           autoRefreshToken: true,
           persistSession: true,
+          storageKey: 'career-ai-auth',
+          flowType: 'pkce',
+          detectSessionInUrl: true
+        },
+        global: {
+          headers: {
+            'x-application-name': 'career-ai-platform'
+          }
         }
       });
 
