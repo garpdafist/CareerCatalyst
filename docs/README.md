@@ -1,56 +1,99 @@
-# CareerAI Documentation
+# Resume Analyzer Documentation
 
 ## Overview
 
-This folder contains comprehensive documentation for the CareerAI platform. The documentation is designed to provide developers and stakeholders with a clear understanding of the application's architecture, features, security considerations, and technical implementation.
+This directory contains comprehensive documentation for the Resume Analyzer application, an AI-powered platform for resume optimization and job matching.
 
-## Table of Contents
+## Documentation Index
 
-1. [Project Overview](ProjectOverview.md) - Comprehensive overview of the entire project
-2. [Architecture](Architecture.md) - Detailed technical architecture and data flow
-3. [Security Checklist](SecurityChecklist.md) - Security audit and recommendations
+### Technical Documentation
 
-## Quick Start
+1. **[Job Analysis Improvements](./job-analysis-improvements.md)**  
+   Comprehensive overview of the enhancements made to the job analysis component, focusing on providing better feedback for poorly matching resumes.
 
-For new developers joining the project, we recommend reading the documentation in this order:
+2. **[Job Analysis Technical Implementation](./job-analysis-technical-implementation.md)**  
+   Detailed technical documentation of the job analysis system architecture, including code examples and implementation details.
 
-1. Start with the [Project Overview](ProjectOverview.md) to understand the application's purpose and main features
-2. Review the [Architecture](Architecture.md) to understand how the system is built
-3. Examine the [Security Checklist](SecurityChecklist.md) to understand security considerations
+3. **[Security Implementation](./security-implementation.md)**  
+   Complete documentation of all security measures implemented in the application, confirming that all security parameters have been addressed.
 
-## Documentation Purpose
+### Architecture and Data Flow
 
-This documentation serves several key purposes:
+Our application follows a modern architecture with these key components:
 
-1. **Knowledge Transfer**: Ensures all team members have a consistent understanding of the application
-2. **Technical Reference**: Provides detailed information about implementation decisions
-3. **Security Guide**: Documents security practices and areas for improvement
-4. **Onboarding Resource**: Helps new team members get up to speed quickly
+- **Frontend**: React with Tailwind CSS and shadcn/ui components
+- **Backend**: Express.js server with TypeScript
+- **Database**: PostgreSQL for data persistence
+- **Authentication**: Supabase for secure user management
+- **AI Integration**: OpenAI GPT-4o for advanced resume analysis
 
-## Documentation Maintenance
+Data flow diagram:
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  User       │────▶│  React UI   │────▶│  Express    │
+│  Interface  │◀────│  Components │◀────│  API Server │
+└─────────────┘     └─────────────┘     └─────────────┘
+                                               │
+                     ┌─────────────┐           │
+                     │  Supabase   │◀──────────┘
+                     │  Auth       │           │
+                     └─────────────┘           │
+                                               │
+     ┌─────────────┐     ┌─────────────┐      │
+     │  OpenAI     │◀────│  Analysis   │◀─────┘
+     │  GPT-4o     │────▶│  Service    │      │
+     └─────────────┘     └─────────────┘      │
+                                              │
+                     ┌─────────────┐          │
+                     │  PostgreSQL │◀─────────┘
+                     │  Database   │
+                     └─────────────┘
+```
 
-This documentation should be treated as a living document and updated whenever significant changes are made to the application. Each document includes a last updated timestamp to track when information was last revised.
+### Features and Functionality
 
-## Key Information
+The Resume Analyzer application includes:
 
-### Technologies Used
+1. **Resume Analysis**
+   - Comprehensive skill extraction
+   - Readability and structure assessment
+   - Improvement recommendations
 
-- **Frontend**: React, Tailwind CSS, shadcn/ui
-- **Backend**: Express.js, Node.js
-- **Database**: PostgreSQL (Neon Serverless)
-- **Authentication**: Supabase Auth
-- **AI Integration**: OpenAI API (GPT-3.5 & GPT-4)
+2. **Job Matching**
+   - Resume-to-job compatibility analysis
+   - Identification of alignment and gaps
+   - Tailoring recommendations
 
-### Primary Features
+3. **Security**
+   - Robust authentication
+   - Data protection
+   - API security
+   - Compliance with best practices
 
-- Resume Analysis
-- Cover Letter Generation
-- LinkedIn Profile Optimization
+## Development Guidelines
 
-### Future Roadmap
+When making changes to the application, please follow these guidelines:
 
-Planned improvements for the application are documented in the [Project Overview](ProjectOverview.md) document under "Future Improvements."
+1. **Code Style**
+   - Follow the TypeScript style conventions
+   - Use meaningful variable and function names
+   - Document complex logic with comments
 
----
+2. **Security**
+   - Never store secrets in code
+   - Always validate user input
+   - Follow the principle of least privilege
 
-Last updated: March 29, 2025 - Updated to reflect Phase 2 architectural improvements
+3. **Testing**
+   - Write tests for new functionality
+   - Verify security aspects
+   - Test edge cases and error handling
+
+4. **Documentation**
+   - Update relevant documentation when making changes
+   - Document any new features or APIs
+   - Keep this documentation index updated
+
+## Contact and Support
+
+For any questions or issues regarding this documentation, please contact the development team.
