@@ -4,12 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { Redirect, useLocation } from "wouter";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [showResend, setShowResend] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const { signIn, isLoading } = useAuth();
+  const { signIn, isLoading, user } = useAuth();
+  
+  // Redirect authenticated users to home page
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   useEffect(() => {
     let timer: NodeJS.Timeout;

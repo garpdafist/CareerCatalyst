@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ResumeAnalysis } from "@shared/schema";
 import { getQueryFn } from "@/lib/queryClient";
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Hook to retrieve, load and handle saved resume analyses
@@ -20,6 +21,9 @@ export function useSavedAnalysis() {
   });
 
   // Query for user's previous analyses with staleTime to reduce network calls
+  // Use the auth state to determine if we should fetch user analyses
+  const { user } = useAuth();
+  
   const { 
     data: userAnalyses,
     isLoading: isLoadingUserAnalyses,
@@ -29,7 +33,7 @@ export function useSavedAnalysis() {
     queryKey: ['/api/user/analyses'],
     queryFn: getQueryFn({ on401: "returnNull" }),
     staleTime: 60000, // Data remains fresh for 1 minute to reduce API calls
-    enabled: true
+    enabled: !!user // Only enable this query when user is authenticated
   });
 
   // Query for specific analysis if ID is provided - with caching

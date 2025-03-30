@@ -221,12 +221,8 @@ const upload = multer({
   }
 });
 
-// Simplified auth middleware for testing
-const requireAuth = async (req: any, res: any, next: any) => {
-  req.session.userId = "test-user-123";
-  req.session.email = "test@example.com";
-  next();
-};
+// Import authentication middleware
+import { requireAuth, getCurrentUserId, initializeSession } from './middleware/auth';
 
 // Add timeout middleware after other imports
 const requestTimeout = (req: any, res: any, next: any) => {
@@ -608,6 +604,9 @@ export function registerRoutes(app: Express): Server {
   
   // Add session middleware
   app.use(sessionMiddleware);
+  
+  // Initialize user sessions with auth info
+  app.use(initializeSession);
   
   // Add CSRF protection for all routes except file uploads
   const csrfProtection = csrf({ cookie: true });

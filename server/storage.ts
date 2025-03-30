@@ -145,6 +145,12 @@ export class DatabaseStorage implements IStorage {
       jobAnalysis?: any; // Add job analysis data
     };
   }): Promise<ResumeAnalysis> {
+    // Verify user authentication
+    if (!data.userId) {
+      console.error('Authentication error: No userId provided for saveResumeAnalysis');
+      throw new Error('Authentication required');
+    }
+  
     // Enhanced logging for debugging job description issues - critical tracing point
     console.log('JOB DESC TRACE - 3. In saveResumeAnalysis:', {
       hasJobDescription: !!data.jobDescription,
@@ -249,6 +255,12 @@ export class DatabaseStorage implements IStorage {
 
   async getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined> {
     try {
+      // Security check - ensure valid ID
+      if (!id || isNaN(id)) {
+        console.error('Invalid analysis ID requested');
+        throw new Error('Invalid analysis ID');
+      }
+      
       console.log('Fetching resume analysis by ID:', {
         id,
         timestamp: new Date().toISOString()
@@ -329,6 +341,12 @@ export class DatabaseStorage implements IStorage {
 
   async getUserAnalyses(userId: string): Promise<ResumeAnalysis[]> {
     try {
+      // Security check - ensure userId is provided
+      if (!userId) {
+        console.error('Authentication error: Attempted to access user analyses without user ID');
+        throw new Error('Authentication required');
+      }
+      
       console.log('Fetching analyses for user:', {
         userId,
         timestamp: new Date().toISOString()
