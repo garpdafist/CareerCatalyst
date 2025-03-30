@@ -133,7 +133,7 @@ export function OtpInput({
   return (
     <div 
       className={cn(
-        "flex gap-2 justify-center items-center", 
+        "flex gap-3 justify-center items-center", 
         className
       )}
     >
@@ -151,9 +151,10 @@ export function OtpInput({
           onPaste={(e) => handlePaste(e, index)}
           disabled={disabled}
           className={cn(
-            "w-10 h-12 text-center rounded-md border border-border/50",
+            "w-12 h-12 text-center rounded-md border border-[#e5e5e5]",
             "text-lg font-medium bg-background",
             "transition-all duration-200",
+            "focus:border-[#009963] focus:ring-1 focus:ring-[#00996333] focus:outline-none",
             disabled && "opacity-50 cursor-not-allowed",
             inputClassName
           )}

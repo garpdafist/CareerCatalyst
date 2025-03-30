@@ -14,10 +14,9 @@ import { OtpInput } from "@/components/ui/otp-input";
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [showResend, setShowResend] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const [activeTab, setActiveTab] = useState<"magic-link" | "otp">("magic-link");
-  const [emailForOtp, setEmailForOtp] = useState("");
+  const [showResend, setShowResend] = useState(false);
   
   const { signIn, isLoading, verifyOtp, isVerifyingOtp, user } = useAuth();
   
@@ -47,9 +46,7 @@ export default function AuthPage() {
     try {
       await signIn(email);
       setShowResend(true);
-      setEmailForOtp(email); // Store email for OTP verification
-      // Switch to OTP tab after sending magic link
-      setActiveTab("otp");
+      setShowOtp(true); // Show OTP verification screen
     } catch (error) {
       // Error is handled in useAuth
     }
@@ -60,6 +57,7 @@ export default function AuthPage() {
     try {
       await signIn(email);
       setCountdown(60);
+      setShowResend(true);
     } catch (error) {
       // Error is handled in useAuth
     }
@@ -67,13 +65,8 @@ export default function AuthPage() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailForOtp) {
-      // If email isn't stored (user went directly to OTP tab), use the current email field
-      setEmailForOtp(email);
-    }
-    
     try {
-      await verifyOtp(emailForOtp || email, otp);
+      await verifyOtp(email, otp);
     } catch (error) {
       // Error is handled in useAuth hook
     }
@@ -139,159 +132,126 @@ export default function AuthPage() {
             </CardHeader>
             
             <CardContent>
-              <Tabs 
-                value={activeTab} 
-                onValueChange={(value) => setActiveTab(value as "magic-link" | "otp")} 
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-[#f2efe5]/40">
-                  <TabsTrigger 
-                    value="magic-link"
-                    className="data-[state=active]:bg-[#e8f5e9] data-[state=active]:text-[#2e7d32] data-[state=active]:shadow-sm py-2.5"
-                  >
-                    Magic Link
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="otp"
-                    className="data-[state=active]:bg-[#e8f5e9] data-[state=active]:text-[#2e7d32] data-[state=active]:shadow-sm py-2.5"
-                  >
-                    One-Time Password
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="magic-link">
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="space-y-3">
-                      <Label htmlFor="email" className="text-sm font-medium">
-                        Email Address
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        className="w-full bg-white py-6 px-4 border border-[#e5e5e5] placeholder:text-muted-foreground/60 focus:border-[#009963]"
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 bg-[#009963] hover:bg-[#008955] transition-all duration-200 shadow-sm hover:shadow-md rounded-md text-white font-medium" 
+              {!showOtp ? (
+                // Initial email input form
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-3">
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
                       disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Sending magic link...
-                        </>
-                      ) : (
-                        <>
-                          Send Magic Link
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-
-                    {showResend && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full mt-2 border-[#e5e5e5] hover:bg-[#f2efe5]/30 hover:text-[#009963]"
-                        onClick={handleResend}
-                        disabled={countdown > 0 || isLoading}
-                      >
-                        {countdown > 0 ? (
-                          <div className="flex items-center">
-                            <Clock className="mr-2 h-4 w-4" />
-                            Resend in {countdown}s
-                          </div>
-                        ) : (
-                          "Resend magic link"
-                        )}
-                      </Button>
+                      className="w-full bg-white py-6 px-4 border border-[#e5e5e5] placeholder:text-muted-foreground/60 focus:border-[#009963]"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-[#009963] hover:bg-[#008955] transition-all duration-200 shadow-sm hover:shadow-md rounded-md text-white font-medium" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Sending verification...
+                      </>
+                    ) : (
+                      <>
+                        Sign In Securely
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
                     )}
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="otp">
-                  <form onSubmit={handleVerifyOtp} className="space-y-5">
-                    {!emailForOtp && (
-                      <div className="space-y-3">
-                        <Label htmlFor="email-otp" className="text-sm font-medium">
-                          Email Address
-                        </Label>
-                        <Input
-                          id="email-otp"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          disabled={isVerifyingOtp}
-                          className="w-full bg-white py-6 px-4 border border-[#e5e5e5] placeholder:text-muted-foreground/60 focus:border-[#009963]"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="space-y-3">
-                      <Label htmlFor="otp" className="text-sm font-medium">
-                        One-Time Password
-                      </Label>
-                      
-                      {/* Custom OTP input component */}
-                      <OtpInput
-                        value={otp}
-                        onChange={setOtp}
-                        length={6}
-                        disabled={isVerifyingOtp}
-                        className="py-2"
-                        inputClassName="bg-white border-[#e5e5e5] focus:border-[#009963]"
-                      />
+                  </Button>
+                </form>
+              ) : (
+                // OTP verification form
+                <form onSubmit={handleVerifyOtp} className="space-y-5">
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#e8f5e9] mb-3">
+                      <Mail className="h-6 w-6 text-[#2e7d32]" />
                     </div>
+                    <h3 className="text-lg font-medium mb-1">Check your email</h3>
+                    <p className="text-sm text-muted-foreground">
+                      We've sent a verification email to <span className="font-medium">{email}</span>
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label htmlFor="otp" className="text-sm font-medium">
+                      Enter the 6-digit code
+                    </Label>
                     
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 bg-[#009963] hover:bg-[#008955] transition-all duration-200 shadow-sm hover:shadow-md rounded-md text-white font-medium" 
+                    {/* Custom OTP input component */}
+                    <OtpInput
+                      value={otp}
+                      onChange={setOtp}
+                      length={6}
                       disabled={isVerifyingOtp}
+                      className="py-2"
+                      inputClassName="bg-white border-[#e5e5e5] focus:border-[#009963]"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-[#009963] hover:bg-[#008955] transition-all duration-200 shadow-sm hover:shadow-md rounded-md text-white font-medium" 
+                    disabled={isVerifyingOtp}
+                  >
+                    {isVerifyingOtp ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        Verify & Sign In
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                  
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm text-[#009963] hover:text-[#008955]"
+                      onClick={handleResend}
+                      disabled={countdown > 0 || isLoading}
                     >
-                      {isVerifyingOtp ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Verifying...
-                        </>
+                      {countdown > 0 ? (
+                        <div className="flex items-center">
+                          <Clock className="mr-2 h-4 w-4" />
+                          Resend email in {countdown}s
+                        </div>
                       ) : (
-                        <>
-                          Verify & Sign In
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
+                        "Resend verification email"
                       )}
                     </Button>
-                    
-                    {!emailForOtp && (
-                      <p className="text-sm text-muted-foreground mt-2 text-center">
-                        Don't have a code? <Button variant="link" className="p-0 h-auto text-[#009963] hover:text-[#008955]" onClick={() => setActiveTab("magic-link")}>Request a magic link first</Button>
-                      </p>
-                    )}
-                  </form>
-                </TabsContent>
-              </Tabs>
+                  </div>
+                </form>
+              )}
             </CardContent>
             
-            <CardFooter className="flex flex-col text-center text-sm text-muted-foreground px-8 pb-6 pt-1 border-t border-[#e5e5e5]/50">
+            <CardFooter className="flex flex-col text-center text-sm text-muted-foreground px-8 pb-6 pt-3 border-t border-[#e5e5e5]/50">
               <div className="flex items-center justify-center mb-2 space-x-2">
                 <Clock className="h-4 w-4 text-muted-foreground/70" />
                 <p>
-                  {activeTab === "magic-link" 
-                    ? "We'll send you a magic link and OTP code to sign in securely"
-                    : "Enter the 6-digit code from the email we sent you"}
+                  {!showOtp 
+                    ? "You'll receive both a magic link and one-time code via email"
+                    : "Both the magic link and OTP code expire after 10 minutes"}
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground/70">
-                Both the magic link and OTP code expire after 10 minutes for security
-              </p>
+              {!showOtp && (
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Use either method to securely access your account
+                </p>
+              )}
             </CardFooter>
           </Card>
         </motion.div>
