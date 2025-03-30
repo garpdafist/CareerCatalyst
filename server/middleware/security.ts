@@ -69,9 +69,44 @@ export const addSecurityHeaders = (_req: Request, res: Response, next: NextFunct
   // Strict Transport Security - enforce HTTPS
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   
-  // Content Security Policy - only in production mode
-  if (process.env.NODE_ENV === 'production') {
-    // Stricter CSP for production
+  // Always enable connectivity to Supabase regardless of environment
+  // This is essential for authentication to work properly
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  if (supabaseUrl) {
+    try {
+      // Parse URL to get domain
+      const supabaseDomain = new URL(supabaseUrl).hostname;
+      console.log(`[SECURITY] Adding ${supabaseDomain} to CSP connect-src`);
+      
+      // Set Content Security Policy header that allows Supabase connections
+      res.setHeader('Content-Security-Policy', 
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "img-src 'self' data: https:; " +
+        `connect-src 'self' https://api.openai.com https://*.supabase.co https://${supabaseDomain}; ` +
+        "report-uri /api/csp-report"
+      );
+    } catch (error) {
+      console.error('[SECURITY] Error parsing Supabase URL for CSP:', error);
+      
+      // Fallback CSP configuration with all Supabase connections allowed
+      res.setHeader('Content-Security-Policy', 
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "img-src 'self' data: https:; " +
+        "connect-src 'self' https://api.openai.com https://*.supabase.co; " +
+        "report-uri /api/csp-report"
+      );
+    }
+  } else {
+    // No Supabase URL in environment, use default CSP
+    console.warn('[SECURITY] No Supabase URL found in environment variables for CSP configuration');
+    
+    // Default CSP for when no Supabase URL is available
     res.setHeader('Content-Security-Policy', 
       "default-src 'self'; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
@@ -82,7 +117,6 @@ export const addSecurityHeaders = (_req: Request, res: Response, next: NextFunct
       "report-uri /api/csp-report"
     );
   }
-  // No CSP in development mode for easier debugging
   
   next();
 };

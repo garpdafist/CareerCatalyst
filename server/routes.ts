@@ -782,64 +782,91 @@ export function registerRoutes(app: Express): Server {
         
         console.log(`[API CONFIG] Testing DNS resolution for ${hostname}`);
         
-        // Use DNS resolution testing
+        // Use a simpler, browser-compatible approach to test connectivity
         try {
-          const { exec } = require('child_process');
+          // Use fetch API instead of Node.js modules for browser compatibility
+          console.log(`[API CONFIG] Testing connectivity to ${hostname}`);
           
-          // Use getent to test DNS resolution (Linux)
-          const dnsCheckPromise = new Promise((resolve) => {
-            exec(`getent hosts ${hostname}`, (error: any, stdout: string, stderr: string) => {
-              if (error) {
-                console.error(`[API CONFIG] DNS resolution error: ${error.message}`);
-                resolve({ success: false, error: error.message, stdout, stderr });
-              } else {
-                resolve({ success: true, stdout, stderr });
+          // Simple connectivity test using fetch API
+          // First create a test function that returns a promise
+          const testDomainConnectivity = async () => {
+            try {
+              // Try a simple no-cors HEAD request to test connectivity
+              const testUrl = `https://${hostname}/auth/v1/health`;
+              console.log(`[API CONFIG] Testing connection to ${testUrl}`);
+              
+              // Use fetch with a timeout
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              
+              const response = await fetch(testUrl, {
+                method: 'HEAD',
+                signal: controller.signal,
+                // Mode no-cors doesn't provide response details but won't fail on CORS issues
+                mode: 'no-cors'
+              });
+              
+              clearTimeout(timeoutId);
+              console.log(`[API CONFIG] Connected to ${hostname}, status: ${response.status}`);
+              return { success: true, statusCode: response.status };
+            } catch (error: any) {
+              console.error(`[API CONFIG] Connection error:`, error);
+              
+              // Check for specific error types
+              let isDnsError = false;
+              
+              if (error.name === 'AbortError') {
+                console.log('[API CONFIG] Request timed out');
+                return { success: false, error: 'Connection timed out' };
               }
-            });
-          });
+              
+              if (error.message) {
+                isDnsError = error.message.includes('ENOTFOUND') || 
+                             error.message.includes('ECONNREFUSED') || 
+                             error.message.includes('resolve') ||
+                             error.message.includes('DNS');
+              }
+              
+              if (isDnsError) {
+                return { success: false, error: error.message || 'DNS resolution error' };
+              } else {
+                // For other errors, DNS resolution may have worked
+                return { success: true, error: error.message || 'Connection error' };
+              }
+            }
+          };
           
-          const dnsResult = await dnsCheckPromise;
-          dnsStatus.canResolve = (dnsResult as any).success;
+          // Execute the test
+          const dnsResult = await testDomainConnectivity();
+          dnsStatus.canResolve = dnsResult.success;
           
-          if (!(dnsResult as any).success) {
+          if (!dnsResult.success) {
             dnsStatus.error = `Cannot resolve hostname ${hostname}`;
             console.error(`[API CONFIG] DNS resolution failed for ${hostname}`);
           } else {
             console.log(`[API CONFIG] DNS resolution successful for ${hostname}`);
             
-            // Now test connectivity with a simple https request
+            // Test direct connectivity with a proper fetch request
             try {
-              const https = require('https');
-              const agent = new https.Agent({
-                rejectUnauthorized: false, // For testing only
-                timeout: 5000
+              console.log(`[API CONFIG] Testing connection to ${supabaseUrl}/health`);
+              
+              // Set up a timeout
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              
+              // Make the request
+              const response = await fetch(`${supabaseUrl}/health`, {
+                method: 'HEAD',
+                signal: controller.signal,
+                mode: 'no-cors'
               });
               
-              const fetchPromise = new Promise((resolve) => {
-                const req = https.get(`${supabaseUrl}/auth/v1/health`, { agent }, (res: any) => {
-                  resolve({ success: true, statusCode: res.statusCode });
-                });
-                
-                req.on('error', (err: any) => {
-                  resolve({ success: false, error: err.message });
-                });
-                
-                req.setTimeout(5000, () => {
-                  req.destroy();
-                  resolve({ success: false, error: 'Connection timed out' });
-                });
-              });
-              
-              const fetchResult = await fetchPromise;
-              dnsStatus.canConnect = (fetchResult as any).success;
-              
-              if (!(fetchResult as any).success) {
-                console.error(`[API CONFIG] Connection failed: ${(fetchResult as any).error}`);
-              } else {
-                console.log(`[API CONFIG] Connection successful, status: ${(fetchResult as any).statusCode}`);
-              }
+              clearTimeout(timeoutId);
+              dnsStatus.canConnect = true;
+              console.log(`[API CONFIG] Connection successful to ${supabaseUrl}`);
             } catch (connErr: any) {
-              console.error(`[API CONFIG] Connection test error: ${connErr.message}`);
+              dnsStatus.canConnect = false;
+              console.error(`[API CONFIG] Connection test error:`, connErr);
             }
           }
         } catch (err: any) {

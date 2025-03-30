@@ -38,6 +38,97 @@ export default function AuthPage() {
     };
   }, [showResend, countdown]);
   
+  // State to track connectivity issues
+  const [connectionStatus, setConnectionStatus] = useState<{
+    hasIssue: boolean;
+    issueType: 'dns' | 'connection' | 'network' | 'browser' | null;
+    domain: string | null;
+  }>({
+    hasIssue: false,
+    issueType: null,
+    domain: null
+  });
+
+  // Check for connectivity issues with Supabase on page load
+  useEffect(() => {
+    // Perform a connectivity test to Supabase
+    async function testConnectivity() {
+      try {
+        // First check the API config endpoint which performs server-side DNS checks
+        console.log('Fetching API config with connection diagnostics...');
+        const configResponse = await fetch('/api/config');
+        const config = await configResponse.json();
+        
+        // Check if server-side diagnostics detected DNS issues
+        if (config.diagnostics?.dnsStatus) {
+          const { canResolve, canConnect, domain } = config.diagnostics.dnsStatus;
+          console.log('Server-side DNS diagnostics:', { canResolve, canConnect, domain });
+          
+          // If server couldn't resolve or connect to Supabase, show warning
+          if (!canResolve || !canConnect) {
+            console.warn('Server detected connectivity issues with Supabase');
+            
+            // Determine the issue type
+            const issueType = !canResolve ? 'dns' : 'connection';
+            
+            // Update connection status state
+            setConnectionStatus({
+              hasIssue: true,
+              issueType,
+              domain
+            });
+          }
+        }
+        
+        // Now test direct connectivity from browser 
+        try {
+          console.log('Testing direct Supabase connectivity from browser...');
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const testResponse = await fetch(config.supabaseUrl + '/auth/v1/health', {
+            method: 'HEAD',
+            signal: controller.signal,
+            mode: 'no-cors', // This won't provide response data but won't fail on CORS issues
+            cache: 'no-cache',
+            credentials: 'omit'
+          });
+          
+          clearTimeout(timeoutId);
+          console.log('Supabase connectivity test completed');
+        } catch (fetchError: any) {
+          console.error('Browser connectivity test failed:', fetchError);
+          
+          // Determine the type of connection error
+          let issueType: 'browser' | 'network' = 'network';
+          if (fetchError.name === 'TypeError' && fetchError.message?.includes('Failed to fetch')) {
+            issueType = 'browser';
+          }
+          
+          // Update connection status
+          if (!connectionStatus.hasIssue) {
+            setConnectionStatus({
+              hasIssue: true,
+              issueType,
+              domain: config.supabaseUrl ? new URL(config.supabaseUrl).hostname : null
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error during connectivity check:', error);
+        
+        // Generic network error
+        setConnectionStatus({
+          hasIssue: true,
+          issueType: 'network',
+          domain: null
+        });
+      }
+    }
+    
+    testConnectivity();
+  }, []);
+  
   // Redirect authenticated users to home page
   if (user) {
     return <Redirect to="/" />;
@@ -189,6 +280,52 @@ export default function AuthPage() {
               {!showOtp ? (
                 // Initial email input form
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Connection warning banner - conditionally shown based on connectionStatus */}
+                  {connectionStatus.hasIssue && (
+                    <Alert variant="warning" className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                      <div className="flex items-start">
+                        <AlertTriangle className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
+                        <div>
+                          <h3 className="text-sm font-medium text-amber-800">
+                            {connectionStatus.issueType === 'dns' 
+                              ? 'DNS Resolution Issue Detected' 
+                              : connectionStatus.issueType === 'browser'
+                              ? 'Browser Security Restriction Detected'
+                              : 'Network Connectivity Issue Detected'}
+                          </h3>
+                          <p className="text-sm text-amber-700 mt-1">
+                            We're having trouble connecting to our authentication service
+                            {connectionStatus.domain ? ` (${connectionStatus.domain})` : ''}.
+                          </p>
+                          <ul className="list-disc pl-5 mt-1 text-sm text-amber-700">
+                            {connectionStatus.issueType === 'dns' && (
+                              <>
+                                <li>Your network may have DNS resolution restrictions</li>
+                                <li>The hostname may be temporarily unavailable</li>
+                              </>
+                            )}
+                            {connectionStatus.issueType === 'browser' && (
+                              <>
+                                <li>Your browser's security settings may be blocking the connection</li>
+                                <li>Content Security Policy restrictions may be in effect</li>
+                              </>
+                            )}
+                            {(connectionStatus.issueType === 'network' || connectionStatus.issueType === 'connection') && (
+                              <>
+                                <li>Your network connection may be unstable</li>
+                                <li>A firewall or proxy might be blocking authentication requests</li>
+                              </>
+                            )}
+                          </ul>
+                          <p className="text-sm text-amber-700 mt-1">
+                            Sign-in may still work, but you might experience issues. If you continue to
+                            have problems, please try a different network connection.
+                          </p>
+                        </div>
+                      </div>
+                    </Alert>
+                  )}
+                  
                   {errorMsg && (
                     <Alert variant="destructive" className="bg-[#ffebee] border-red-200 text-red-700">
                       <AlertTriangle className="h-4 w-4" />
