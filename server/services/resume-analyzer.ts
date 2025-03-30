@@ -231,22 +231,23 @@ const RESUME_ANALYSIS_PROMPT = `You are an expert resume analyzer. Provide a com
 Requirements: Extract all relevant keywords, provide detailed feedback, include actual content from resume, no empty arrays, return valid JSON only.`;
 
 /**
- * Job-specific analysis prompt for resume-job matching
+ * Job-specific analysis prompt for resume-job matching with enhanced instructions
+ * for detailed and actionable feedback, especially for poor fit scenarios
  */
-const JOB_ANALYSIS_PROMPT = `You are an expert resume analyzer comparing a resume to a job description. Provide a complete analysis in JSON format:
+const JOB_ANALYSIS_PROMPT = `You are an expert resume analyzer comparing a resume to a job description. Provide a complete and detailed analysis in JSON format:
 {
-  "score": (overall match score 0-100),
+  "score": (overall match score 0-100, be realistic based on actual alignment),
   "scores": {
     "keywordsRelevance": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analysis of keyword alignment",
-      "keywords": ["matching keywords"]
+      "feedback": "detailed analysis of keyword alignment with specific examples",
+      "keywords": ["all matching keywords"]
     },
     "achievementsMetrics": {
       "score": (1-10),
       "maxScore": 10,
-      "feedback": "analysis of achievements relevance",
+      "feedback": "analysis of achievements relevance to job requirements",
       "highlights": ["relevant achievements"]
     },
     "structureReadability": {
@@ -265,21 +266,52 @@ const JOB_ANALYSIS_PROMPT = `You are an expert resume analyzer comparing a resum
       "feedback": "analysis of overall presentation"
     }
   },
-  "identifiedSkills": ["skills found in resume"],
+  "identifiedSkills": ["specific skills found in resume"],
   "primaryKeywords": ["important keywords found in resume"],
-  "suggestedImprovements": ["specific improvements needed for this job"],
+  "suggestedImprovements": ["detailed and specific improvements needed for this job"],
   "generalFeedback": {
-    "overall": "analysis of overall match"
+    "overall": "comprehensive analysis of overall match with specific strengths and weaknesses"
   },
   "jobAnalysis": {
-    "alignmentAndStrengths": ["areas where resume aligns well with job"],
-    "gapsAndConcerns": ["missing skills or experience needed for job"],
-    "recommendationsToTailor": ["how to better target resume to this job"],
-    "overallFit": "summary of how well resume matches job requirements"
+    "alignmentAndStrengths": [
+      "SPECIFIC areas where resume aligns well with job (list actual matching skills/experiences)"
+    ],
+    "gapsAndConcerns": [
+      "SPECIFIC missing skills or experiences needed for job (list actual missing requirements)",
+      "Each gap should reference exact requirements from the job description that are missing"
+    ],
+    "recommendationsToTailor": [
+      "ACTIONABLE steps on how to better target resume to this job",
+      "Each recommendation should directly address a specific gap identified",
+      "Include examples of how to highlight relevant experience if it exists but isn't emphasized"
+    ],
+    "overallFit": "Nuanced evaluation of fit percentage (e.g. '65% match') with explanation of the key factors affecting the match, including whether the candidate should pursue this role or look elsewhere"
   }
 }
 
-Requirements: Be specific about job match, highlight relevant skills and gaps, provide actionable recommendations.`;
+IMPORTANT INSTRUCTIONS:
+1. If the resume is a POOR MATCH (score below 70), be ESPECIALLY detailed about:
+   - Specific skills, technologies, or experiences mentioned in the job description that are missing from the resume
+   - Clear explanations of why these gaps matter for this position
+   - Actionable, step-by-step recommendations to address each identified gap
+   - Whether the candidate should invest time tailoring their resume or consider other positions
+
+2. Be CONSTRUCTIVE and HELPFUL regardless of match quality:
+   - Use a friendly, encouraging tone even when identifying significant gaps
+   - Provide specific examples from both the resume and job description
+   - Make all recommendations concrete and actionable
+
+3. Always provide COMPLETE analysis:
+   - Even for poor matches, provide comprehensive insights rather than generic statements
+   - Identify the most critical requirements from the job description and analyze them specifically
+   - Ensure each section contains multiple detailed points (at least 3-5 items per section)
+
+4. Focus on QUALITY OF MATCH, not just presence of keywords:
+   - Evaluate depth of experience, not just mention of skills
+   - Consider level of seniority required vs. demonstrated
+   - Assess cultural fit aspects when possible
+
+Return valid JSON only with detailed arrays for each section.`;
 
 /**
  * Schema for resume analysis response validation
@@ -529,15 +561,83 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
         // Critical fix: Ensure jobAnalysis is populated when a job description is provided
         if (jobDescription && (!parsedResponse.jobAnalysis || parsedResponse.jobAnalysis === null)) {
           console.log(`[${new Date().toISOString()}] WARNING: Job description was provided but jobAnalysis is missing in the response`);
+          // Create a more detailed and actionable fallback job analysis
+          const resumeSkills = [
+            ...(parsedResponse.identifiedSkills || []),
+            ...(initialAnalysis.technicalSkills || []),
+            ...(initialAnalysis.softSkills || [])
+          ];
+          
+          // Extract potential skills from job description if it's a string
+          let jobSkills: string[] = [];
+          if (typeof jobDescription === 'string') {
+            // Create a simple skill extraction by looking for keywords and phrases
+            const skillIndicators = ['experience with', 'knowledge of', 'proficient in', 'skilled in', 'expertise in', 'familiar with'];
+            const lines = jobDescription.split(/[.;\n]/);
+            
+            lines.forEach(line => {
+              // Check if line contains skill indicators
+              skillIndicators.forEach(indicator => {
+                if (line.toLowerCase().includes(indicator)) {
+                  const skillPart = line.split(indicator)[1]?.trim();
+                  if (skillPart) {
+                    // Extract up to next punctuation or 5 words
+                    const skill = skillPart.split(/[,.:;]|(?=\s(?:\w+\s){4})/)[0].trim();
+                    if (skill.length > 3 && skill.length < 50) {
+                      jobSkills.push(skill);
+                    }
+                  }
+                }
+              });
+            });
+          } else if (jobDescription && typeof jobDescription === 'object' && jobDescription.skills) {
+            jobSkills = jobDescription.skills;
+          }
+          
+          // Calculate potential matches between resume and job skills
+          const matchedSkills = resumeSkills.filter(skill => 
+            jobSkills.some(jobSkill => 
+              jobSkill.toLowerCase().includes(skill.toLowerCase()) || 
+              skill.toLowerCase().includes(jobSkill.toLowerCase())
+            )
+          );
+          
+          // Calculate potential gaps
+          const potentialGaps = jobSkills.filter(jobSkill => 
+            !resumeSkills.some(skill => 
+              jobSkill.toLowerCase().includes(skill.toLowerCase()) || 
+              skill.toLowerCase().includes(jobSkill.toLowerCase())
+            )
+          );
+          
           parsedResponse.jobAnalysis = {
-            alignmentAndStrengths: ["Your skills match some of the requirements in the job description."],
-            gapsAndConcerns: ["There may be requirements in the job description that aren't reflected in your resume."],
+            alignmentAndStrengths: matchedSkills.length > 0 ? 
+              matchedSkills.map(skill => `Your experience with ${skill} is relevant to this position.`) : 
+              [
+                "Your background may have some transferable skills for this role.",
+                "Review the job description to identify specifically which of your skills match the requirements.",
+                "Consider highlighting broader industry knowledge or transferable skills from your experience."
+              ],
+            
+            gapsAndConcerns: potentialGaps.length > 0 ? 
+              potentialGaps.map(gap => `The job requires ${gap}, which doesn't appear to be highlighted in your resume.`) : 
+              [
+                "There appear to be requirements in the job description that aren't clearly reflected in your resume.",
+                "The job may require specific technical skills or industry experience not evident in your current resume.",
+                "Your experience level may differ from what's required for this position."
+              ],
+            
             recommendationsToTailor: [
-              "Tailor your resume to highlight experience relevant to this position",
-              "Incorporate keywords from the job description into your resume",
-              "Quantify achievements that demonstrate skills mentioned in the job posting"
+              "Review the job description thoroughly and identify key required skills and experiences.",
+              "Customize your professional summary to specifically address how your background aligns with this role.",
+              "Add a 'Relevant Skills' section that directly maps to the job requirements.",
+              "Reorganize your experience to highlight projects or responsibilities that demonstrate the required skills.",
+              "Quantify your achievements with metrics that show impact relevant to this position."
             ],
-            overallFit: "The AI was unable to generate a complete job match analysis. To get better results, try analyzing your resume against a more detailed job description."
+            
+            overallFit: `Based on automated analysis, your resume shows approximately ${matchedSkills.length > 0 ? 
+              Math.min(Math.floor((matchedSkills.length / Math.max(jobSkills.length, 1)) * 100), 70) : 
+              "40-60"}% alignment with this position. For a more accurate assessment, consider updating your resume to specifically highlight relevant experience and skills mentioned in the job description.`
           };
         }
         
@@ -565,13 +665,24 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
           },
           // When job description exists, always populate jobAnalysis with meaningful content
           jobAnalysis: jobDescription ? {
-            alignmentAndStrengths: ["Your resume contains some relevant skills."],
-            gapsAndConcerns: ["There may be gaps between your resume and the job requirements."],
-            recommendationsToTailor: [
-              "Tailor your resume to highlight experience relevant to this position",
-              "Incorporate keywords from the job description into your resume"
+            alignmentAndStrengths: [
+              "Your resume may contain some transferable skills applicable to this position.",
+              "Review your technical and soft skills to identify those relevant to this job description.",
+              "Your past experience in similar roles or industries might be an advantage."
             ],
-            overallFit: "We encountered difficulty analyzing your resume against this job description. Try reviewing both documents to ensure they are well-structured."
+            gapsAndConcerns: [
+              "There appear to be requirements in the job description that may not be reflected in your resume.",
+              "The job might require specific qualifications or certifications not mentioned in your resume.",
+              "Your experience level might differ from what's required for this position."
+            ],
+            recommendationsToTailor: [
+              "Carefully review the job description to identify all key requirements and qualifications.",
+              "Revise your professional summary to directly address how your background aligns with this role.",
+              "Reorganize your experience section to highlight relevant achievements and responsibilities.",
+              "Add industry-specific keywords that appear in the job description.",
+              "Consider creating a 'Relevant Skills' section that directly maps to the job requirements."
+            ],
+            overallFit: "Based on our initial analysis, your resume may need significant tailoring to demonstrate alignment with this position. Consider whether your actual experience and skills match the job requirements, even if they're not explicitly showcased in your current resume. For a better assessment, update your resume to specifically address the key requirements in this job description."
           } : null
         };
       }
@@ -619,14 +730,24 @@ Provide a comprehensive evaluation of this resume based on the initial analysis 
         },
         // When job description exists, always provide meaningful job analysis content
         jobAnalysis: jobDescription ? {
-          alignmentAndStrengths: ["Your resume may contain skills relevant to this job."],
-          gapsAndConcerns: ["Service error prevented detailed gap analysis."],
-          recommendationsToTailor: [
-            "Try analyzing again with the job description", 
-            "Ensure your resume highlights skills mentioned in the job posting",
-            "Format your resume clearly to help our AI analyze it better"
+          alignmentAndStrengths: [
+            "You may have some applicable skills for this position.",
+            "Consider any transferable experience from similar industries or roles.",
+            "Review your resume for relevant certifications or technical competencies."
           ],
-          overallFit: "We encountered a service error while analyzing your job fit. Please try again later."
+          gapsAndConcerns: [
+            "Due to a service error, we couldn't identify specific skills gaps.",
+            "Compare your qualifications carefully against the job requirements.",
+            "Consider whether your experience level matches what the position requires."
+          ],
+          recommendationsToTailor: [
+            "Analyze the job description for key technical and soft skills requirements.",
+            "Highlight any relevant projects or responsibilities from your experience.",
+            "Add measurable achievements that demonstrate impact in related areas.",
+            "Customize your professional summary to show alignment with this role.",
+            "Consider adding a skills section that directly addresses job requirements."
+          ],
+          overallFit: "A service error prevented a complete analysis of your resume against this job description. To evaluate your fit, review the job posting carefully and assess how your skills and experience align with their requirements. Consider both technical qualifications and experience level to determine if this role is right for you."
         } : null
       };
     }
