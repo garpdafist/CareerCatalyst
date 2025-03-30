@@ -191,7 +191,7 @@ export function ResumeAnalysisEnhanced({
                     {/* Overall Score with animated circular indicator */}
                     <div className="flex flex-col md:flex-row md:items-center p-5 bg-[#f8f5ee] rounded-lg border border-gray-200">
                       <div className="mb-4 md:mb-0 md:mr-6 flex-shrink-0">
-                        <div className="relative w-24 h-24 mx-auto">
+                        <div className="relative w-32 h-32 mx-auto">
                           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                             {/* Background circle */}
                             <circle 
@@ -211,23 +211,17 @@ export function ResumeAnalysisEnhanced({
                               fill="none"
                               stroke={scoreColors.bg}
                               strokeWidth="3"
-                              strokeDasharray={`${analysisData.score}, 100`}
                               className="animate-scoreCircle origin-center"
                               style={{
                                 // Starting with 0 and animating to full value
-                                strokeDasharray: `0, 100`,
-                                animationName: 'scoreCircleFill, colorTransition',
-                                animationDuration: '2s, 2s',
-                                animationFillMode: 'forwards',
-                                animationTimingFunction: 'ease-out',
-                                animationDelay: '0.2s',
+                                strokeDasharray: "0, 100",
                                 '--score-target': analysisData.score,
                               } as React.CSSProperties}
                             />
                           </svg>
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                             <span 
-                              className="text-2xl font-bold" 
+                              className="text-3xl font-bold" 
                               data-target={analysisData.score}
                               style={{
                                 counterReset: `score ${analysisData.score}`,
@@ -235,22 +229,22 @@ export function ResumeAnalysisEnhanced({
                             >
                               {analysisData.score}
                             </span>
-                            <span className="text-xs block text-gray-500">out of 100</span>
+                            <span className="text-sm block text-gray-500">out of 100</span>
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex-grow">
-                        <h3 className="text-lg font-semibold mb-2 text-[#1c170d]">Resume Quality Score</h3>
+                        <h3 className="text-xl font-semibold mb-3 text-[#1c170d]">Resume Quality Score</h3>
                         <p className="text-[#292929] mb-4 text-sm leading-relaxed">
                           This score reflects how well your resume meets industry standards and best practices. 
                           A higher score indicates a stronger resume that's more likely to impress employers 
                           and pass through applicant tracking systems.
                         </p>
                         
-                        <div className="bg-[#f8f5ee] p-3 rounded-lg mb-4 border border-gray-200">
-                          <h4 className="text-xs font-medium mb-2 text-[#1c170d]">What does this score mean?</h4>
-                          <ul className="space-y-1.5 text-xs text-[#292929]">
+                        <div className="bg-white p-4 rounded-lg mb-4 border border-gray-200 shadow-sm">
+                          <h4 className="text-sm font-medium mb-3 text-[#1c170d]">What does this score mean?</h4>
+                          <ul className="space-y-2 text-sm text-[#292929]">
                             <li className="flex items-start">
                               <span className="text-red-500 mr-2 font-bold">•</span>
                               <span><strong>Below 60:</strong> Your resume needs significant improvements in multiple areas.</span>
@@ -270,84 +264,18 @@ export function ResumeAnalysisEnhanced({
                           </ul>
                         </div>
                         
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                        <div className="w-full bg-gray-200 rounded-full h-3 mb-1">
                           <div 
-                            className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${scoreColors.bg}`}
+                            className={`h-3 rounded-full transition-all duration-1000 ease-out ${scoreColors.bg}`}
                             style={{ width: `${analysisData.score}%` }}
                           ></div>
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500">
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>Needs Improvement</span>
                           <span>Excellent</span>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Score Categories */}
-                    {analysisData.scores && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {Object.entries(analysisData.scores).map(([key, scoreObj]) => {
-                          if (!scoreObj || typeof scoreObj !== 'object') return null;
-                          
-                          // Generate a proper display name for the category
-                          const displayName = key
-                            .replace(/([A-Z])/g, ' $1') // Add spaces before capital letters
-                            .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
-                            .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
-                            .replace(/Readability/, 'Readability') // Fix specific cases
-                            .replace(/Keywords/, 'Keywords')
-                            .replace(/Relevance/, 'Relevance')
-                            .replace(/Metrics/, 'Metrics')
-                            .replace(/Polish/, 'Polish')
-                            .replace(/Clarity/, 'Clarity');
-                          
-                          // Safely get score and maxScore with type checking
-                          const score = typeof scoreObj === 'object' && scoreObj !== null && 'score' in scoreObj 
-                            ? (scoreObj.score as number) || 0 
-                            : 0;
-                            
-                          const maxScore = typeof scoreObj === 'object' && scoreObj !== null && 'maxScore' in scoreObj 
-                            ? (scoreObj.maxScore as number) || 10 
-                            : 10;
-                            
-                          const percentage = (score / maxScore) * 100;
-                          const categoryColor = getScoreColor(percentage);
-                          
-                          // Select an appropriate icon based on the category name
-                          let Icon = CheckCircle2;
-                          if (key.toLowerCase().includes('keyword')) Icon = FileCheck;
-                          else if (key.toLowerCase().includes('achievement')) Icon = Award;
-                          else if (key.toLowerCase().includes('structure')) Icon = PenLine;
-                          else if (key.toLowerCase().includes('summary')) Icon = FileText;
-                          else if (key.toLowerCase().includes('polish')) Icon = Star;
-                          
-                          return (
-                            <div key={key} className="p-3 rounded-lg border border-gray-200">
-                              <div className="flex items-center mb-2">
-                                <Icon className={`h-5 w-5 mr-2 ${categoryColor.icon}`} />
-                                <h4 className="font-medium text-sm">{displayName}</h4>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
-                                <div 
-                                  className={`h-1.5 rounded-full ${categoryColor.bg}`}
-                                  style={{ width: `${percentage}%` }}
-                                ></div>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">
-                                  {score}/{maxScore}
-                                </span>
-                                {typeof scoreObj === 'object' && scoreObj !== null && 'feedback' in scoreObj && (
-                                  <span className="text-xs text-gray-500">
-                                    {scoreObj.feedback ? String(scoreObj.feedback) : ''}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                 </DialogContent>
               </Dialog>
