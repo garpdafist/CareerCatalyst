@@ -276,6 +276,67 @@ export function ResumeAnalysisEnhanced({
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Key Score Parameters - simplified view */}
+                    {analysisData.scores && (
+                      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <h4 className="text-sm font-medium mb-3 text-[#1c170d]">Score Parameters</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {Object.entries(analysisData.scores)
+                            .slice(0, 6) // Only show top 6 parameters
+                            .map(([key, scoreObj]) => {
+                              if (!scoreObj || typeof scoreObj !== 'object') return null;
+                              
+                              // Generate a nicer display name
+                              const displayName = key
+                                .replace(/([A-Z])/g, ' $1')
+                                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                                .replace(/^./, str => str.toUpperCase())
+                                .replace(/Readability/, 'Readability')
+                                .replace(/Keywords/, 'Keywords')
+                                .replace(/Relevance/, 'Relevance'); 
+                              
+                              // Get score values
+                              const score = typeof scoreObj === 'object' && 'score' in scoreObj 
+                                ? (scoreObj.score as number) || 0 
+                                : 0;
+                                
+                              const maxScore = typeof scoreObj === 'object' && 'maxScore' in scoreObj 
+                                ? (scoreObj.maxScore as number) || 10 
+                                : 10;
+                                
+                              const percentage = (score / maxScore) * 100;
+                              const categoryColor = getScoreColor(percentage);
+                              
+                              // Select icons based on category
+                              let Icon = CheckCircle2;
+                              if (key.toLowerCase().includes('keyword')) Icon = FileCheck;
+                              else if (key.toLowerCase().includes('achievement')) Icon = Award;
+                              else if (key.toLowerCase().includes('structure')) Icon = PenLine;
+                              else if (key.toLowerCase().includes('summary')) Icon = FileText;
+                              else if (key.toLowerCase().includes('polish')) Icon = Star;
+                              
+                              return (
+                                <div key={key} className="flex items-center justify-between">
+                                  <div className="flex items-center">
+                                    <Icon className={`h-4 w-4 mr-1.5 ${categoryColor.icon}`} />
+                                    <span className="text-sm">{displayName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className={`h-1.5 rounded-full ${categoryColor.bg}`}
+                                        style={{ width: `${percentage}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs font-medium">{score}/{maxScore}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
