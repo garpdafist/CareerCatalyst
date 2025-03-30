@@ -92,13 +92,32 @@ export default {
           "0%": { stroke: "#ef4444" },  
           "50%": { stroke: "#eab308" },
           "100%": { stroke: "#22c55e" }
+        },
+        "gradient": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" }
+        },
+        "blob": {
+          "0%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+          "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+          "100%": { transform: "translate(0px, 0px) scale(1)" }
         }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "scoreCircle": "scoreCircleFill 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, colorTransition 2.5s ease-out forwards",
-        "countUp": "countUp 2s steps(5, end) forwards"
+        "countUp": "countUp 2s steps(5, end) forwards",
+        "gradient": "gradient 15s ease infinite",
+        "blob": "blob 7s infinite",
+      },
+      // Add utility classes for animation delays
+      transitionDelay: {
+        '2000': '2000ms',
+        '4000': '4000ms',
+        '6000': '6000ms',
       },
     },
   },
