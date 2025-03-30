@@ -133,9 +133,22 @@ export default function AuthPage() {
     return <Redirect to="/" />;
   }
 
+  // Function to validate email format
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null); // Clear any previous errors
+    
+    // Check if email format is valid
+    if (!isValidEmail(email)) {
+      setErrorMsg("Please enter a valid email address (e.g., name@example.com)");
+      return;
+    }
+    
     try {
       console.log('Initiating sign-in process for:', email);
       
@@ -346,16 +359,21 @@ export default function AuthPage() {
                     <Label htmlFor="email" className="text-sm font-medium">
                       Email Address
                     </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      className="w-full bg-white py-6 px-4 border border-[#e5e5e5] placeholder:text-muted-foreground/60 focus:border-[#009963]"
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="w-full bg-white py-6 px-4 border border-[#e5e5e5] placeholder:text-muted-foreground/60 focus:border-[#009963]"
+                        pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                        title="Please enter a valid email address (e.g., name@example.com)"
+                      />
+                      <p className="text-xs text-muted-foreground px-1">Format: name@example.com</p>
+                    </div>
                   </div>
                   
                   <Button 
