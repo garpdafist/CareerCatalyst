@@ -101,8 +101,8 @@ export const addSecurityHeaders = (_req: Request, res: Response, next: NextFunct
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
         "img-src 'self' data: https:; " +
-        "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.io https://api.openai.com " +
-        `https://${supabaseDomain} wss://${supabaseDomain} wss://*.supabase.co https://identity.supabase.com; ` +
+        "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.io https://api.supabase.com https://api.openai.com " +
+        `https://${supabaseDomain} wss://${supabaseDomain} https://pwiysqqirjnjqacevzfp.supabase.co wss://*.supabase.co https://identity.supabase.com; ` +
         "report-uri /api/csp-report"
       );
     } catch (error) {
@@ -115,8 +115,8 @@ export const addSecurityHeaders = (_req: Request, res: Response, next: NextFunct
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
         "img-src 'self' data: https:; " +
-        "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.io " +
-        "https://api.openai.com wss://*.supabase.co https://identity.supabase.com; " +
+        "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.io https://api.supabase.com " +
+        "https://pwiysqqirjnjqacevzfp.supabase.co https://api.openai.com wss://*.supabase.co https://identity.supabase.com; " +
         "report-uri /api/csp-report"
       );
     }
@@ -131,8 +131,8 @@ export const addSecurityHeaders = (_req: Request, res: Response, next: NextFunct
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com; " +
       "img-src 'self' data: https:; " +
-      "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.io " +
-      "https://api.openai.com wss://*.supabase.co https://identity.supabase.com; " +
+      "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.io https://api.supabase.com " +
+      "https://pwiysqqirjnjqacevzfp.supabase.co https://api.openai.com wss://*.supabase.co https://identity.supabase.com; " +
       "report-uri /api/csp-report"
     );
   }
