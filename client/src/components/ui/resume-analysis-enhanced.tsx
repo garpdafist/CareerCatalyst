@@ -1,4 +1,5 @@
 import { 
+  AlertCircle,
   ArrowRight, 
   FileText, 
   RefreshCw, 
@@ -194,7 +195,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.score ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
-              <BarChart3 className="h-6 w-6 mr-2 text-gray-600" />
+              <BarChart3 className="h-6 w-6 mr-2 text-[#009962]" />
               Resume Score
             </h2>
             <button 
@@ -328,7 +329,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.feedback ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
-              <FileText className="h-6 w-6 mr-2 text-gray-600" />
+              <FileText className="h-6 w-6 mr-2 text-[#009962]" />
               Overall Feedback
             </h2>
             <button 
@@ -341,17 +342,20 @@ export function ResumeAnalysisEnhanced({
           
           {analysisData.generalFeedback ? (
             <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <p className="text-gray-700 leading-relaxed">
-                {typeof analysisData.generalFeedback === 'object' 
-                  ? analysisData.generalFeedback.overall 
-                  : analysisData.generalFeedback}
-              </p>
+              <div className="flex items-start">
+                <span className="text-[#009962] mr-3 text-xl flex-shrink-0">ⓘ</span>
+                <p className="text-[#292929] leading-relaxed">
+                  {typeof analysisData.generalFeedback === 'object' 
+                    ? analysisData.generalFeedback.overall 
+                    : analysisData.generalFeedback}
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="flex">
-                <Lightbulb className="h-5 w-5 text-gray-600 mr-2 flex-shrink-0 mt-0.5" />
-                <p className="text-gray-700">
+                <Lightbulb className="h-5 w-5 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-[#292929]">
                   We weren't able to generate overall feedback for this resume. This might be due to an analysis issue or insufficient data. 
                   Please try analyzing your resume again or contact support if this problem persists.
                 </p>
@@ -364,7 +368,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.skills ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
-              <Zap className="h-6 w-6 mr-2 text-gray-600" />
+              <Zap className="h-6 w-6 mr-2 text-[#009962]" />
               Skills & Keywords
             </h2>
             <button 
@@ -402,8 +406,8 @@ export function ResumeAnalysisEnhanced({
                   })}
                 </div>
               ) : (
-                <div className="p-3 bg-white border border-gray-200 rounded-md shadow-sm">
-                  <p className="text-gray-700 text-sm">
+                <div className="p-4 bg-white border border-gray-200 rounded-md shadow-sm">
+                  <p className="text-[#292929] text-sm">
                     No key skills were identified in your resume. This might indicate that your resume lacks industry-specific terminology
                     or that there was an issue with the analysis process.
                   </p>
@@ -429,7 +433,7 @@ export function ResumeAnalysisEnhanced({
                     return (
                       <span 
                         key={i} 
-                        className="px-3 py-1.5 bg-white text-gray-700 rounded-full text-sm font-medium border border-gray-300"
+                        className="px-3 py-1.5 bg-[#e8f5e9] text-[#009962] rounded-full text-sm font-medium border border-[#009962] shadow-sm"
                       >
                         {propercaseSkill}
                       </span>
@@ -437,8 +441,8 @@ export function ResumeAnalysisEnhanced({
                   })}
                 </div>
               ) : (
-                <div className="p-3 bg-white border border-gray-200 rounded-md shadow-sm">
-                  <p className="text-gray-700 text-sm">
+                <div className="p-4 bg-white border border-gray-200 rounded-md shadow-sm">
+                  <p className="text-[#292929] text-sm">
                     No primary keywords were identified in your resume. Consider revising your resume to clearly highlight your technical 
                     and soft skills using industry-standard terminology.
                   </p>
@@ -452,7 +456,7 @@ export function ResumeAnalysisEnhanced({
         <div className={`mb-8 ${expandedSections.improvements ? '' : 'hidden'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
-              <Lightbulb className="h-6 w-6 mr-2 text-[#009962]" />
+              <Lightbulb className="h-6 w-6 mr-2 text-[#4A90E2]" />
               Suggested Improvements
             </h2>
             <button 
@@ -466,19 +470,19 @@ export function ResumeAnalysisEnhanced({
           {Array.isArray(analysisData.suggestedImprovements) && analysisData.suggestedImprovements.length > 0 ? (
             <div className="space-y-3">
               {analysisData.suggestedImprovements.map((improvement, i) => (
-                <div key={i} className="p-6 bg-[#f8f5ee] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div key={i} className="p-6 bg-[#EEF4FD] rounded-lg border border-gray-200 shadow-sm transition-all hover:shadow-md">
                   <div className="flex items-start group">
-                    <span className="text-[#009962] mr-3 font-bold text-xl">→</span>
+                    <span className="text-[#4A90E2] mr-3 font-bold text-xl">→</span>
                     <p className="text-[#292929]">{improvement}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="flex">
-                <Lightbulb className="h-5 w-5 text-gray-600 mr-2 flex-shrink-0 mt-0.5" />
-                <p className="text-gray-700">
+                <Lightbulb className="h-5 w-5 text-[#4A90E2] mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-[#292929]">
                   We weren't able to generate specific improvement suggestions for this resume. This might be due to an analysis issue or insufficient data in your resume.
                   Try adding more detailed information to your resume, or analyze again with a job description for more targeted improvements.
                 </p>
@@ -491,7 +495,8 @@ export function ResumeAnalysisEnhanced({
         {(analysisData.jobDescription || analysisData.jobAnalysis) ? (
           <div className={`mb-8 ${expandedSections.jobAnalysis ? '' : 'hidden'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-[#1c170d]">
+              <h2 className="text-2xl font-bold flex items-center text-[#1c170d]">
+                <Briefcase className="h-6 w-6 mr-2 text-[#009962]" />
                 Job Match Analysis
               </h2>
               <button 
@@ -508,7 +513,8 @@ export function ResumeAnalysisEnhanced({
                 {Array.isArray(analysisData.jobAnalysis.alignmentAndStrengths) && 
                 analysisData.jobAnalysis.alignmentAndStrengths.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                    <CheckCircle2 className="h-5 w-5 mr-2 text-[#009962]" />
                     Alignment & Strengths
                   </h3>
                   <div className="space-y-2">
@@ -528,7 +534,8 @@ export function ResumeAnalysisEnhanced({
                 {Array.isArray(analysisData.jobAnalysis.gapsAndConcerns) && 
                 analysisData.jobAnalysis.gapsAndConcerns.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2 text-[#e53935]" />
                     Gaps & Concerns
                   </h3>
                   <div className="space-y-2">
@@ -548,7 +555,8 @@ export function ResumeAnalysisEnhanced({
                 {Array.isArray(analysisData.jobAnalysis.recommendationsToTailor) && 
                 analysisData.jobAnalysis.recommendationsToTailor.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                    <RefreshCw className="h-5 w-5 mr-2 text-[#3f51b5]" />
                     How to Tailor Your Resume
                   </h3>
                   <div className="space-y-2">
@@ -567,12 +575,13 @@ export function ResumeAnalysisEnhanced({
                 {/* Overall Fit Assessment */}
                 {analysisData.jobAnalysis.overallFit && (
                 <div>
-                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d]">
+                  <h3 className="text-xl font-semibold mb-4 text-[#1c170d] flex items-center">
+                    <Award className="h-5 w-5 mr-2 text-[#009962]" />
                     Overall Fit Assessment
                   </h3>
                   <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div className="flex items-start">
-                      <span className="text-gray-500 mr-3 text-xl flex-shrink-0">ⓘ</span>
+                      <span className="text-[#009962] mr-3 text-xl flex-shrink-0">ⓘ</span>
                       <span className="text-[#292929]">{analysisData.jobAnalysis.overallFit}</span>
                     </div>
                   </div>
@@ -582,18 +591,18 @@ export function ResumeAnalysisEnhanced({
 
               </div>
             ) : (
-              <div className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex">
-                  <Briefcase className="h-5 w-5 text-[#1c170d] mr-2 flex-shrink-0 mt-0.5" />
+                  <Briefcase className="h-5 w-5 text-[#009962] mr-2 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-[#1c170d] font-medium mb-2">
                       Job Analysis Information
                     </p>
-                    <p className="text-gray-700">
+                    <p className="text-[#292929]">
                       We detected a job description in your submission, but we weren't able to generate 
                       a complete job-specific analysis for your resume.
                     </p>
-                    <p className="text-gray-700 mt-2">
+                    <p className="text-[#292929] mt-2">
                       This might be due to an analysis processing issue or insufficient details in the job description.
                       Try providing a more detailed job description with clear requirements and responsibilities for better matching results.
                     </p>
