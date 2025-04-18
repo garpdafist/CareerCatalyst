@@ -1,0 +1,29 @@
+We are encountering an issue where, when a job description is provided with the resume upload, the final analysis result does not include any job description data. The logs indicate that although a job description is sent in the request (with length 3238, etc.), later in the process it shows "Job description info: { exists: false, type: 'undefined', length: 0, preview: 'undefined' }" and the saved analysis has hasJobDescription set to false.
+
+Please perform the following steps to diagnose and fix the issue:
+
+1. **Trace the Job Description Processing:**
+   - Add detailed logging at every stage where the job description should be processed:
+     a. Log the raw request payload to verify that the jobDescription field is present.
+     b. Log the results after schema validation to confirm that the jobDescription is correctly recognized and parsed.
+     c. Log the job description data just before it is appended to the AI prompt for both the GPT-3.5 initial analysis and the GPT-4 comprehensive analysis.
+     d. Log the job description value immediately after the AI returns the analysis, to see if the field is included in the AI response.
+     e. Log the final analysis object right before saving it to the database.
+
+2. **Review Schema and Fallback Logic:**
+   - Examine the validation schema (using Zod or similar) to ensure that the jobDescription field is optional but, if provided, correctly stored as a string.
+   - Check for any fallback logic that might be inadvertently overriding a provided job description (e.g., setting job description to "none" or undefined).
+
+3. **Review AI Prompt Construction:**
+   - Verify that when a job description is provided, it is properly incorporated into the AI prompt. Confirm that no conditions are unintentionally skipping the job description segment.
+
+4. **Identify and Fix the Issue:**
+   - Based on the logs, determine at which point the job description data is lost or altered.
+   - Apply necessary changes so that if a job description is provided in the request, it is processed and included in the final analysis result (with hasJobDescription set to true and the corresponding fields populated).
+
+5. **Testing and Documentation:**
+   - After applying fixes, test the complete flow by uploading a resume with a job description.
+   - Verify in the logs that the job description is correctly processed and that the final saved analysis includes the job description details.
+   - Add inline comments to document the changes made and the expected flow for handling job description data.
+
+Please implement these debugging steps and necessary fixes, then confirm once the job description is correctly processed in the analysis results.

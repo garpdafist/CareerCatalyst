@@ -1,0 +1,57 @@
+You are an experienced full-stack developer and prompt engineer. I want to standardize the resume analysis output so that multiple analyses always return the same JSON structure and minimal variability. Please do the following:
+
+1. **Refine the OpenAI Prompt**:
+   - In the `server/services/openai.ts` (or wherever the AI call is made), set:
+     ```js
+     const response = await openai.createChatCompletion({
+       model: "gpt-3.5-turbo",
+       temperature: 0,
+       messages: [
+         {
+           role: "system",
+           content: `
+             You are an AI specialized in resume analysis. Always return valid JSON with these exact fields:
+             {
+               "score": <number>,
+               "identifiedSkills": [...],
+               "importantKeywords": [...],
+               "suggestedImprovements": [...],
+               "generalFeedback": "...",
+               "resumeSections": {
+                 "professionalSummary": "...",
+                 "workExperience": "...",
+                 "technicalSkills": "...",
+                 "education": "...",
+                 "keyAchievements": "..."
+               }
+             }
+             If any field is missing data, use an empty array or string. No disclaimers or extra keys. 
+           `
+         },
+         {
+           role: "user",
+           content: "Resume text: [PLACEHOLDER FOR THE RESUME CONTENT]"
+         }
+       ]
+     });
+     ```
+   - This ensures the LLM follows the same structure every time. 
+   - Setting `temperature: 0` reduces creative variance, so each analysis is consistent.
+
+2. **Validate & Post-Process**:
+   - After receiving `response.data.choices[0].message.content`, parse it as JSON. 
+   - If it includes disclaimers or extra text, we can refine the system prompt further or do a small post-processing step to remove anything outside the JSON braces.
+
+3. **(Optional) Limit Array Length**:
+   - If we only want up to 10 items for identifiedSkills or importantKeywords, instruct the model or do:
+     ```js
+     data.identifiedSkills = data.identifiedSkills.slice(0, 10);
+     data.importantKeywords = data.importantKeywords.slice(0, 10);
+     ```
+   - This ensures each run doesn’t produce a random number of skills/keywords.
+
+4. **Retest**:
+   - Each time we submit a resume, the logs should show the same JSON fields (score, identifiedSkills, etc.). 
+   - The UI can display them with no unexpected variations.
+
+Please implement these changes, confirm the final code snippet in `server/services/openai.ts` or equivalent, and share the final logs or front-end result to verify the standard format is consistent for multiple analyses.

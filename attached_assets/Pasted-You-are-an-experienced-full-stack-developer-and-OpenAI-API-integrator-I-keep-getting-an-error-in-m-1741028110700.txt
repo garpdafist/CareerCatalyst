@@ -1,0 +1,45 @@
+You are an experienced full-stack developer and OpenAI API integrator. 
+I keep getting an error in my resume analysis feature, even though we removed the 'response_format' parameter. 
+Please do a thorough debug of my code and environment to see why the error persists:
+
+---------------------------------------------
+1. Check All References to 'response_format'
+---------------------------------------------
+- Search the entire project (client, server, config files) for any leftover references:
+  - `response_format`
+  - `format: "json"`
+  - Or any old code snippet that might still be adding that param to the OpenAI request.
+- If found, remove or comment them out. 
+- Confirm the final request to OpenAI only uses valid parameters like `model`, `messages`, `temperature`, `max_tokens`, etc.
+
+---------------------------------------------
+2. Inspect the OpenAI API Call
+---------------------------------------------
+- In the code where we call `openai.createChatCompletion` (or `openai.createCompletion`):
+  1. Log the entire request object (model, messages, temperature, etc.) right before sending.
+  2. Check for any hidden or leftover property that might be referencing a param the model doesn’t support (like `response_format`).
+- Ensure we are using the correct model name (e.g., "gpt-3.5-turbo" or "gpt-4") and the official Chat Completion endpoint if using the new chat-based model.
+
+---------------------------------------------
+3. Review Logs & Error Messages
+---------------------------------------------
+- Show me the exact error response from OpenAI. 
+  - Is it a 400 “Bad Request,” or a 404, or something else?
+  - Does it mention “Unsupported parameter: response_format” or “invalid_request_error”?
+- Compare the raw logs to confirm if the error text references that parameter or a different mismatch.
+
+---------------------------------------------
+4. Confirm We’re on the Right Endpoint
+---------------------------------------------
+- If we use `openai.createChatCompletion`, that’s for chat-based models (like gpt-3.5-turbo). 
+- If we’re still referencing `openai.createCompletion` (older completion endpoint) with a new model, that might cause issues.
+- Ensure we’re calling the correct method for the chosen model.
+
+---------------------------------------------
+5. Possibly Re-Add Debugging
+---------------------------------------------
+- Temporarily add extra console logs:
+  ```js
+  console.log('Final OpenAI request:', requestBody);
+  const response = await openai.createChatCompletion(requestBody);
+  console.log('OpenAI response:', response.data);

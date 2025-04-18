@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!-- CSP Meta Tag - Ensures the browser has the right CSP policy even if HTTP headers are not properly set -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.supabase.com https://api.supabase.io https://identity.supabase.com https://pwiysqqirjnjqacevzfp.supabase.co wss://*.supabase.co https://api.openai.com https://*.algolia.net https://*.algolia.com data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; object-src 'none'; media-src 'self';" />
   </head>
   <body>
     <div id="root"></div>

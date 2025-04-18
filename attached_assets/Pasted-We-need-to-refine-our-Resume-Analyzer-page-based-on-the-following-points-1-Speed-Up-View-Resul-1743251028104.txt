@@ -1,0 +1,34 @@
+We need to refine our Resume Analyzer page based on the following points:
+
+1. **Speed Up “View Results”**  
+   - Currently, when the user clicks “View Results,” it takes a long time for the page to load. We want to reduce perceived wait times. Please do the following:
+     • Implement a skeleton or partial loading approach when fetching a specific analysis, so the user sees immediate feedback rather than a blank screen.  
+     • Consider prefetching analysis data (e.g., using React Query) so that when the user clicks “View Results,” we already have most of the data ready.  
+     • If the analysis data is already in local state or cached, avoid a full page reload. Possibly navigate to a sub-route or modal with the existing data.
+
+2. **Show Only the Last 2 Analyses**  
+   - Instead of listing the last 6 analyses on the “Your Recent Analyses” section, show only the 2 most recent.  
+   - Provide a “View All” or “Show More” link if the user wants to see their entire history (if we have a dedicated page or collapsible section—see below).
+
+3. **New Analysis Button**  
+   - When the user clicks “New Analysis,” we want to:
+     • Clear any URL parameters (so we don’t load an old analysis).  
+     • Reset the form (clear the resume input, job description toggle, etc.).  
+     • Automatically scroll down to the “Paste Content / Upload File” section so the user sees the form right away.
+   - Make sure the UI clearly indicates they’re starting a fresh analysis.
+
+4. **“Your Recent Analyses” as a CTA or Collapsible**  
+   - We’re debating whether to:
+     • Keep the recent analyses on the same page but collapsible.  
+     • Or turn “Your Recent Analyses” into a CTA that navigates to a dedicated page showing all analyses.  
+   - Please create a collapsible or “View All Analyses” button approach:
+     • If we have a separate page, the user can click “View All” to see the entire list of past analyses.  
+     • If we stick to a collapsible section, only the last 2 analyses are shown by default, and clicking “Show More” expands the rest.  
+   - Provide inline comments on whichever approach you implement so we can switch between them if we decide to.
+
+**Implementation Notes**:
+- Use React Query (or a similar library) to cache the user’s analyses and reduce redundant network calls.
+- For the skeleton or partial loading, keep the design consistent with our existing skeleton placeholders.
+- Ensure that the new “New Analysis” button behavior (clearing params, resetting the form, scrolling down) works smoothly on both desktop and mobile.
+
+Please implement these changes, focusing on improving the loading experience for “View Results,” limiting the default displayed analyses to 2, refining the “New Analysis” button flow, and deciding on a collapsible vs. separate page approach for all analyses. Let us know once done so we can test the updated UX.

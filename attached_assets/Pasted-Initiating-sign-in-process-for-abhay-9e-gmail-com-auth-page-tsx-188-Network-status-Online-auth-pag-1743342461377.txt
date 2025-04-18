@@ -1,0 +1,139 @@
+Initiating sign-in process for: abhay.9e@gmail.com
+auth-page.tsx:188 Network status: Online
+auth-page.tsx:189 Current URL: https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev/auth
+auth-page.tsx:190 API endpoint: /api/config
+use-auth.tsx:67 Fetching Supabase client
+use-auth.tsx:71 Testing connectivity to Supabase domain...
+use-auth.tsx:77 Refused to connect to 'https://api.supabase.com/ping' because it violates the following Content Security Policy directive: "default-src 'self'". Note that 'connect-src' was not explicitly set, so 'default-src' is used as a fallback.
+
+signIn @ use-auth.tsx:77
+handleSubmit @ auth-page.tsx:192
+callCallback2 @ chunk-276SZO74.js?v=ff40016f:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=ff40016f:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=ff40016f:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=ff40016f:3736
+executeDispatch @ chunk-276SZO74.js?v=ff40016f:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=ff40016f:7034
+processDispatchQueue @ chunk-276SZO74.js?v=ff40016f:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=ff40016f:7051
+(anonymous) @ chunk-276SZO74.js?v=ff40016f:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=ff40016f:18913
+batchedUpdates @ chunk-276SZO74.js?v=ff40016f:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=ff40016f:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=ff40016f:5478
+dispatchEvent @ chunk-276SZO74.js?v=ff40016f:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=ff40016f:5449
+Show 15 more frames
+Show less
+use-auth.tsx:77 Refused to connect to 'https://api.supabase.com/ping' because it violates the document's Content Security Policy.
+signIn @ use-auth.tsx:77
+handleSubmit @ auth-page.tsx:192
+callCallback2 @ chunk-276SZO74.js?v=ff40016f:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=ff40016f:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=ff40016f:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=ff40016f:3736
+executeDispatch @ chunk-276SZO74.js?v=ff40016f:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=ff40016f:7034
+processDispatchQueue @ chunk-276SZO74.js?v=ff40016f:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=ff40016f:7051
+(anonymous) @ chunk-276SZO74.js?v=ff40016f:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=ff40016f:18913
+batchedUpdates @ chunk-276SZO74.js?v=ff40016f:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=ff40016f:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=ff40016f:5478
+dispatchEvent @ chunk-276SZO74.js?v=ff40016f:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=ff40016f:5449
+Show 15 more frames
+Show less
+use-auth.tsx:84 Supabase API connectivity test failed: TypeError: Failed to fetch
+    at signIn (use-auth.tsx:77:40)
+    at handleSubmit (auth-page.tsx:192:13)
+    at HTMLUnknownElement.callCallback2 (chunk-276SZO74.js?v=ff40016f:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-276SZO74.js?v=ff40016f:3699:24)
+    at invokeGuardedCallback (chunk-276SZO74.js?v=ff40016f:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-276SZO74.js?v=ff40016f:3736:33)
+    at executeDispatch (chunk-276SZO74.js?v=ff40016f:7014:11)
+    at processDispatchQueueItemsInOrder (chunk-276SZO74.js?v=ff40016f:7034:15)
+    at processDispatchQueue (chunk-276SZO74.js?v=ff40016f:7043:13)
+    at dispatchEventsForPlugins (chunk-276SZO74.js?v=ff40016f:7051:11)
+signIn @ use-auth.tsx:84
+use-auth.tsx:94 Supabase client initialized successfully
+use-auth.tsx:108 Supabase client initialized, sending OTP
+use-auth.tsx:111 Starting signInWithOtp for abhay.9e@gmail.com with redirect to https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev
+use-auth.tsx:112 Hybrid authentication enabled: true
+@supabase_supabase-js.js?v=ff40016f:4062 Refused to connect to 'https://pwiysqqirjnjqacevzfp.supabase.co/auth/v1/otp?redirect_to=https%3A%2F%2F91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev' because it violates the following Content Security Policy directive: "default-src 'self'". Note that 'connect-src' was not explicitly set, so 'default-src' is used as a fallback.
+
+(anonymous) @ @supabase_supabase-js.js?v=ff40016f:4062
+_handleRequest2 @ @supabase_supabase-js.js?v=ff40016f:4410
+_request @ @supabase_supabase-js.js?v=ff40016f:4400
+signInWithOtp @ @supabase_supabase-js.js?v=ff40016f:5318
+Show 4 more frames
+Show less
+@supabase_supabase-js.js?v=ff40016f:4062 Refused to connect to 'https://pwiysqqirjnjqacevzfp.supabase.co/auth/v1/otp?redirect_to=https%3A%2F%2F91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev' because it violates the document's Content Security Policy.
+(anonymous) @ @supabase_supabase-js.js?v=ff40016f:4062
+_handleRequest2 @ @supabase_supabase-js.js?v=ff40016f:4410
+_request @ @supabase_supabase-js.js?v=ff40016f:4400
+signInWithOtp @ @supabase_supabase-js.js?v=ff40016f:5318
+Show 4 more frames
+Show less
+@supabase_supabase-js.js?v=ff40016f:4412 TypeError: Failed to fetch
+    at @supabase_supabase-js.js?v=ff40016f:4062:23
+    at _handleRequest2 (@supabase_supabase-js.js?v=ff40016f:4410:20)
+    at _request (@supabase_supabase-js.js?v=ff40016f:4400:22)
+    at SupabaseAuthClient.signInWithOtp (@supabase_supabase-js.js?v=ff40016f:5318:33)
+    at async signIn (use-auth.tsx:136:31)
+    at async handleSubmit (auth-page.tsx:192:7)
+_handleRequest2 @ @supabase_supabase-js.js?v=ff40016f:4412
+Show 1 more frame
+Show less
+use-auth.tsx:143 signInWithOtp response: Data received Error present
+use-auth.tsx:146 Supabase signInWithOtp error details: AuthRetryableFetchError: Failed to fetch
+    at _handleRequest2 (@supabase_supabase-js.js?v=ff40016f:4413:11)
+    at async _request (@supabase_supabase-js.js?v=ff40016f:4400:16)
+    at async SupabaseAuthClient.signInWithOtp (@supabase_supabase-js.js?v=ff40016f:5318:27)
+    at async signIn (use-auth.tsx:136:31)
+    at async handleSubmit (auth-page.tsx:192:7)
+signIn @ use-auth.tsx:146
+use-auth.tsx:159 Authentication error: AuthRetryableFetchError: Failed to fetch
+    at _handleRequest2 (@supabase_supabase-js.js?v=ff40016f:4413:11)
+    at async _request (@supabase_supabase-js.js?v=ff40016f:4400:16)
+    at async SupabaseAuthClient.signInWithOtp (@supabase_supabase-js.js?v=ff40016f:5318:27)
+    at async signIn (use-auth.tsx:136:31)
+    at async handleSubmit (auth-page.tsx:192:7)
+signIn @ use-auth.tsx:159
+use-auth.tsx:160 Error details: Object
+signIn @ use-auth.tsx:160
+auth-page.tsx:197 Auth page sign-in error: AuthRetryableFetchError: Failed to fetch
+    at _handleRequest2 (@supabase_supabase-js.js?v=ff40016f:4413:11)
+    at async _request (@supabase_supabase-js.js?v=ff40016f:4400:16)
+    at async SupabaseAuthClient.signInWithOtp (@supabase_supabase-js.js?v=ff40016f:5318:27)
+    at async signIn (use-auth.tsx:136:31)
+    at async handleSubmit (auth-page.tsx:192:7)
+handleSubmit @ auth-page.tsx:197
+auth-page.tsx:200 Authentication error details: AuthRetryableFetchError: Failed to fetch
+    at _handleRequest2 (@supabase_supabase-js.js?v=ff40016f:4413:11)
+    at async _request (@supabase_supabase-js.js?v=ff40016f:4400:16)
+    at async SupabaseAuthClient.signInWithOtp (@supabase_supabase-js.js?v=ff40016f:5318:27)
+    at async signIn (use-auth.tsx:136:31)
+    at async handleSubmit (auth-page.tsx:192:7)
+handleSubmit @ auth-page.tsx:200
+auth-page.tsx:204 Error name: AuthRetryableFetchError
+handleSubmit @ auth-page.tsx:204
+auth-page.tsx:205 Error message: Failed to fetch
+handleSubmit @ auth-page.tsx:205
+auth-page.tsx:206 Stack trace: AuthRetryableFetchError: Failed to fetch
+    at _handleRequest2 (https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@supabase_supabase-js.js?v=ff40016f:4413:11)
+    at async _request (https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@supabase_supabase-js.js?v=ff40016f:4400:16)
+    at async SupabaseAuthClient.signInWithOtp (https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@supabase_supabase-js.js?v=ff40016f:5318:27)
+    at async signIn (https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev/src/hooks/use-auth.tsx:98:31)
+    at async handleSubmit (https://91de2bf2-8c43-4543-be38-d2c83db0e937-00-1ic00boyy526e.kirk.replit.dev/src/pages/auth-page.tsx:144:7)
+handleSubmit @ auth-page.tsx:206
+auth-page.tsx:260 Running comprehensive connectivity diagnostics...
+auth-page.tsx:293 Refused to connect to 'https://pwiysqqirjnjqacevzfp.supabase.co/health' because it violates the following Content Security Policy directive: "default-src 'self'". Note that 'connect-src' was not explicitly set, so 'default-src' is used as a fallback.
+
+handleSubmit @ auth-page.tsx:293
+auth-page.tsx:293 Refused to connect to 'https://pwiysqqirjnjqacevzfp.supabase.co/health' because it violates the document's Content Security Policy.
+handleSubmit @ auth-page.tsx:293
+auth-page.tsx:301 Direct authentication service test failed: TypeError: Failed to fetch
+    at handleSubmit (auth-page.tsx:293:34)
+handleSubmit @ auth-page.tsx:301

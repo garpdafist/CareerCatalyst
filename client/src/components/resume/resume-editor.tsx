@@ -3,12 +3,14 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { GripVertical, Download, AlertCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { GripVertical, Download, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { ResumeAnalysis } from "@shared/schema";
 import { motion } from "framer-motion";
 import { PageLayout, PageHeader, PageTitle, PageDescription } from "@/components/layout";
+import { Link } from "wouter";
+import { FileText, ArrowRight } from "lucide-react";
+
 
 // Define resume section structure
 type ResumeSection = {
@@ -23,9 +25,9 @@ type ResumeSection = {
 
 // Standard ATS-friendly sections with consulting-style guidance
 const initialSections: ResumeSection[] = [
-  { 
-    id: "summary", 
-    title: "Professional Summary", 
+  {
+    id: "summary",
+    title: "Professional Summary",
     content: "",
     suggestions: [
       "Start with years of marketing experience and key specializations",
@@ -36,9 +38,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "Marketing professional with X years of experience in [specialization]. Achieved [specific metric]% growth in [key area] through [strategy]. Expert in [tools/platforms] with proven success in [specific achievement with numbers].",
     isCollapsed: false,
   },
-  { 
-    id: "experience", 
-    title: "Work Experience", 
+  {
+    id: "experience",
+    title: "Work Experience",
     content: "",
     suggestions: [
       "Start bullets with strong action verbs (Launched, Optimized, Spearheaded)",
@@ -49,9 +51,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "• Spearheaded digital campaign delivering 45% ROI, reducing CPC from $2.30 to $1.15\n• Led 5-person team to achieve 150% YoY growth in user acquisition\n• Optimized conversion funnel, improving CTR by 60% through A/B testing",
     isCollapsed: false,
   },
-  { 
-    id: "skills", 
-    title: "Technical Skills", 
+  {
+    id: "skills",
+    title: "Technical Skills",
     content: "",
     suggestions: [
       "Group by category: Analytics, Paid Media, Content, etc.",
@@ -62,9 +64,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "Analytics: Google Analytics, Firebase, AppsFlyer (Advanced)\nPaid Media: Meta Ads, Google Ads, LinkedIn Ads (Expert)\nTools: HubSpot, Salesforce, Mailchimp (Proficient)\nAnalysis: SQL, Excel, Tableau (Advanced)",
     isCollapsed: false,
   },
-  { 
-    id: "education", 
-    title: "Education", 
+  {
+    id: "education",
+    title: "Education",
     content: "",
     suggestions: [
       "List degrees in reverse chronological order",
@@ -75,9 +77,9 @@ const initialSections: ResumeSection[] = [
     placeholder: "MBA, Marketing Analytics (GPA: 3.8)\nUniversity Name, Year\n• Led market research project resulting in 25% improvement in campaign targeting\n• Selected for Marketing Leadership Program (Top 5%)",
     isCollapsed: false,
   },
-  { 
-    id: "achievements", 
-    title: "Key Achievements", 
+  {
+    id: "achievements",
+    title: "Key Achievements",
     content: "",
     suggestions: [
       "List 2-3 most impressive quantifiable wins",
@@ -93,97 +95,113 @@ const initialSections: ResumeSection[] = [
 export default function ResumeEditor() {
   const [sections, setSections] = useState(initialSections);
   const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [completionScore, setCompletionScore] = useState(0);
+  const [showNextSteps, setShowNextSteps] = useState(false);
 
+  // Load and process analysis data
   useEffect(() => {
-    // Load analysis results from localStorage
     const savedAnalysis = localStorage.getItem('resumeAnalysis');
     if (savedAnalysis) {
-      const parsedAnalysis = JSON.parse(savedAnalysis);
-      setAnalysis(parsedAnalysis);
+      try {
+        const parsedAnalysis = JSON.parse(savedAnalysis);
+        setAnalysis(parsedAnalysis);
 
-      // Update sections with analysis feedback
-      setSections(sections.map(section => {
-        const sectionSuggestions = [];
+        if (parsedAnalysis.structuredContent) {
+          const content = parsedAnalysis.structuredContent;
+          const criteria = parsedAnalysis.scoringCriteria;
 
-        // Add section-specific suggestions from analysis
-        if (parsedAnalysis.improvements) {
-          sectionSuggestions.push(
-            ...parsedAnalysis.improvements.filter(imp => 
-              imp.toLowerCase().includes(section.id.toLowerCase())
-            )
-          );
+          // Create new sections with updated content
+          const updatedSections = sections.map(section => {
+            let updatedSection = { ...section };
+
+            switch (section.id) {
+              case "summary":
+                updatedSection.content = content.professionalSummary || "";
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.summary.feedback
+                ];
+                break;
+
+              case "experience":
+                const workExperience = content.workExperience || [];
+                updatedSection.content = workExperience.map(job => (
+                  `${job.company} - ${job.position}\n` +
+                  `${job.duration}\n\n` +
+                  job.achievements.map(achievement => `• ${achievement}`).join('\n')
+                )).join('\n\n');
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.achievementsAndMetrics.feedback
+                ];
+                updatedSection.keywords = parsedAnalysis.keywords;
+                break;
+
+              case "skills":
+                updatedSection.content = content.technicalSkills.join(", ") || "";
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.skills.feedback
+                ];
+                updatedSection.keywords = parsedAnalysis.skills;
+                break;
+
+              case "education":
+                const education = content.education || [];
+                updatedSection.content = education.map(edu => (
+                  `${edu.institution}\n` +
+                  `${edu.degree} (${edu.year})`
+                )).join('\n\n');
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.education.feedback
+                ];
+                break;
+
+              case "achievements":
+                updatedSection.content = parsedAnalysis.improvements.map(improvement => `• ${improvement}`).join('\n');
+                updatedSection.suggestions = [
+                  ...section.suggestions,
+                  criteria.achievementsAndMetrics.feedback
+                ];
+                break;
+            }
+
+            return updatedSection;
+          });
+
+          setSections(updatedSections);
         }
-
-        // Add keywords relevant to this section
-        const relevantKeywords = parsedAnalysis.keywords?.filter(keyword =>
-          keyword.toLowerCase().includes(section.id.toLowerCase())
-        );
-
-        switch (section.id) {
-          case "skills":
-            return {
-              ...section,
-              content: parsedAnalysis.skills?.join(", ") || "",
-              suggestions: [
-                ...section.suggestions,
-                ...sectionSuggestions,
-                "Match skills with job requirements",
-                "Include both technical and soft skills"
-              ],
-              keywords: parsedAnalysis.skills,
-              isCollapsed: false
-            };
-          case "summary":
-            return {
-              ...section,
-              suggestions: [
-                ...section.suggestions,
-                ...sectionSuggestions,
-                "Include years of experience",
-                "Highlight key achievements"
-              ],
-              isCollapsed: false
-            };
-          default:
-            return {
-              ...section,
-              suggestions: [...section.suggestions, ...sectionSuggestions],
-              keywords: relevantKeywords,
-              isCollapsed: false
-            };
-        }
-      }));
+      } catch (error) {
+        console.error('Error processing analysis:', error);
+      }
     }
-  }, []);
+  }, []); // Only run on mount
 
-  // Calculate completion score based on filled sections and metrics usage
+  // Calculate completion score
   useEffect(() => {
     const filledSections = sections.filter(s => s.content.trim().length > 0).length;
-    const hasMetrics = sections.some(s => 
-      /\d+%|\$\d+|\d+x/i.test(s.content) || // Check for percentages, dollar amounts, or multipliers
-      /increased|decreased|improved|reduced/i.test(s.content) // Check for improvement-related words
+    const hasMetrics = sections.some(s =>
+      /\d+%|\$\d+|\d+x/i.test(s.content) ||
+      /increased|decreased|improved|reduced/i.test(s.content)
     );
-    const baseScore = (filledSections / sections.length) * 80; // Base score out of 80
-    const metricsBonus = hasMetrics ? 20 : 0; // Bonus 20 points for using metrics
+    const baseScore = (filledSections / sections.length) * 80;
+    const metricsBonus = hasMetrics ? 20 : 0;
     setCompletionScore(Math.round(baseScore + metricsBonus));
   }, [sections]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
-
     const items = Array.from(sections);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-
     setSections(items);
   };
 
   const toggleSection = (index: number) => {
-    const newSections = [...sections];
-    newSections[index].isCollapsed = !newSections[index].isCollapsed;
-    setSections(newSections);
+    setSections(prev => prev.map((section, i) =>
+      i === index ? { ...section, isCollapsed: !section.isCollapsed } : section
+    ));
   };
 
   const handleDownload = () => {
@@ -208,6 +226,38 @@ export default function ResumeEditor() {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+    setShowNextSteps(true);
+  };
+
+  const renderNextSteps = () => {
+    if (!showNextSteps) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mt-8 space-y-4"
+      >
+        <div className="bg-primary/5 rounded-lg p-6 border border-primary/20">
+          <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
+          <div className="space-y-3">
+            <Link href="/cover-letter">
+              <Button variant="outline" className="w-full justify-between">
+                Create a matching Cover Letter
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/linkedin-optimizer">
+              <Button variant="outline" className="w-full justify-between">
+                Optimize your LinkedIn Profile
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
@@ -215,7 +265,7 @@ export default function ResumeEditor() {
       <PageHeader>
         <PageTitle>Resume Editor</PageTitle>
         <PageDescription>
-          Follow consulting-style best practices: quantify achievements, use action verbs, and highlight metrics.
+          Follow best practices: quantify achievements, use action verbs, and highlight metrics.
         </PageDescription>
       </PageHeader>
 
@@ -225,35 +275,43 @@ export default function ResumeEditor() {
         transition={{ duration: 0.5 }}
         className="space-y-8"
       >
-        <Card className="border-white/10 bg-card/95 backdrop-blur">
+        <Card className="border-0 bg-[#F5F0E5]">
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-white/90">Resume Quality Score</h3>
-                <span className="text-sm font-medium text-white/80">
-                  {completionScore}% {completionScore >= 90 ? "✨" : ""}
+                <h3 className="text-lg font-medium text-[#1C170D]">Resume Quality Score</h3>
+                <span className="text-sm font-medium text-[#1C170D]">
+                  {analysis ? analysis.score : completionScore}% {analysis && analysis.score >= 90 ? "✨" : ""}
                 </span>
               </div>
-              <Progress value={completionScore} className="h-2" />
-              {completionScore < 90 && (
-                <p className="text-sm text-white/60">
-                  Pro tip: Add specific metrics (%, $, growth rates) to improve your score
-                </p>
-              )}
+              <Progress value={analysis ? analysis.score : completionScore} className="h-2 bg-[#E8DECF]" />
             </div>
+            {analysis && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {Object.entries(analysis.scoringCriteria).map(([key, criteria]) => (
+                  <div key={key} className="bg-white/50 rounded-lg p-4">
+                    <h4 className="font-medium mb-2 capitalize">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </h4>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">
+                        {criteria.score}/{criteria.maxScore}
+                      </span>
+                    </div>
+                    <Progress
+                      value={(criteria.score / criteria.maxScore) * 100}
+                      className="h-1 bg-[#E8DECF]"
+                    />
+                    <p className="text-sm mt-2 text-muted-foreground">
+                      {criteria.feedback}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {analysis && (
-          <Alert className="bg-primary/5 border-primary/20">
-            <AlertCircle className="h-4 w-4 text-primary" />
-            <AlertDescription className="text-primary">
-              ATS Score: {analysis.score}/100
-              <br />
-              Make the suggested improvements to increase your ATS compatibility score.
-            </AlertDescription>
-          </Alert>
-        )}
 
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="resume-sections">
@@ -278,20 +336,20 @@ export default function ResumeEditor() {
                         <Card
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="border-white/10 bg-card/95 backdrop-blur transition-all duration-200 hover:border-primary/20"
+                          className="border-0 bg-[#F5F0E5] transition-all duration-200"
                         >
-                          <CardHeader 
+                          <CardHeader
                             className="flex flex-row items-center gap-4 py-3 cursor-pointer"
                             onClick={() => toggleSection(index)}
                           >
                             <div
                               {...provided.dragHandleProps}
-                              className="cursor-grab hover:text-primary transition-colors"
+                              className="cursor-grab hover:text-[#009963] transition-colors"
                               title="Drag to reorder sections"
                             >
                               <GripVertical className="h-5 w-5" />
                             </div>
-                            <CardTitle className="text-lg flex items-center gap-2 text-white/90">
+                            <CardTitle className="text-lg flex items-center gap-2 text-[#1C170D]">
                               {section.title}
                               {section.isCollapsed ? (
                                 <ChevronDown className="h-4 w-4 ml-2" />
@@ -312,35 +370,35 @@ export default function ResumeEditor() {
                                       setSections(newSections);
                                     }}
                                     placeholder={section.placeholder}
-                                    className="mb-2 bg-background/50 border-white/10"
+                                    className="mb-2 bg-white border-[#E8DECF]"
                                   />
                                 </div>
                                 <div className="space-y-4">
-                                  <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                                    <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                  <div className="bg-white rounded-lg p-4 border border-[#E8DECF]">
+                                    <h4 className="font-medium mb-2 flex items-center gap-2 text-[#009963]">
                                       <Sparkles className="h-4 w-4" />
                                       Best Practices
                                     </h4>
                                     <ul className="space-y-2 text-sm">
                                       {section.suggestions.map((suggestion, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-white/70">
-                                          <span className="text-primary">•</span>
+                                        <li key={i} className="flex items-start gap-2 text-[#757575]">
+                                          <span className="text-[#009963]">•</span>
                                           {suggestion}
                                         </li>
                                       ))}
                                     </ul>
                                   </div>
                                   {section.keywords && section.keywords.length > 0 && (
-                                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                                      <h4 className="font-medium mb-2 flex items-center gap-2 text-primary">
+                                    <div className="bg-white rounded-lg p-4 border border-[#E8DECF]">
+                                      <h4 className="font-medium mb-2 flex items-center gap-2 text-[#009963]">
                                         <Sparkles className="h-4 w-4" />
                                         Key Terms to Include
                                       </h4>
                                       <div className="flex flex-wrap gap-2">
                                         {section.keywords.map((keyword, i) => (
-                                          <span 
+                                          <span
                                             key={i}
-                                            className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                                            className="text-xs bg-[#009963]/10 text-[#009963] px-2 py-1 rounded-full"
                                           >
                                             {keyword}
                                           </span>
@@ -370,12 +428,13 @@ export default function ResumeEditor() {
         >
           <Button
             onClick={handleDownload}
-            className="w-full flex items-center justify-center gap-2 bg-primary/90 hover:bg-primary text-white"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-full"
           >
             <Download className="h-4 w-4" />
             Download Resume
           </Button>
         </motion.div>
+        {renderNextSteps()}
       </motion.div>
     </PageLayout>
   );

@@ -15,7 +15,7 @@ async function throwIfResNotOk(res: Response) {
     } catch (e) {
       errorDetails = res.statusText;
     }
-    
+
     console.error(`API Error ${res.status}:`, errorDetails);
     throw new Error(`${res.status}: ${errorDetails || res.statusText}`);
   }
@@ -25,34 +25,110 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-  options?: RequestInit,
+  options?: RequestInit & { timeout?: number },
 ): Promise<Response> {
   try {
-    console.log(`Sending ${method} request to ${url}`, {
-      dataSize: data ? JSON.stringify(data).length : 0,
-      contentType: options?.headers?.['Content-Type'] || (data ? 'application/json' : 'none')
-    });
+    // Create a simple headers object that contains only strings
+    const headersObj: Record<string, string> = {};
+    
+    // Copy any headers from options safely
+    if (options?.headers) {
+      const headers = options.headers;
+      if (headers instanceof Headers) {
+        // Convert Headers instance to plain object
+        headers.forEach((value, key) => {
+          headersObj[key] = value;
+        });
+      } else if (typeof headers === 'object') {
+        // Handle plain object headers safely
+        Object.entries(headers as Record<string, unknown>).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            headersObj[key] = value;
+          }
+        });
+      }
+    }
 
-    const res = await fetch(url, {
+    // Set up timeout - default to 60 seconds for long-running operations
+    const timeout = options?.timeout || 60000;
+
+    // Log request preparation
+    console.log('Preparing request:', {
       method,
-      headers: {
-        ...(data ? { "Content-Type": "application/json" } : {}),
-        ...(options?.headers || {}),
-      },
-      body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
-      ...options,
+      url,
+      isFormData: data instanceof FormData,
+      dataType: data ? typeof data : 'undefined',
+      hasHeaders: Object.keys(headersObj).length > 0,
+      timeout
     });
 
-    console.log(`Response from ${url}:`, {
-      status: res.status,
-      statusText: res.statusText,
-      contentType: res.headers.get('content-type')
+    // Only add Content-Type if NOT FormData
+    if (data && !(data instanceof FormData)) {
+      headersObj["Content-Type"] = "application/json";
+      console.log('Setting Content-Type: application/json');
+    } else if (data instanceof FormData) {
+      console.log('FormData detected - browser will set Content-Type automatically');
+      // Log FormData contents for debugging
+      console.log('FormData entries:', Array.from((data as FormData).entries()).map(([key]) => key));
+    }
+
+    // Create Headers object from our safe headersObj
+    const headers = new Headers();
+    Object.entries(headersObj).forEach(([key, value]) => {
+      headers.append(key, value);
+    });
+    
+    const requestConfig = {
+      method,
+      headers,
+      body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
+      credentials: "include" as RequestCredentials,
+      ...(options || {}),
+    };
+    
+    // Remove timeout from passed options to prevent fetch error
+    if (requestConfig.timeout) {
+      delete requestConfig.timeout;
+    }
+
+    // Log final request configuration
+    console.log('Sending request with config:', {
+      method: requestConfig.method,
+      headers: requestConfig.headers,
+      hasBody: !!requestConfig.body,
+      bodyType: requestConfig.body ? requestConfig.body.constructor.name : 'none',
+      timeout
     });
 
-    await throwIfResNotOk(res);
-    return res;
-  } catch (error) {
+    // Create fetch with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const res = await fetch(url, {
+        ...requestConfig,
+        signal: controller.signal,
+      });
+  
+      // Log response details
+      console.log(`Response from ${url}:`, {
+        status: res.status,
+        statusText: res.statusText,
+        contentType: res.headers.get('content-type'),
+        size: res.headers.get('content-length')
+      });
+  
+      await throwIfResNotOk(res);
+      return res;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error(`API request timeout after ${options?.timeout || 60000}ms (${method} ${url})`);
+      throw new Error(`Request timeout: The operation took too long to complete. Please try with a smaller document or try again later.`);
+    }
+    
     console.error(`API request error (${method} ${url}):`, error);
     throw error;
   }
@@ -83,10 +159,30 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors except for 429 (rate limit)
+        if (error instanceof Error) {
+          const status = parseInt(error.message.split(':')[0]);
+          if (status >= 400 && status < 500 && status !== 429) {
+            return false;
+          }
+        }
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
     },
     mutations: {
-      retry: false,
+      retry: (failureCount, error) => {
+        // Similar retry logic for mutations
+        if (error instanceof Error) {
+          const status = parseInt(error.message.split(':')[0]);
+          if (status >= 400 && status < 500 && status !== 429) {
+            return false;
+          }
+        }
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
     },
   },
 });

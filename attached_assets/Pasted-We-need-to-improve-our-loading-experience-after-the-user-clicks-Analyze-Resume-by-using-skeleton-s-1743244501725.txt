@@ -1,0 +1,40 @@
+We need to improve our loading experience after the user clicks “Analyze Resume” by using skeleton screens and a fun loading message. Please implement the following in our React/TypeScript + Tailwind codebase, with extra detail on what we mean by “skeleton screens.”
+
+1. Transform/Hide the Upload Form on Click:
+   - When the user clicks “Analyze Resume,” animate the current upload form (including the job description toggle) to fade out or slide up, so the user clearly sees that the input phase has ended.
+
+2. Display a Fun Loading Panel:
+   - Immediately after the upload form is hidden, show a loading panel with:
+     - A minimal spinner or animated icon.
+     - A fun, friendly loading message. For example:
+       “Hang tight while we rummage through your resume for hidden talents…”
+       And if a job description was provided, append:
+       “We’re also matching your resume against the job listing to see how you stack up.”
+   - The message should be playful yet professional.
+
+3. Implement Skeleton Screens for the Result Sections:
+   - **Definition**: Skeleton screens are placeholder UI components that mimic the layout of the final content but are filled with neutral, greyed-out blocks instead of real data.
+   - **For Example**:
+     - **Overall Score Section**: Render a grey circle or rectangle where the score (e.g., “65/100”) will eventually appear.
+     - **Key Skills Section**: Render a row of pill-shaped grey blocks to indicate where each key skill will be listed.
+     - **Suggested Improvements**: Render 3-4 horizontal grey bars representing bullet points that will later show specific improvement suggestions.
+     - **Job Match Analysis (if applicable)**: Render a similar set of placeholders (like a smaller list or box) for the job-specific feedback.
+   - These skeleton components should have subtle animations (like a shimmer effect) to indicate that content is loading.
+   - As soon as the real data is available, smoothly transition (fade out the skeleton and fade in the real content) in their place.
+
+4. Optionally, Add a “What to Expect” Panel:
+   - Beneath the fun loading message, display a small, concise note:
+     “We’re extracting your strengths, suggesting improvements, and comparing your resume with any job requirements provided. This usually takes about 10-15 seconds.”
+   - This panel should be styled in line with our brand (using Tailwind classes for spacing and color).
+
+5. Ensure Responsiveness & Consistency:
+   - Make sure that the skeleton screens, loading panel, and transitions work well on both desktop and mobile devices.
+   - Use our existing Tailwind theme to style these elements (for example, using classes like `bg-gray-300` for placeholders and `animate-pulse` for shimmer effects).
+
+6. Documentation & Inline Comments:
+   - Include clear inline comments in your code to explain:
+     - What each skeleton component represents.
+     - How the transition from the upload form to the loading panel to the final content works.
+     - How the fun loading message is conditionally modified when a job description is provided.
+
+Please implement these changes, ensuring the skeleton screens are clearly defined as placeholders for the final content, and let me know once complete for testing.

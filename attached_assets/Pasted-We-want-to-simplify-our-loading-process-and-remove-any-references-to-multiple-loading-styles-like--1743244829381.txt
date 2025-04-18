@@ -1,0 +1,28 @@
+We want to simplify our loading process and remove any references to multiple loading styles (like “Timeline,” “Skeleton,” or “Minimal”). Instead, we’d like to use a **single approach** that employs skeleton placeholders for the final results, with a fun loading message. Specifically:
+
+1. **Remove Any “Timeline” or “Skeleton” Steps in the UI**  
+   - Right now, our interface shows multiple “modes” or “tabs” (Timeline, Skeleton, Minimal). We don’t want that. We want one unified loading state.
+   - Delete any toggle or step that says “Skeleton” as if it’s a separate process. The user should see just one loading state.
+
+2. **Implement a Single Skeleton-Based Loading State**  
+   - Once the user clicks “Analyze Resume,” hide or fade out the upload form.  
+   - Show a short, playful message (e.g., “Hang tight while we rummage through your resume for hidden talents…”) and, if a job description is provided, append: “We’re also matching your resume against the job listing to see how you stack up.”
+   - Display skeleton placeholders for the final analysis screen:
+     • A grey circle/rectangle where the score will go  
+     • A few pill-shaped grey placeholders for skills  
+     • Some horizontal bars for improvements or job match feedback  
+   - These skeleton elements should animate (e.g., using `animate-pulse` in Tailwind).
+
+3. **No Separate “Skeleton” Phase in the Timeline**  
+   - If you have icons labeled “Analyzing,” “Processing,” “Generating,” “Complete,” please keep them or remove them—either is fine—but do **not** add an additional “Skeleton” step. The skeleton approach is simply how we render the results section while data is loading.
+
+4. **Transition to Final Results**  
+   - When the analysis data is ready, fade out the skeleton placeholders and fade in the real results (score, skills, suggestions, etc.).  
+   - Keep the playful message until data is ready, then remove it or transition it out.
+
+5. **Consistent Styling & Documentation**  
+   - Use our existing Tailwind theme (colors, spacing) for all elements.  
+   - Remove any references in the code to “Skeleton mode,” “Timeline mode,” or “Minimal mode.” We want just one final loading style with skeleton placeholders.  
+   - Add brief inline comments to explain how the skeleton placeholders work and how the fade-in/fade-out transitions are implemented.
+
+By removing multiple modes and focusing on a single skeleton-based loading approach, we’ll have a clean, cohesive experience that doesn’t confuse the user with different loading “phases.” Please implement these changes and confirm once complete.

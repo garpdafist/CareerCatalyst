@@ -5,42 +5,16 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 80%;
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 94%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 94%;
-    --primary: 228 100% 70%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 16%;
-    --secondary-foreground: 228 100% 70%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 166 100% 44%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 94%;
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 228 100% 70%;
-    --radius: 0.5rem;
-  }
-
   body {
     @apply font-sans antialiased;
-    background: linear-gradient(to bottom, hsl(var(--background)), hsl(0 0% 6%));
-    min-height: 100vh;
-  }
-
-  ::selection {
-    @apply bg-primary/25;
+    background-color: #FFFFFF !important;
+    color: #1C170D;
   }
 
   /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight text-card-foreground;
+    @apply font-semibold tracking-tight;
+    color: #1C170D;
   }
 
   h1 {
@@ -56,41 +30,99 @@
   }
 
   p {
-    @apply leading-7 text-foreground;
+    color: #1C170D;
+    @apply leading-7;
   }
-
-  /* Links */
-  a {
-    @apply text-primary transition-colors hover:text-primary/80;
+  
+  /* Animation Keyframes */
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
   }
 }
 
 @layer components {
+  .container {
+    @apply px-4 mx-auto max-w-7xl;
+  }
+
   .card {
-    @apply rounded-lg border border-border/20 bg-card/95 text-card-foreground 
-           shadow-md backdrop-blur-sm transition-all duration-300 
-           hover:border-primary/20 hover:shadow-lg;
+    background-color: #F5F0E5;
+    @apply rounded-xl p-6 shadow-sm transition-all duration-300;
   }
 
-  .btn-primary {
-    @apply bg-primary text-primary-foreground shadow-md transition-all duration-300 
-           hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02];
+  .feature-card {
+    background-color: #F5F0E5;
+    @apply rounded-xl p-6 shadow-sm transition-all duration-300;
   }
 
-  .btn-secondary {
-    @apply bg-secondary text-secondary-foreground border-2 border-primary/20 
-           transition-all duration-300 hover:border-primary/40 hover:bg-secondary/80;
+  /* Standardized button styles */
+  .btn,
+  button[class*="btn"],
+  .button,
+  [type="button"],
+  [type="submit"] {
+    @apply rounded-full px-6 py-2.5 h-11 font-medium transition-all duration-300;
   }
 
-  .interactive-scale {
-    @apply transition-transform duration-300 hover:scale-[1.02];
+  .btn-primary,
+  .button-primary,
+  button[class*="primary"] {
+    background-color: #009963;
+    color: #FFFFFF;
+    @apply shadow-sm;
   }
 
-  .interactive-shadow {
-    @apply transition-shadow duration-300 hover:shadow-lg;
+  .btn-primary:hover,
+  .button-primary:hover,
+  button[class*="primary"]:hover {
+    @apply opacity-90 shadow-md;
   }
 
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  .btn-secondary,
+  .button-secondary,
+  button[class*="secondary"] {
+    background-color: #FFFFFF;
+    color: #009963;
+    border: 2px solid rgba(0, 153, 99, 0.2);
+  }
+
+  .btn-secondary:hover,
+  .button-secondary:hover,
+  button[class*="secondary"]:hover {
+    background-color: rgba(0, 153, 99, 0.05);
+    border-color: rgba(0, 153, 99, 0.4);
+  }
+
+  .btn-ghost,
+  .button-ghost,
+  button[class*="ghost"] {
+    @apply bg-transparent text-[#009963] hover:bg-[#009963]/5 border-0;
+  }
+
+  .stat-card {
+    background-color: #E8DECF;
+    color: #1C170D;
+    @apply rounded-xl p-4 flex flex-col items-center justify-center;
+  }
+
+  .text-muted {
+    color: #757575;
+  }
+
+  .text-accent {
+    color: #A1824A;
+  }
+
+  .section {
+    @apply py-12 md:py-16 lg:py-24;
   }
 }

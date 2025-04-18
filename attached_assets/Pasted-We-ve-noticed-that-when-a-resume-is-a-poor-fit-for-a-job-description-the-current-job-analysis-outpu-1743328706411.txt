@@ -1,0 +1,35 @@
+We've noticed that when a resume is a poor fit for a job description, the current job analysis output is too generic and unhelpful. For example, it only provides minimal feedback like:
+
+  Alignment & Strengths: "Your skills match some of the requirements..."
+  Gaps & Concerns: "There may be requirements that aren't reflected..."
+  Overall Fit Assessment: "The AI was unable to generate a complete job match analysis."
+
+We need to improve this for cases where the resume doesn't match well by making the analysis more detailed and actionable. Please implement the following changes:
+
+1. **Enhance the AI Prompt for Poor Fit Cases:**
+   - Modify the backend prompt used for job analysis so that if the resume lacks key requirements, the AI is instructed to:
+     • Identify specific missing skills, experiences, or achievements.
+     • Provide a detailed breakdown comparing the job description's critical requirements with the resume content.
+     • Generate actionable recommendations tailored to address each identified gap (e.g., "Consider adding a section on PPC management if you have relevant experience or projects").
+   - Ensure the prompt encourages a friendly, constructive tone that motivates the user to improve their resume.
+
+2. **Revise the "Gaps & Concerns" Section:**
+   - Instead of generic text, dynamically populate this section with:
+     • A list of critical missing requirements (e.g., missing keywords or experiences).
+     • Clear, step-by-step suggestions on how to bridge these gaps.
+   - Ensure that if the resume is a poor match, the feedback is granular rather than saying "incomplete analysis."
+
+3. **Improve the "Overall Fit Assessment":**
+   - Update this section so that instead of merely stating that the AI couldn't generate a complete analysis, it provides a nuanced evaluation.
+   - For example, include a score or percentage that reflects the degree of fit, along with a summary of the key areas needing improvement.
+   - Suggest whether the user should revise the resume for this specific role or consider another job that might be a better match.
+
+4. **Implement a Secondary Analysis Layer (Optional):**
+   - If the initial analysis score is low or critical requirements are missing, trigger a supplementary analysis that dives deeper into the job description versus resume comparison.
+   - This secondary analysis should provide even more detailed insights and recommendations.
+
+5. **Maintain a Consistent Tone and Design:**
+   - Ensure that all output remains friendly, encouraging, and actionable.
+   - The changes should integrate with our existing UI/UX, so that the improved analysis is displayed clearly on the results page.
+
+Please implement these changes in both the backend job analysis logic and the frontend display. Once completed, provide a summary of the modifications and confirm that the improved job analysis output is ready for testing.

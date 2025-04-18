@@ -1,0 +1,30 @@
+We're still receiving the same error:
+
+"Refused to connect to 'https://api.supabase.com/ping' because it violates the following Content Security Policy directive: 'default-src 'self'". 
+
+It appears that despite our recent changes, the browser is still enforcing a restrictive CSP. We need to further diagnose and resolve this issue. Please take the following steps:
+
+1. **Log the Actual CSP Header:**
+   - Modify our security middleware to log the full Content Security Policy header that is being sent in the HTTP response.
+   - Verify that this header includes an explicit `connect-src` directive allowing connections to "https://api.supabase.com" and "https://pwiysqqirjnjqacevzfp.supabase.co".
+
+2. **Check for Overriding Configurations:**
+   - Confirm that no other middleware (e.g., Helmet or a CDN service) is overriding our CSP settings.
+   - Ensure that our custom CSP configuration is not being cached by the browser. If needed, clear the cache and test again.
+
+3. **Temporary CSP Relaxation:**
+   - Temporarily remove or relax the CSP header (e.g., set `connect-src *`) to confirm that the error disappears. This will help verify that the issue is solely related to CSP restrictions.
+   - Once confirmed, reapply a stricter CSP that explicitly allows our Supabase domains.
+
+4. **Refine the CSP Settings:**
+   - Update the CSP to explicitly allow connections to:
+     - "https://api.supabase.com"
+     - "https://pwiysqqirjnjqacevzfp.supabase.co"
+   - Example: `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.supabase.com https://pwiysqqirjnjqacevzfp.supabase.co; ...">`
+
+5. **Document and Test:**
+   - Add inline comments explaining the CSP configuration changes.
+   - Restart the server and test the authentication flow again.
+   - Log the final CSP header and ensure that the authentication service can be reached without triggering errors.
+
+Please implement these steps and confirm once the CSP is correctly configured and the error is resolved.

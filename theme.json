@@ -1,6 +1,10 @@
 {
+  "theme": {
+    "light": "zinc",
+    "dark": "slate"
+  },
+  "primary": "#10B981",
   "variant": "professional",
-  "primary": "#6A84FF",
-  "appearance": "dark",
+  "appearance": "light",
   "radius": 0.5
 }

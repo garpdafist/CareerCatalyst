@@ -1,0 +1,31 @@
+You are an experienced AI prompt engineer and full-stack developer. We have several limitations to fix:
+
+1) **Large Input (Token Limit)**:
+   - If resume + jobDescription + sample instructions is huge, the AI might truncate or fail. 
+   - Implement a chunking or summarization step:
+     - If the job description or resume text is above a certain length, do a quick summarization pass before the final AI prompt.
+   - This ensures we don’t exceed token limits.
+
+2) **Contradictory Instructions** (brief vs. “min 50 words”):
+   - Make the instructions consistent. Either remove references to “brief feedback” if we require a minimum word count, or reduce the word count demands if we truly want concise. 
+   - Possibly set something like “Aim for 2–3 sentences per field, ~30–50 words each” so it’s not contradictory.
+
+3) **Fallback Overshadowing Partial Data**:
+   - Right now, if the AI returns an empty string or partial data, we might overwrite it with “No general feedback available” or “No job-specific feedback available.” 
+   - Only apply fallback if the field is truly undefined, not if it’s an empty string. 
+   - Let partial data remain, so we can see if the AI gave partial feedback.
+
+4) **Log Final Prompt & AI Response**:
+   - In the server route (or code) that calls the AI, console.log or store the final system/user message plus the raw AI response. 
+   - This helps us debug if the AI is returning partial text or if it’s being overwritten by fallback. 
+   - Once we confirm the raw response, we can refine the prompt further.
+
+5) **Implementation & Testing**:
+   - Show me a final code snippet or diff with:
+     - The chunking or summarization logic for large input.
+     - The updated instructions removing contradictory demands (like “brief” vs. “min 50 words”).
+     - The fallback logic that only replaces fields if they’re truly undefined.
+     - A console.log or similar that logs the final prompt + raw AI response before parsing.
+   - Then test with a large resume and job description to confirm no token limit errors, and see if partial data from the AI is preserved rather than overwritten.
+
+This should resolve the limitations: token limit issues, contradictory instructions, overshadowed partial data, and lack of visibility into the final prompt. Let’s ensure we get consistent, meaningful output from the AI.

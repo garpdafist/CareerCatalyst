@@ -1,0 +1,34 @@
+We're still encountering an error when trying to connect to our authentication service. The browser shows a message:
+
+"Browser Security Restriction Detected
+We're having trouble connecting to our authentication service. Your browser's security settings may be blocking the connection
+Content Security Policy restrictions may be in effect
+Sign-in may still work, but you might experience issues. If you continue to have problems, please try a different network connection.
+
+Authentication Error
+Cannot connect to authentication service. Please check your network connection."
+
+We've confirmed that our Supabase project is now active and the keys have been updated. Please perform the following steps to diagnose and resolve the issue:
+
+1. **Review Content Security Policy (CSP) Settings:**
+   - Check our index.html (or server headers if applicable) to see if there's a CSP meta tag or HTTP header restricting external connections.
+   - Update the CSP to allow connections to our Supabase endpoint, for example by adding "https://pwiysqqirjnjqacevzfp.supabase.co" to the connect-src directive.
+   - Ensure any other relevant CSP directives (such as default-src) do not block external API calls.
+
+2. **Verify Client-Side Supabase Configuration:**
+   - Open the client/src/lib/supabase.ts file and confirm that the Supabase URL and keys are correctly set.
+   - Log these values (without exposing secrets) to ensure the application is using the updated, active credentials.
+
+3. **Network Diagnostics:**
+   - Use the browser's network tab to inspect the failed requests to the Supabase endpoints. Check if any error details or blocked requests are visible.
+   - Confirm that no local browser extensions or settings are interfering with network requests.
+
+4. **Testing Connectivity:**
+   - Attempt a direct fetch (using curl or similar) to "https://pwiysqqirjnjqacevzfp.supabase.co/health" from the same environment to verify that the endpoint is reachable.
+   - Compare the results with the browser console errors.
+
+5. **Documentation and Logging:**
+   - Add inline comments in the code explaining the CSP changes.
+   - Provide a brief summary of your findings and any adjustments made to the CSP or Supabase configuration.
+
+Please implement these changes, then test and confirm that the authentication service is now accessible without triggering the browser security error.

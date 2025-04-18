@@ -1,0 +1,63 @@
+# Detailed Next Steps for Resume Analyzer Project
+# ===============================================
+# Please read carefully and implement each step in the code.
+
+steps:
+  - name: "Verify Data Flow (Server → Front End)"
+    description: >
+      1. In server/index.ts (or your Express routes), confirm that
+         the final response from /api/resume-analyze includes all
+         necessary fields (score, identifiedSkills, etc.).
+      2. In the front-end code, ensure the fetch() or axios() call
+         does:
+           const res = await fetch('/api/resume-analyze', { ... });
+           const data = await res.json();
+           console.log('Analysis result:', data);
+         Then set the relevant state or store for the UI.
+
+  - name: "Match Field Names"
+    description: >
+      1. Compare the server logs' JSON structure with how the front
+         end references it. If the server returns data.score, data.resumeSections,
+         etc., make sure the front end uses data.score, data.resumeSections, etc.
+      2. Remove or update any old references (like data.analysis.score) if they
+         no longer exist.
+
+  - name: "Check Sign-In Logic"
+    description: >
+      1. If the user is not signed in, do we show partial or no results?
+         Decide on a consistent approach (lock behind sign-in or show partial).
+      2. Confirm the front end can detect a valid user session. If you see
+         empty analysis because the user is 'anonymous', fix that logic.
+
+  - name: "Remove Port Conflicts"
+    description: >
+      1. Search the entire codebase for references to 5000 or 3000 that might
+         override process.env.PORT. Example:
+            grep -r "5000" .
+         Remove them or replace with:
+            const port = process.env.PORT || 3000;
+      2. Check .replit or replit.yaml for any run commands that specify
+         a port (like node server.js --port=5000). Remove them.
+
+  - name: "Kill Old Processes & Retest"
+    description: >
+      1. Use pkill -f "node" or pkill -f "tsx" if needed to ensure no leftover
+         dev watchers are running.
+      2. Then do npm run dev or npm start (whichever is correct) and watch the logs.
+      3. Confirm the server logs show "Server running on port X" with X being
+         the assigned port or 3000 locally.
+
+  - name: "Final Validation"
+    description: >
+      1. Upload a test PDF. Confirm the logs show a successful analysis with
+         a score and JSON structure.
+      2. Check the front-end console or dev tools to ensure the response data
+         matches what the UI displays.
+      3. If the user is signed in, confirm the UI actually shows the analysis
+         (score, identifiedSkills, etc.). If not, fix any sign-in checks.
+
+notes:
+  - "If you find additional leftover references or environment variables forcing port 5000, remove them."
+  - "Ensure front-end code actually sets local or React state with the analysis data."
+  - "Once done, share the updated code snippet or final link so we can confirm everything works."

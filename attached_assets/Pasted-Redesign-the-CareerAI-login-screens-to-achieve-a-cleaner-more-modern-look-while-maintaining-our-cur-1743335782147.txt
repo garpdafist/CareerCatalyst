@@ -1,0 +1,24 @@
+Redesign the CareerAI login screens to achieve a cleaner, more modern look while maintaining our current color palette (a warm beige background and green buttons) and the passwordless authentication options (Magic Link and One-Time Password). The goal is to enhance visual hierarchy, improve spacing and typography, and create a smooth, user-friendly flow.
+
+For the first screen (email entry and authentication option selection):
+- Display a prominent "Welcome to CareerAI" header with increased font size and weight.
+- Refine the email input field styling for clarity and ease-of-use, with adequate padding and a subtle border.
+- Design clear, visually distinct toggle buttons to switch between Magic Link and One-Time Password options. Ensure the toggles indicate the active selection with visual cues (e.g., color change or underline).
+- Update the "Send Magic Link" button to be more visually appealing—keep the green color but consider a more modern button shape with rounded corners, shadow, and a hover effect.
+- Elegantly incorporate any security notes (e.g., expiration of the magic link or OTP) using subtle, smaller text placed below the primary action.
+- Add subtle visual cues (such as icons or progress indicators) to guide users through the process without cluttering the interface.
+
+For the second screen (OTP verification):
+- Ensure visual consistency with the first screen by reusing the same header style and color palette.
+- Create a clean layout for entering the 6-digit OTP code with clearly spaced input fields or a single input with proper character spacing.
+- Design a visually appealing "Verify & Sign In" button using our green accent but with updated styling (e.g., rounded edges, soft shadow, hover effects).
+- Maintain helpful text for requesting a magic link, positioning it in a secondary but clear manner.
+- Present the expiration notification in a refined way, using smaller, elegant typography that does not overpower the primary actions.
+
+Across both screens:
+- Improve overall spacing and padding to create ample white space and avoid visual clutter.
+- Establish a clear typographic hierarchy by using different font weights and sizes for headers, subheaders, and body text.
+- Consider incorporating subtle, hand-drawn style icons or illustrations that add a friendly, approachable touch without detracting from the functionality.
+- Ensure the design is fully responsive and maintains consistency on both desktop and mobile devices.
+
+Please implement these changes to create a polished, modern, and user-friendly login experience that feels inviting and familiar, yet refined. Include inline comments to explain any new styling decisions for future maintenance.

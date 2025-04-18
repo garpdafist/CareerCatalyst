@@ -1,0 +1,39 @@
+We have an issue where "primaryKeywords" and "generalFeedback" appear in the raw OpenAI response but are missing in the UI. Please diagnose and fix by performing a “backward” debugging trace and verifying our DB logic. Here’s the plan:
+
+1. **Front-End (React) Fetch & Console Log**  
+   - After fetching the analysis data, log it:
+     ```js
+     console.log("Fetched analysis data:", data);
+     setAnalysisData(data);
+     ```
+   - If "primaryKeywords" and "generalFeedback" are missing here, the issue is server-side or DB-side.
+
+2. **Check the Server Route’s Final Response**  
+   - Right before `return res.json(result);` in the Express route, log the object:
+     ```js
+     console.log("Final response to client:", JSON.stringify(result, null, 2));
+     ```
+   - Confirm "primaryKeywords" and "generalFeedback" are present.
+
+3. **Database Storage & Retrieval**  
+   - In the function that saves the analysis (e.g., "saveResumeAnalysis"), verify we include "primaryKeywords" and "generalFeedback" in the insert statement, and that the DB schema has columns for them.
+   - When retrieving data, ensure we SELECT or fetch those columns. Log the DB result to confirm the fields exist.
+
+4. **Hard-Code a Test Response**  
+   - Create a simple route (e.g., "/api/test-debug") that returns:
+     ```js
+     res.json({
+       primaryKeywords: ["Keyword1", "Keyword2"],
+       generalFeedback: { overall: "Test feedback" }
+     });
+     ```
+   - If the front-end displays these correctly, the UI is fine, and the problem lies in how we build or fetch the real analysis response.
+
+5. **Search for Typos or Inconsistent Naming**  
+   - Use your IDE’s find-in-files for "primaryKeywords" and "generalFeedback" to ensure consistent naming across:
+     - AI response parsing
+     - DB insert and retrieval
+     - Final `res.json(...)`
+     - React’s fetch and render code
+
+Please implement these steps, log each stage, and fix any naming mismatches or missing DB columns so that "primaryKeywords" and "generalFeedback" appear in the final UI.

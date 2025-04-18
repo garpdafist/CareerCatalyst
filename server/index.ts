@@ -1,13 +1,46 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cookieParser from 'cookie-parser';
+import {
+  addSecurityHeaders,
+  generalLimiter,
+  handleCSRFError,
+  requestId,
+  apiLogger,
+  errorLogger,
+} from './middleware';
 
 const app = express();
+
+// Apply security headers first to ensure they're set for all responses
+app.use(addSecurityHeaders);
+
+// Parse cookies, needed for CSRF protection
+app.use(cookieParser());
+
+// Generate unique request ID for each request (for tracing/debugging)
+app.use(requestId);
+
+// Apply general rate limiting
+app.use('/api', generalLimiter);
+
 // Increase JSON payload size limit to 50MB
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Add logging middleware
+// Add CORS headers for authentication endpoints
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
+
+// Enhanced API request logger
+app.use('/api', apiLogger);
+
+// Legacy logging middleware (can be removed once API logger is fully tested)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -43,12 +76,34 @@ app.use((req, res, next) => {
     log("Starting server initialization...");
     const server = await registerRoutes(app);
 
-    // Global error handler
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    // Handle CSRF errors first
+    app.use(handleCSRFError);
+    
+    // Log errors before handling them
+    app.use(errorLogger);
+    
+    // Enhanced global error handler with improved security
+    app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
       log(`Error: ${err.message}`);
       const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
+      
+      // Don't expose error details in production
+      const message = process.env.NODE_ENV === 'production' && status === 500
+        ? "An unexpected error occurred"
+        : err.message || "Internal Server Error";
+      
+      // Include sanitized error information
+      res.status(status).json({
+        status: 'error',
+        message,
+        requestId: (req as any).id,
+        code: err.code,
+        // Only include stack trace in development
+        ...(process.env.NODE_ENV !== 'production' ? {
+          stack: err.stack,
+          details: err.details
+        } : {})
+      });
     });
 
     // Serve static files in production
@@ -60,17 +115,45 @@ app.use((req, res, next) => {
       await setupVite(app, server);
     }
 
-    // Try to serve the app on port 5000, but fallback to another port if needed
-    const tryPort = (port: number): Promise<number> => {
-      return new Promise((resolve, reject) => {
+    // Use a dynamic port assignment strategy
+    const attemptPortBinding = (startPort: number) => {
+      const tryPort = (port: number): Promise<number> => {
+        return new Promise((resolve, reject) => {
+          import('http').then(http => {
+            const testServer = http.createServer();
+            testServer.once('error', (err: any) => {
+              if (err.code === 'EADDRINUSE') {
+                log(`Port ${port} is in use, trying next port...`);
+                resolve(tryPort(port + 1)); // Try next port
+              } else {
+                reject(err);
+              }
+            });
+            testServer.once('listening', () => {
+              testServer.close(() => {
+                resolve(port);
+              });
+            });
+            testServer.listen(port, '0.0.0.0');
+          }).catch(reject);
+        });
+      };
+
+      return tryPort(startPort);
+    };
+
+    // Find an available port starting with environment PORT or 5000
+    const startPort = parseInt(process.env.PORT || '5000', 10);
+
+    attemptPortBinding(startPort)
+      .then(PORT => {
+        log(`Starting server on port ${PORT} (process.env.PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV})`);
+
         server.listen({
-          port,
-          host: "0.0.0.0",
-          reusePort: true,
-        })
-        .on('listening', () => {
-          const actualPort = (server.address() as any)?.port || port;
-          log(`Server running at http://0.0.0.0:${actualPort}`);
+          port: PORT,
+          host: "0.0.0.0"
+        }, () => {
+          log(`🚀 Server running at http://0.0.0.0:${PORT}`);
           // Print additional debug info about the server
           log(`Server info: Node ${process.version}, Express routes: ${
             Object.keys(app._router.stack
@@ -78,28 +161,12 @@ app.use((req, res, next) => {
               .map((r: any) => `${Object.keys(r.route.methods)[0].toUpperCase()} ${r.route.path}`)
             )
           }`);
-          resolve(actualPort);
-        })
-        .on('error', (err: any) => {
-          if (err.code === 'EADDRINUSE') {
-            log(`Port ${port} is in use, trying ${port + 1}`);
-            server.close();
-            resolve(tryPort(port + 1));
-          } else {
-            reject(err);
-          }
+          // Set environment variable with the actual port for client reference
+          process.env.ACTUAL_PORT = PORT.toString();
         });
-      });
-    };
-    
-    tryPort(5000)
-      .then(port => {
-        log(`Server successfully started on port ${port}`);
-        // Set environment variable with the actual port for client reference
-        process.env.ACTUAL_PORT = port.toString();
       })
       .catch(error => {
-        log(`Fatal error during server startup: ${error}`);
+        log(`Fatal error during port selection: ${error}`);
         process.exit(1);
       });
   } catch (error) {

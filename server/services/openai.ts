@@ -1,160 +1,204 @@
+/**
+ * OpenAI Service
+ * 
+ * This service handles all interactions with the OpenAI API:
+ * - Provides a unified interface for making API calls
+ * - Implements rate limiting and retry logic
+ * - Handles error scenarios gracefully
+ * - Supports response validation with Zod schemas
+ */
+
 import OpenAI from "openai";
 import { z } from "zod";
+import crypto from "crypto";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-const openai = new OpenAI();
+// Initialize OpenAI client
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const resumeAnalysisResponseSchema = z.object({
-  score: z.number().min(0).max(100),
-  feedback: z.array(z.string()),
-  skills: z.array(z.string()),
-  improvements: z.array(z.string()),
-  keywords: z.array(z.string()),
-});
+// Constants for API requests
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000;
+const MAX_RETRY_DELAY = 10000;
 
-export type ResumeAnalysisResponse = z.infer<typeof resumeAnalysisResponseSchema>;
+/**
+ * Request queue for rate limiting OpenAI API calls
+ */
+class RequestQueue {
+  private queue: Array<() => Promise<any>> = [];
+  private processing = false;
+  private lastRequestTime = 0;
+  private readonly minRequestInterval = 500; // ms between requests
 
-// Rate limiting variables
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL_MS = 1000; // 1 second minimum between requests
+  /**
+   * Add an operation to the queue and process it in order
+   */
+  async add<T>(operation: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          // Rate limiting with minimum interval between requests
+          const now = Date.now();
+          const timeSinceLastRequest = now - this.lastRequestTime;
+          if (timeSinceLastRequest < this.minRequestInterval) {
+            await new Promise(r => setTimeout(r, this.minRequestInterval - timeSinceLastRequest));
+          }
 
-export async function analyzeResume(resumeText: string): Promise<ResumeAnalysisResponse> {
-  try {
-    // Implement rate limiting
-    const now = Date.now();
-    const timeElapsed = now - lastRequestTime;
-    if (timeElapsed < MIN_REQUEST_INTERVAL_MS) {
-      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL_MS - timeElapsed));
-    }
-    lastRequestTime = Date.now();
-
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional resume analyzer. Analyze the resume and provide feedback."
-        },
-        {
-          role: "user",
-          content: `Analyze this resume and provide the following:
-          1. A score from 0-100
-          2. A list of identified skills
-          3. A list of suggested improvements
-          4. A list of feedback points
-          5. A list of important keywords
-          
-          Resume: ${resumeText}`
+          const result = await operation();
+          this.lastRequestTime = Date.now();
+          resolve(result);
+        } catch (error) {
+          reject(error);
         }
-      ],
-      response_format: { type: "json_object" }
+      });
+
+      if (!this.processing) {
+        this.processQueue();
+      }
     });
-
-    // Parse the response
-    const responseText = completion.choices[0]?.message?.content || '{}';
-    const parsedResponse = JSON.parse(responseText);
-    
-    // Validate with zod schema
-    const validatedResponse = resumeAnalysisResponseSchema.parse({
-      score: parsedResponse.score || 0,
-      feedback: parsedResponse.feedback || [],
-      skills: parsedResponse.skills || [],
-      improvements: parsedResponse.improvements || [],
-      keywords: parsedResponse.keywords || [],
-    });
-
-    return validatedResponse;
-  } catch (error: any) {
-    console.error('OpenAI API error:', {
-      message: error.message,
-      type: error.constructor.name,
-      status: error.status,
-      details: error.response?.data
-    });
-    
-    // Return a default response on error
-    return {
-      score: 0,
-      feedback: ["Error analyzing resume. Please try again."],
-      skills: [],
-      improvements: ["Unable to analyze resume due to an error."],
-      keywords: []
-    };
-  }
-}
-const MIN_REQUEST_INTERVAL = 210; // 0.21 seconds in milliseconds
-
-async function waitForRateLimit() {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const delay = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-    await new Promise(resolve => setTimeout(resolve, delay));
   }
 
-  lastRequestTime = Date.now();
-}
-
-export async function analyzeResumeWithAI(content: string): Promise<ResumeAnalysisResponse> {
-  const prompt = `You are an expert resume analyzer. Analyze the following resume content and provide detailed, professional feedback. 
-
-Your analysis should focus on:
-1. Overall resume strength and effectiveness
-2. Technical and soft skills identified
-3. Key industry-relevant keywords
-4. Specific areas for improvement
-5. General professional advice
-
-Return the response in JSON format with the following structure:
-{
-  "score": <number between 0-100 based on overall resume strength>,
-  "feedback": [<array of detailed, actionable feedback points>],
-  "skills": [<array of all identified technical and soft skills>],
-  "improvements": [<array of specific, actionable improvement suggestions>],
-  "keywords": [<array of important industry-relevant keywords found>]
-}
-
-Resume content to analyze:
-${content}`;
-
-  try {
-    // Wait for rate limit before making the request
-    await waitForRateLimit();
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
-    });
-
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error('No response from OpenAI');
+  /**
+   * Process queued operations in order
+   */
+  private async processQueue() {
+    if (this.queue.length === 0) {
+      this.processing = false;
+      return;
     }
 
-    const result = JSON.parse(content);
-    return resumeAnalysisResponseSchema.parse(result);
-  } catch (error: any) {
-    console.error('OpenAI API Error:', error);
-
-    // Handle rate limit errors specially
-    if (error.status === 429) {
-      console.log('Rate limit hit, falling back to mock data');
+    this.processing = true;
+    const operation = this.queue.shift();
+    if (operation) {
+      try {
+        await operation();
+      } catch (error) {
+        console.error("Error in queue processing:", error);
+      }
     }
 
-    // Fallback to mock analysis when OpenAI fails
-    return {
-      score: 75,
-      feedback: [
-        "Unable to perform AI analysis at the moment",
-        "Please try again later",
-        "Using sample feedback in the meantime"
-      ],
-      skills: ["Sample Skill 1", "Sample Skill 2"],
-      improvements: ["This is a sample improvement suggestion"],
-      keywords: ["sample", "keywords"]
-    };
+    await this.processQueue();
   }
 }
+
+// Create a shared request queue for all OpenAI calls
+const requestQueue = new RequestQueue();
+
+// Create MD5 hash for caching purposes
+function createMD5Hash(str: string): string {
+  return crypto.createHash('md5').update(str).digest('hex');
+}
+
+/**
+ * Enhanced API request with retry logic and exponential backoff
+ * 
+ * @param operation The async operation to perform
+ * @param maxRetries Maximum number of retry attempts
+ * @param initialDelay Initial delay in milliseconds before retrying
+ * @param timeout Maximum time to wait for operation completion
+ * @returns Result of the operation
+ */
+export async function withExponentialBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES,
+  initialDelay: number = INITIAL_RETRY_DELAY,
+  timeout: number = 60000
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let canceled = false;
+    
+    // Set timeout for the whole operation
+    const timeoutId = setTimeout(() => {
+      canceled = true;
+      reject(new Error("Analysis timeout exceeded"));
+    }, timeout);
+    
+    // Execute operation with retries
+    const executeWithRetry = async (retryCount: number = 0, delay: number = initialDelay) => {
+      if (canceled) return;
+      
+      try {
+        // Add to request queue to manage rate limits
+        const result = await requestQueue.add(operation);
+        clearTimeout(timeoutId);
+        resolve(result);
+      } catch (error: any) {
+        // Handle rate limit errors specifically
+        if (error?.status === 429) {
+          const retryAfter = parseInt(error.response?.headers?.['retry-after'] || '1', 10);
+          const retryMs = (retryAfter || 1) * 1000;
+          
+          console.warn(`Rate limit hit, retry after ${retryMs}ms`);
+          
+          if (retryCount < maxRetries) {
+            await new Promise(r => setTimeout(r, retryMs)); 
+            return executeWithRetry(retryCount + 1, Math.min(retryMs * 2, MAX_RETRY_DELAY));
+          }
+        }
+        
+        // If exceeded retries or non-retryable error
+        if (retryCount >= maxRetries) {
+          clearTimeout(timeoutId);
+          reject(error);
+          return;
+        }
+        
+        console.warn(`API error (attempt ${retryCount + 1}/${maxRetries}): ${error.message}`);
+        // Exponential backoff
+        await new Promise(r => setTimeout(r, delay));
+        return executeWithRetry(retryCount + 1, Math.min(delay * 2, MAX_RETRY_DELAY));
+      }
+    };
+    
+    executeWithRetry();
+  });
+}
+
+/**
+ * Resume analysis response type
+ */
+export type ResumeAnalysisResponse = {
+  score: number;
+  scores: {
+    keywordsRelevance: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+      keywords: string[];
+    };
+    achievementsMetrics: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+      highlights: string[];
+    };
+    structureReadability: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+    };
+    summaryClarity: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+    };
+    overallPolish: {
+      score: number;
+      maxScore: 10;
+      feedback: string;
+    };
+  };
+  identifiedSkills: string[];
+  primaryKeywords: string[];
+  suggestedImprovements: string[];
+  generalFeedback: {
+    overall: string;
+  };
+  jobAnalysis?: {
+    alignmentAndStrengths: string[];
+    gapsAndConcerns: string[];
+    recommendationsToTailor: string[];
+    overallFit: string;
+  };
+};
+
+export { openai, requestQueue };

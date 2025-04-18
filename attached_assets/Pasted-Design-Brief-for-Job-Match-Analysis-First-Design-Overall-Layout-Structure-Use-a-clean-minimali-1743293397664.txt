@@ -1,0 +1,64 @@
+Design Brief for Job Match Analysis (First Design)
+Overall Layout & Structure
+
+Use a clean, minimalist design with a light cream/off-white background (#FAF9F5 or similar)
+Organize content into clear sections with generous whitespace between them
+Use a hierarchical heading structure with the main title "Job Match Analysis" at the top in bold black text
+Create four distinct sections: "Alignment & Strengths," "Gaps & Concerns," "How to Tailor Your Resume," and "Overall Fit Assessment"
+
+Typography
+
+Use a modern sans-serif font throughout (likely Arial, Helvetica or similar)
+Main title: 24-28px, bold
+Section headings: 20-22px, medium weight
+Content text: 16-18px, regular weight
+Blue recommendation text: slightly larger than standard text
+
+Color Scheme
+
+Background: Light cream/off-white
+Section titles: Dark gray/black
+Strengths items: Green text (#3D9970 or similar) with green checkmark icons
+Gaps/concerns: Red text (#E74C3C or similar) with red X icons
+Recommendations: Blue text (#4A90E2 or similar) with blue arrow icons
+Information icon: Light gray/blue in the assessment section
+
+Content Containers
+
+Create subtle rounded rectangle containers with very light background colors for each content item:
+
+Strengths items: Very light green background (#E6F7EF or similar)
+Gaps items: Very light red/pink background (#FEECEC or similar)
+Recommendations: Very light blue background (#EEF4FD or similar)
+Assessment: White background with thin gray border
+
+
+
+Icons
+
+Green checkmarks (✓) before each strength
+Red X marks (✗) before each gap/concern
+Blue right-facing arrows (→) before each recommendation
+Information/note icon (ⓘ) before the assessment summary
+
+Content Specifications
+
+Strengths section: Include 2 green-highlighted items with checkmarks
+Gaps section: Include 2 red-highlighted items with X marks
+Recommendations section: Include 3 blue-highlighted items with arrows
+Assessment section: Include 1 summary statement with information icon
+
+Content Style Differences
+
+First design focuses on digital marketing content creation and entrepreneurial experience
+First design mentions lack of professional summary as a gap
+First design suggests adding professional summary, metrics, and certifications
+First design includes an overall assessment section at the bottom
+
+Responsive Considerations
+
+Ensure all text remains readable at various screen sizes
+Maintain padding consistency within container elements
+Allow containers to expand vertically based on content needs
+
+This design creates a clear, visually organized job match analysis that effectively distinguishes between strengths, gaps, and tailoring recommendations with a professional appearance that's easy to scan and understand.

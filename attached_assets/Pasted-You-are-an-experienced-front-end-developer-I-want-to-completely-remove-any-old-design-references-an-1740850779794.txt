@@ -1,0 +1,34 @@
+You are an experienced front-end developer. I want to completely remove any old design references and start from scratch with my new Figma-based color scheme. Please do the following:
+
+1. **Delete Old Design & CSS**:
+   - Remove or comment out all old CSS files, SCSS files, style blocks, inline styles, or leftover Tailwind configs referencing outdated color variables or classes.
+   - Ensure no conflicting code remains in my project that could override the new palette.
+
+2. **Create a Single CSS (or SCSS) File**:
+   - Call it `style.css` (or `styles.scss`) and place it in a clear location (e.g., `/styles`).
+   - Define only the new color variables from the Figma file. For example:
+     ```
+     :root {
+       --color-bg-main: #FFFFFF;        /* White */
+       --color-bg-secondary: #F5F0E5;   /* Off-white/cream */
+       --color-bg-alt: #E8DECF;         /* Light beige */
+       --color-text-primary: #1C170D;   /* Dark brown/black */
+       --color-text-secondary: #757575; /* Gray */
+       --color-accent: #009963;         /* Green */
+       --color-accent-secondary: #A1824A; /* Golden-brown */
+     }
+     ```
+   - These should be the only color definitions in the project.
+
+3. **Re-Implement the Design**:
+   - Update each page (home, resume analyzer, resume editor, cover letter, LinkedIn profile, etc.) to reference the new color variables:
+     - Backgrounds, text, buttons, cards, etc.
+     - For example, use `var(--color-bg-main)` for main backgrounds, `var(--color-text-primary)` for headings, etc.
+   - Remove any leftover classes or inline styles that used old colors.
+
+4. **Confirm Everything is Fresh**:
+   - Provide me with a final Replit preview link so I can see the new design with no trace of old color references.
+   - Verify that all pages share a consistent, cohesive look with these new Figma-based colors.
+   - If you see any old color codes or dark theme remnants, remove them immediately.
+
+By doing this, we’ll ensure a fully clean slate and a single source of truth for our color palette, reflecting the exact Figma color scheme.

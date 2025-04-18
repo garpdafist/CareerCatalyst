@@ -1,0 +1,27 @@
+We're encountering an issue with the job description flow in the resume analysis: when a user includes a job description and clicks "Analyze Resume," the analysis output is completely empty (only the CTA is shown), even though this used to work before our recent security & database updates.
+
+Please perform the following debugging steps:
+
+1. **Log the Incoming Request:**
+   - Add detailed console logging in the /api/resume-analyze endpoint to print the entire request payload.
+   - Verify that the job description field is present and correctly populated in the request coming from the client.
+
+2. **Trace the Job Description Processing:**
+   - Add logging in the server-side processing logic (in the OpenAI service and any relevant middleware) to track how the job description is handled.
+   - Ensure that the job description is being passed into the AI prompt and that the analysis service is receiving it.
+
+3. **Check the Schema & Database Integration:**
+   - Confirm that the updated database schema includes the job description field and that it is being correctly stored.
+   - Verify that any changes made for security and database updates did not remove or alter the jobDescription field unexpectedly.
+
+4. **Log the Final Analysis Output:**
+   - Before sending the response back to the client, log the complete analysis output.
+   - Check if the job-specific fields are missing from the output and determine if the AI response is not including them or if they are being filtered out.
+
+5. **Compare with Previous Implementation:**
+   - If possible, compare the current job description handling and response generation with the previous, working version to identify any discrepancies.
+
+6. **Take Corrective Actions:**
+   - Based on your findings, adjust the processing logic, schema, or API endpoint to ensure that when a job description is provided, its data is correctly processed and included in the final analysis output.
+
+Please implement these debugging steps and provide detailed logs, so we can pinpoint where the job description data is being lost in the pipeline. Once identified, apply the necessary fixes to restore the full job-specific analysis output.

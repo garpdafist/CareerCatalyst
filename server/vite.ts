@@ -25,7 +25,7 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    hmr: false, // Completely disable HMR to prevent reconnection loops
     allowedHosts: true,
   };
 

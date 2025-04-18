@@ -1,79 +1,46 @@
-import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { cn } from "@/lib/utils";
 
-interface Particle {
-  x: number;
-  y: number;
-  size: number;
-  opacity: number;
+interface AnimatedBackgroundProps {
+  className?: string;
 }
 
-export function AnimatedBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Set canvas size
-    const updateSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-
-    // Create particles
-    let particles: Particle[] = Array.from({ length: 50 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: Math.random() * 2 + 1,
-      opacity: Math.random() * 0.5 + 0.2
-    }));
-
-    // Animation loop
-    let animationFrame: number;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Update and draw particles
-      particles.forEach((particle) => {
-        particle.y -= 0.2;
-        if (particle.y < -10) particle.y = canvas.height + 10;
-        
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(200, 95%, 45%, ${particle.opacity})`;
-        ctx.fill();
-      });
-
-      animationFrame = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      window.removeEventListener('resize', updateSize);
-      cancelAnimationFrame(animationFrame);
-    };
-  }, []);
-
+/**
+ * A subtle animated background component that adds visual interest
+ * without overwhelming the content.
+ */
+export function AnimatedBackground({ className }: AnimatedBackgroundProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1 }}
-      className="fixed inset-0 -z-10 overflow-hidden"
+    <div
+      className={cn(
+        "absolute inset-0 overflow-hidden -z-10",
+        className
+      )}
     >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(to bottom, hsl(220 25% 4%), hsl(220 25% 2%))' }}
+      {/* Animated gradient background */}
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-[#f8f5ee]/80 via-[#f8f5ee] to-[#f2efe5]/90"
+        style={{ 
+          backgroundSize: "400% 400%",
+          animation: "gradient 15s ease infinite"
+        }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/50 to-background opacity-80" />
-    </motion.div>
+      
+      {/* Subtle blurred shapes */}
+      <div className="absolute top-0 left-0 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30" 
+        style={{ animation: "blob 7s infinite" }} />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20" 
+        style={{ animation: "blob 7s infinite", animationDelay: "2000ms" }} />
+      <div className="absolute bottom-0 left-20 w-64 h-64 bg-amber-50 rounded-full mix-blend-multiply filter blur-3xl opacity-20" 
+        style={{ animation: "blob 7s infinite", animationDelay: "4000ms" }} />
+      <div className="absolute bottom-0 right-20 w-64 h-64 bg-emerald-50 rounded-full mix-blend-multiply filter blur-3xl opacity-30" 
+        style={{ animation: "blob 7s infinite", animationDelay: "6000ms" }} />
+      
+      {/* Optional subtle grid pattern overlay */}
+      <div 
+        className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMwLTkuOTQtOC4wNi0xOC0xOC0xOCIgc3Ryb2tlPSIjRTJFOEYwIi8+PC9nPjwvc3ZnPg==')]"
+        style={{ opacity: 0.05 }}
+      />
+    </div>
   );
 }

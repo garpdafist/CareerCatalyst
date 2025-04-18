@@ -1,7 +1,13 @@
-import { type ResumeAnalysis, type InsertResumeAnalysis, type User, type InsertUser } from "@shared/schema";
-import { analyzeResumeWithAI } from "./services/openai";
+import { 
+  type ResumeAnalysis, 
+  type InsertResumeAnalysis, 
+  type User, 
+  type InsertUser,
+  type ResumeSections
+} from "@shared/schema";
+import { analyzeResume } from "./services/resume-analyzer";
 import { db } from "./db";
-import { users, resumeAnalyses } from "@shared/schema";
+import { users, resumeAnalyses, resumeSectionsSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { Store } from "express-session";
@@ -19,6 +25,20 @@ export interface IStorage {
   getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined>;
   getUserAnalyses(userId: string): Promise<ResumeAnalysis[]>;
 
+  // New method for saving analysis
+  saveResumeAnalysis(data: {
+    userId: string;
+    content: string;
+    score: number;
+    analysis: {
+      scores: any;
+      identifiedSkills: string[];
+      primaryKeywords: string[];
+      suggestedImprovements: string[];
+      generalFeedback: { overall: string } | string;
+    };
+  }): Promise<ResumeAnalysis>;
+
   // Session store for authentication
   sessionStore: Store;
 }
@@ -34,28 +54,13 @@ export class DatabaseStorage implements IStorage {
       },
       createTableIfMissing: true,
     });
-
-    // Create test user during initialization
-    this.ensureTestUser().catch(console.error);
   }
 
-  private async ensureTestUser() {
-    try {
-      const testUser = await this.getUserByEmail("test@example.com");
-      if (!testUser) {
-        console.log("Creating test user...");
-        await this.createUser("test@example.com", "test-user-123");
-      }
-    } catch (error) {
-      console.error("Failed to create test user:", error);
-    }
-  }
-
-  async createUser(email: string, id?: string): Promise<User> {
+  async createUser(email: string): Promise<User> {
     const [user] = await db
       .insert(users)
       .values({
-        id: id || randomBytes(16).toString("hex"),
+        id: randomBytes(16).toString("hex"),
         email,
         emailVerified: new Date(),
         lastLoginAt: new Date(),
@@ -85,90 +90,342 @@ export class DatabaseStorage implements IStorage {
   }
 
   async analyzeResume(content: string, userId: string): Promise<ResumeAnalysis> {
+    console.log('Starting resume analysis for user:', {
+      userId,
+      contentLength: content.length,
+      timestamp: new Date().toISOString()
+    });
+
     try {
-      // Log content length before analysis
-      console.log('Analyzing resume content:', {
-        contentLength: content.length,
-        firstChars: content.substring(0, 100) + '...'
+      // Get the AI analysis
+      const aiAnalysis = await analyzeResume(content);
+
+      console.log('Received AI analysis:', {
+        score: aiAnalysis.score,
+        hasScores: !!aiAnalysis.scores,
+        primaryKeywordsCount: aiAnalysis.primaryKeywords?.length,
+        primaryKeywords: aiAnalysis.primaryKeywords,
+        timestamp: new Date().toISOString()
       });
 
-      const aiAnalysis = await analyzeResumeWithAI(content);
-
-      const [analysis] = await db
-        .insert(resumeAnalyses)
-        .values({
-          userId,
-          content: content.substring(0, 10000), // Limit content length for storage
-          ...aiAnalysis,
-        })
-        .returning();
-
-      return analysis;
-    } catch (error: any) {
-      console.error('Analysis error:', {
-        message: error.message,
-        type: error.constructor.name,
-        stack: error.stack
-      });
-
-      // Always provide fallback mock data that matches our schema
-      const mockAnalysis = {
+      // Save the analysis
+      return this.saveResumeAnalysis({
         userId,
-        content: content.substring(0, 100) + '...', // Store truncated content
-        score: 75,
-        feedback: [
-          'Strong technical background demonstrated',
-          'Clear project descriptions',
-          'Good use of action verbs',
-          'Consider adding more quantifiable achievements'
-        ],
-        skills: [
-          'JavaScript',
-          'React',
-          'Node.js',
-          'TypeScript',
-          'Database Management',
-          'API Development'
-        ],
-        improvements: [
-          'Add more specific examples of project impacts',
-          'Include metrics and quantifiable results',
-          'Highlight leadership experience',
-          'Consider adding certifications section'
-        ],
-        keywords: [
-          'full-stack development',
-          'web applications',
-          'software engineering',
-          'agile methodology',
-          'team collaboration',
-          'problem solving'
-        ],
-      };
+        content,
+        score: aiAnalysis.score,
+        analysis: {
+          scores: aiAnalysis.scores,
+          identifiedSkills: aiAnalysis.identifiedSkills,
+          primaryKeywords: aiAnalysis.primaryKeywords || [], // Ensure we use primaryKeywords consistently
+          suggestedImprovements: aiAnalysis.suggestedImprovements,
+          generalFeedback: aiAnalysis.generalFeedback
+        }
+      });
+    } catch (error: any) {
+      console.error('Error during resume analysis:', {
+        error: error.message,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
+  }
 
+  async saveResumeAnalysis(data: {
+    userId: string;
+    content: string;
+    score: number;
+    jobDescription?: string; // Add job description parameter
+    analysis: {
+      scores: any;
+      identifiedSkills: string[];
+      primaryKeywords: string[];
+      suggestedImprovements: string[];
+      generalFeedback: { overall: string } | string;
+      jobAnalysis?: any; // Add job analysis data
+    };
+  }): Promise<ResumeAnalysis> {
+    // Verify user authentication
+    if (!data.userId) {
+      console.error('Authentication error: No userId provided for saveResumeAnalysis');
+      throw new Error('Authentication required');
+    }
+  
+    // Enhanced logging for debugging job description issues - critical tracing point
+    console.log('JOB DESC TRACE - 3. In saveResumeAnalysis:', {
+      hasJobDescription: !!data.jobDescription,
+      jobDescriptionType: data.jobDescription ? typeof data.jobDescription : 'null/undefined',
+      isNull: data.jobDescription === null,
+      isUndefined: data.jobDescription === undefined,
+      jobDescriptionLength: data.jobDescription && typeof data.jobDescription === 'string' ? data.jobDescription.length : 0,
+      jobDescriptionSample: data.jobDescription && typeof data.jobDescription === 'string' ? 
+        data.jobDescription.substring(0, 50) + '...' : 'none',
+      hasJobAnalysis: !!data.analysis.jobAnalysis,
+      jobAnalysisType: typeof data.analysis.jobAnalysis,
+      jobAnalysisIsNull: data.analysis.jobAnalysis === null,
+      jobAnalysisIsUndefined: data.analysis.jobAnalysis === undefined,
+      jobAnalysisKeys: data.analysis.jobAnalysis ? Object.keys(data.analysis.jobAnalysis) : []
+    });
+    
+    console.log('Saving resume analysis:', {
+      userId: data.userId,
+      score: data.score,
+      hasGeneralFeedback: !!data.analysis.generalFeedback,
+      generalFeedbackContent: typeof data.analysis.generalFeedback === 'object'
+        ? data.analysis.generalFeedback.overall
+        : data.analysis.generalFeedback,
+      hasPrimaryKeywords: !!data.analysis.primaryKeywords,
+      primaryKeywordsCount: data.analysis.primaryKeywords?.length,
+      primaryKeywords: data.analysis.primaryKeywords,
+      hasSuggestedImprovements: !!data.analysis.suggestedImprovements,
+      suggestedImprovementsCount: data.analysis.suggestedImprovements?.length,
+      suggestedImprovementsSample: data.analysis.suggestedImprovements?.slice(0, 2),
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      // Create valid insert object using type safety
+      const insertData: InsertResumeAnalysis = {
+        userId: data.userId,
+        content: data.content,
+        score: data.score,
+        scores: data.analysis.scores,
+        // CRITICAL FIX: Always include the jobDescription field
+        // Set it to null when no job description is provided to ensure consistent behavior
+        jobDescription: data.jobDescription !== undefined && data.jobDescription !== null ? 
+          (typeof data.jobDescription === 'object' ? 
+            JSON.stringify(data.jobDescription) : String(data.jobDescription)) 
+          : null,
+        resumeSections: resumeSectionsSchema.parse({ 
+          professionalSummary: "",
+          workExperience: "",
+          technicalSkills: "",
+          education: "",
+          keyAchievements: ""
+        }),
+        identifiedSkills: data.analysis.identifiedSkills,
+        primaryKeywords: data.analysis.primaryKeywords,
+        suggestedImprovements: data.analysis.suggestedImprovements,
+        generalFeedback: typeof data.analysis.generalFeedback === 'object'
+          ? data.analysis.generalFeedback.overall || ''
+          : data.analysis.generalFeedback || '',
+        // CRITICAL FIX: Always include the jobAnalysis field
+        // Set it to null when no job analysis is available to ensure consistent behavior
+        jobAnalysis: data.analysis.jobAnalysis || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Now insert with the validated data
       const [analysis] = await db
         .insert(resumeAnalyses)
-        .values(mockAnalysis)
+        .values(insertData)
         .returning();
 
-      return analysis;
+      console.log('Successfully saved analysis:', {
+        id: analysis.id,
+        userId: analysis.userId,
+        score: analysis.score,
+        hasPrimaryKeywords: !!analysis.primaryKeywords,
+        primaryKeywordsCount: analysis.primaryKeywords?.length,
+        primaryKeywords: analysis.primaryKeywords,
+        hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback,
+        hasSuggestedImprovements: !!analysis.suggestedImprovements,
+        suggestedImprovementsCount: analysis.suggestedImprovements?.length,
+        suggestedImprovementsSample: analysis.suggestedImprovements?.slice(0, 2),
+        hasJobDescription: !!analysis.jobDescription,
+        jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
+        hasJobAnalysis: !!analysis.jobAnalysis,
+        jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : [],
+        timestamp: new Date().toISOString()
+      });
+
+      // Cast to expected type - this is safe since we know the DB structure matches our type
+      return analysis as unknown as ResumeAnalysis;
+    } catch (error: any) {
+      console.error('Error saving resume analysis:', {
+        error: error.message,
+        userId: data.userId,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
     }
   }
 
   async getResumeAnalysis(id: number): Promise<ResumeAnalysis | undefined> {
-    const [analysis] = await db
-      .select()
-      .from(resumeAnalyses)
-      .where(eq(resumeAnalyses.id, id));
-    return analysis;
+    try {
+      // Security check - ensure valid ID
+      if (!id || isNaN(id)) {
+        console.error('Invalid analysis ID requested');
+        throw new Error('Invalid analysis ID');
+      }
+      
+      console.log('Fetching resume analysis by ID:', {
+        id,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Use a prepared statement approach with explicit field selection
+      // This takes advantage of the primary key index on id
+      const [analysis] = await db
+        .select()
+        .from(resumeAnalyses)
+        .where(eq(resumeAnalyses.id, id))
+        .limit(1); // Ensure only one result (though ID is primary key)
+
+      if (!analysis) {
+        console.log('Analysis not found:', { id });
+        return undefined;
+      }
+
+      console.log('Successfully fetched analysis:', {
+        id: analysis.id,
+        userId: analysis.userId,
+        score: analysis.score,
+        hasJobDescription: !!analysis.jobDescription,
+        jobDescriptionType: analysis.jobDescription ? typeof analysis.jobDescription : 'none',
+        hasJobAnalysis: !!analysis.jobAnalysis,
+        jobAnalysisKeys: analysis.jobAnalysis ? Object.keys(analysis.jobAnalysis) : [],
+        hasPrimaryKeywords: !!analysis.primaryKeywords,
+        primaryKeywordsCount: analysis.primaryKeywords?.length,
+        hasSuggestedImprovements: !!analysis.suggestedImprovements, 
+        suggestedImprovementsCount: analysis.suggestedImprovements?.length,
+        hasGeneralFeedback: !!analysis.generalFeedback,
+        generalFeedbackContent: analysis.generalFeedback,
+        timestamp: new Date().toISOString()
+      });
+
+      // Type-safe date handling
+      let createdDate: Date;
+      let updatedDate: Date;
+      
+      // Explicitly handle date conversion to avoid null issues
+      if (analysis.createdAt) {
+        createdDate = new Date(analysis.createdAt.toString());
+      } else {
+        createdDate = new Date();
+      }
+      
+      if (analysis.updatedAt) {
+        updatedDate = new Date(analysis.updatedAt.toString());
+      } else {
+        updatedDate = new Date();
+      }
+
+      // Ensure proper type conversion and field presence
+      return {
+        ...analysis,
+        id: Number(analysis.id),
+        score: Number(analysis.score),
+        scores: analysis.scores || {},
+        identifiedSkills: Array.isArray(analysis.identifiedSkills) ? analysis.identifiedSkills : [],
+        primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
+        suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
+        generalFeedback: analysis.generalFeedback || '',
+        // Include job description and job analysis in returned object
+        jobDescription: analysis.jobDescription || null,
+        jobAnalysis: analysis.jobAnalysis || null,
+        createdAt: createdDate,
+        updatedAt: updatedDate
+      } as ResumeAnalysis;
+    } catch (error) {
+      console.error('Error in getResumeAnalysis:', {
+        error,
+        id,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
   }
 
   async getUserAnalyses(userId: string): Promise<ResumeAnalysis[]> {
-    return db
-      .select()
-      .from(resumeAnalyses)
-      .where(eq(resumeAnalyses.userId, userId))
-      .orderBy(resumeAnalyses.createdAt);
+    try {
+      // Security check - ensure userId is provided
+      if (!userId) {
+        console.error('Authentication error: Attempted to access user analyses without user ID');
+        throw new Error('Authentication required');
+      }
+      
+      console.log('Fetching analyses for user:', {
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Optimize query to select only necessary fields and use limit
+      // This query will benefit from the userId + createdAt composite index we added
+      const results = await db
+        .select({
+          id: resumeAnalyses.id,
+          userId: resumeAnalyses.userId,
+          score: resumeAnalyses.score,
+          identifiedSkills: resumeAnalyses.identifiedSkills,
+          primaryKeywords: resumeAnalyses.primaryKeywords,
+          suggestedImprovements: resumeAnalyses.suggestedImprovements,
+          generalFeedback: resumeAnalyses.generalFeedback,
+          // Include job-related fields
+          jobDescription: resumeAnalyses.jobDescription,
+          jobAnalysis: resumeAnalyses.jobAnalysis,
+          createdAt: resumeAnalyses.createdAt,
+          updatedAt: resumeAnalyses.updatedAt
+        })
+        .from(resumeAnalyses)
+        .where(eq(resumeAnalyses.userId, userId))
+        .orderBy(resumeAnalyses.createdAt)
+        .limit(100); // Prevents excessive data loading
+      
+      console.log('Successfully fetched analyses:', {
+        userId,
+        count: results.length,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Process each analysis to ensure type safety
+      const processedResults: ResumeAnalysis[] = [];
+      
+      for (const analysis of results) {
+        // Type-safe date handling
+        let createdDate: Date;
+        let updatedDate: Date;
+        
+        // Explicitly handle null date values
+        if (analysis.createdAt) {
+          createdDate = new Date(analysis.createdAt.toString());
+        } else {
+          createdDate = new Date();
+        }
+        
+        if (analysis.updatedAt) {
+          updatedDate = new Date(analysis.updatedAt.toString());
+        } else {
+          updatedDate = new Date();
+        }
+        
+        // Create a properly typed object
+        processedResults.push({
+          ...analysis,
+          id: Number(analysis.id),
+          score: Number(analysis.score),
+          scores: {}, // Default empty scores object as we didn't select it
+          resumeSections: {}, // Default empty resumeSections object as we didn't select it
+          content: '', // Default empty content as we didn't select it (large field)
+          identifiedSkills: Array.isArray(analysis.identifiedSkills) ? analysis.identifiedSkills : [],
+          primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
+          suggestedImprovements: Array.isArray(analysis.suggestedImprovements) ? analysis.suggestedImprovements : [],
+          generalFeedback: analysis.generalFeedback || '',
+          // Include job-related fields
+          jobDescription: analysis.jobDescription || null,
+          jobAnalysis: analysis.jobAnalysis || null,
+          createdAt: createdDate,
+          updatedAt: updatedDate
+        } as ResumeAnalysis);
+      }
+      
+      return processedResults;
+    } catch (error) {
+      console.error('Error in getUserAnalyses:', error);
+      throw error;
+    }
   }
 }
 
